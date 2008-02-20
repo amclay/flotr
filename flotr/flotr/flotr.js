@@ -35,8 +35,7 @@ var Flotr = (function(){
 			result[i] = (typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp)) ? merge(src[i], dest[i]) : result[i] = src[i];        
 		}
 		return result;	
-	}
-	
+	}	
 	/**
 	 * Function: (private) getTickSize
 	 * 
@@ -59,17 +58,11 @@ var Flotr = (function(){
 		 */
         var norm = delta / magn;
 
-        var tickSize = 1;
-        if (norm < 1.5)
-            tickSize = 1;
-        else if (norm < 2.25)
-            tickSize = 2;
-        else if (norm < 3)
-            tickSize = 2.5;
-        else if (norm < 7.5)
-            tickSize = 5;
-        else
-            tickSize = 10;
+        var tickSize = 10;
+        if(norm < 1.5) tickSize = 1;
+        else if(norm < 2.25) tickSize = 2;
+        else if(norm < 3) tickSize = 2.5;
+        else if(norm < 7.5) tickSize = 5;
 
         if(tickSize == 2.5 && decimals == 0)
             tickSize = 2;
@@ -535,7 +528,7 @@ var Flotr = (function(){
 			});
 			target.appendChild(canvas);
 			if(Prototype.Browser.IE){
-				canvas = window.G_vmlCanvasManager.initElement(canvas);
+				canvas = $(window.G_vmlCanvasManager.initElement(canvas));
 			} 
 			ctx = canvas.getContext('2d');
 	
@@ -552,7 +545,7 @@ var Flotr = (function(){
 			});
 			target.appendChild(overlay);
 			if(Prototype.Browser.IE){
-				overlay = window.G_vmlCanvasManager.initElement(overlay);	
+				overlay = $(window.G_vmlCanvasManager.initElement(overlay));
 			}			
 			octx = overlay.getContext('2d');
 	    }
@@ -614,13 +607,13 @@ var Flotr = (function(){
 	         */
 	        for(var j = 0; j < series.length; ++j){
 	            var data = series[j].data;
-	            for (var h = 0; h < data.length; ++h){
+	            for(var h = 0; h < data.length; ++h){
 	                var x = data[h][0];
 	                var y = data[h][1];
-	                if (x < xaxis.datamin) xaxis.datamin = x;
-	                else if (x > xaxis.datamax) xaxis.datamax = x;
-	                if (y < yaxis.datamin) yaxis.datamin = y;
-	                else if (y > yaxis.datamax) yaxis.datamax = y;
+	                if(x < xaxis.datamin) xaxis.datamin = x;
+	                else if(x > xaxis.datamax) xaxis.datamax = x;
+	                if(y < yaxis.datamin) yaxis.datamin = y;
+	                else if(y > yaxis.datamax) yaxis.datamax = y;
 	            }
 	        }
 	    }
@@ -643,8 +636,7 @@ var Flotr = (function(){
 	            var widen = (max == 0.0) ? 1.0 : 0.01;
 	            min -= widen;
 	            max += widen;
-	        }
-	        
+	        }	        
 	        axis.tickSize = getTickSize(axisOptions.noTicks, min, max, axisOptions.tickDecimals);
 	            
 	        /**
@@ -670,7 +662,7 @@ var Flotr = (function(){
 	            margin = axisOptions.autoscaleMargin;
 	            if(margin != 0){
 	                max += axis.tickSize * margin;
-	                if (max > 0 && axis.datamax <= 0) max = 0;                
+	                if(max > 0 && axis.datamax <= 0) max = 0;                
 	                max = axis.tickSize * Math.ceil(max / axis.tickSize);
 	            }
 	        }
@@ -689,12 +681,12 @@ var Flotr = (function(){
 		 * 		void
 		 */
 	    function extendXRangeIfNeededByBar(){
-			if (options.xaxis.max == null) {
+			if(options.xaxis.max == null){
 	            /**
 	             * Autoscaling.
 	             */
 	            var newmax = xaxis.max;
-	            for(var i = 0; i < series.length; ++i) {
+	            for(var i = 0; i < series.length; ++i){
 					if(series[i].bars.show && series[i].bars.barWidth + xaxis.datamax > newmax){
 						newmax = xaxis.max + series[i].bars.barWidth;
 					}
@@ -722,36 +714,37 @@ var Flotr = (function(){
 	                ticks = ticks({ min: axis.min, max: axis.max });
 				}
 	            
-	            // clean up the user-supplied ticks, copy them over
-	            for(var i = 0; i < ticks.length; ++i) {
-	                var v, label;
+	            /**
+	             * Clean up the user-supplied ticks, copy them over.
+	             */
+	            for(var i = 0, v, label; i < ticks.length; ++i){
 	                var t = ticks[i];
-	                if (typeof(t) == "object") {
+	                if(typeof(t) == 'object'){
 	                    v = t[0];
-	                    if (t.length > 1)
-	                        label = t[1];
-	                    else
-	                        label = axisOptions.tickFormatter(v);
-	                }
-	                else {
+						label = (t.length > 1) ? t[1] : axisOptions.tickFormatter(v);
+	                }else{
 	                    v = t;
 	                    label = axisOptions.tickFormatter(v);
 	                }
 	                axis.ticks[i] = { v: v, label: label };
 	            }
 	        }else{
-	            // round to nearest multiple of tick size
+	            /**
+	             * Round to nearest multiple of tick size.
+	             */
 	            var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize);
-	            // then spew out all possible ticks
+	            /**
+	             * Then spew out all possible ticks.
+	             */
 	            for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
 	                v = start + i * axis.tickSize;
 	                
-	                // round (this is always needed to fix numerical instability)
+	                /**
+	                 * Round (this is always needed to fix numerical instability).
+	                 */
 	                var decimals = axisOptions.tickDecimals;
-	                if (decimals == null)
-	                    decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
-	                if (decimals < 0)
-	                    decimals = 0;
+	                if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
+	                if(decimals < 0) decimals = 0;
 	                
 	                v = v.toFixed(decimals);
 	                axis.ticks.push({ v: v, label: axisOptions.tickFormatter(v) });
@@ -773,11 +766,12 @@ var Flotr = (function(){
 	        // calculate spacing for labels, using the heuristic
 	        // that the longest string is probably the one that takes
 	        // up the most space
-	        var i, max_label = "";
-	        for (i = 0; i < yaxis.ticks.length; ++i) {
+	        var max_label = '';
+	        for(var i = 0; i < yaxis.ticks.length; ++i){
 	            var l = yaxis.ticks[i].label.length;
-	            if (l > max_label.length)
+	            if(l > max_label.length){
 	                max_label = yaxis.ticks[i].label;
+				}
 	        }
 	
 	        var dummyDiv = target.insert('<div style="position:absolute;top:-10000px;font-size:smaller" class="gridLabel">' + max_label + '</div>').down(0).next(1);
@@ -786,28 +780,31 @@ var Flotr = (function(){
 	        labelMaxHeight = dummyDiv.getHeight();
 	        dummyDiv.remove();
 	
-	        var maxOutset = 2; // grid outline line width
-	        if (options.points.show)
+			/**
+			 * Grid outline line width.
+			 */
+	        var maxOutset = 2;
+	        if(options.points.show){
 	            maxOutset = Math.max(maxOutset, options.points.radius + options.points.lineWidth/2);
-	        for (i = 0; i < series.length; ++i) {
-	            if (series[i].points.show)
-	                maxOutset = Math.max(maxOutset, series[i].points.radius + series[i].points.lineWidth/2);
+			}
+	        for(var j = 0; j < series.length; ++j){
+	            if (series[j].points.show){
+	                maxOutset = Math.max(maxOutset, series[j].points.radius + series[j].points.lineWidth/2);
+				}
 	        }
 	
 	        plotOffset.left = plotOffset.right = plotOffset.top = plotOffset.bottom = maxOutset;
-	        
 	        plotOffset.left += labelMaxWidth + options.grid.labelMargin;
-	        plotOffset.bottom += labelMaxHeight + options.grid.labelMargin;
-	        
+	        plotOffset.bottom += labelMaxHeight + options.grid.labelMargin;	        
 	        plotWidth = canvasWidth - plotOffset.left - plotOffset.right;
 	        plotHeight = canvasHeight - plotOffset.bottom - plotOffset.top;
 	        hozScale = plotWidth / (xaxis.max - xaxis.min);
 	        vertScale = plotHeight / (yaxis.max - yaxis.min);
 	    }
         /**
-		 * Function: (private)
+		 * Function: (private) draw
 		 * 
-		 * 
+		 * Draws grid, labels and series.
 		 * 
 		 * Parameters:
 		 * 		none
@@ -833,7 +830,7 @@ var Flotr = (function(){
 		 * Returns:
 		 * 		Translated relative x coordinate.
 		 */
-	    function tHoz(x) {
+	    function tHoz(x){
 	        return (x - xaxis.min) * hozScale;
 	    }
 		/**
@@ -847,7 +844,7 @@ var Flotr = (function(){
 		 * Returns:
 		 * 		Translated relative y coordinate.
 		 */
-	    function tVert(y) {
+	    function tVert(y){
 	        return plotHeight - (y - yaxis.min) * vertScale;
 	    }
 		/**
@@ -944,8 +941,7 @@ var Flotr = (function(){
 	         */
 	        for(var j = 0, tick = null; j < xaxis.ticks.length; ++j){
 	            tick = xaxis.ticks[j];
-	            if (!tick.label)
-	                continue;
+	            if(!tick.label) continue;
 	            html += '<div style="position:absolute;top:' + (plotOffset.top + plotHeight + options.grid.labelMargin) + 'px;left:' + (plotOffset.left + tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center" class="gridLabel">' + tick.label + "</div>";
 	        }
 	        
@@ -954,8 +950,7 @@ var Flotr = (function(){
 	         */
 	        for(var k = 0, tick = null; k < yaxis.ticks.length; ++k){
 	            tick = yaxis.ticks[k];
-	            if (!tick.label || tick.label.length == 0)
-	                continue;
+	            if (!tick.label || tick.label.length == 0) continue;
 	            html += '<div style="position:absolute;top:' + (plotOffset.top + tVert(tick.v) - labelMaxHeight/2) + 'px;left:0;width:' + labelMaxWidth + 'px;text-align:right" class="gridLabel">' + tick.label + "</div>";
 	        }
 	        html += '</div>';        
@@ -1001,68 +996,71 @@ var Flotr = (function(){
 	
 	            ctx.beginPath();
 	            ctx.moveTo(prevx, prevy);
-	            for (var i = 0; i < data.length - 1; ++i) {
+	            for(var i = 0; i < data.length - 1; ++i){
 	                var x1 = data[i][0], y1 = data[i][1],
 	                    x2 = data[i+1][0], y2 = data[i+1][1];
 	
-	                // clip with ymin
-	                if (y1 <= y2 && y1 < yaxis.min) {
-	                    if (y2 < yaxis.min)
-	                        continue;   // line segment is outside
-	                    // compute new intersection point
+	                /**
+	                 * Clip with ymin.
+	                 */
+	                if(y1 <= y2 && y1 < yaxis.min){
+						/**
+						 * Line segment is outside the drawing area.
+						 */
+	                    if(y2 < yaxis.min) continue;
+						
+	                    /**
+	                     * Compute new intersection point.
+	                     */
 	                    x1 = (yaxis.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y1 = yaxis.min;
-	                }
-	                else if (y2 <= y1 && y2 < yaxis.min) {
-	                    if (y1 < yaxis.min)
-	                        continue;
+	                }else if(y2 <= y1 && y2 < yaxis.min){
+	                    if(y1 < yaxis.min) continue;
 	                    x2 = (yaxis.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y2 = yaxis.min;
 	                }
 	
-	                // clip with ymax
-	                if (y1 >= y2 && y1 > yaxis.max) {
-	                    if (y2 > yaxis.max)
-	                        continue;
+	                /**
+	                 * Clip with ymax.
+	                 */ 
+	                if(y1 >= y2 && y1 > yaxis.max) {
+	                    if(y2 > yaxis.max) continue;
 	                    x1 = (yaxis.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y1 = yaxis.max;
 	                }
-	                else if (y2 >= y1 && y2 > yaxis.max) {
-	                    if (y1 > yaxis.max)
-	                        continue;
+	                else if(y2 >= y1 && y2 > yaxis.max){
+	                    if(y1 > yaxis.max) continue;
 	                    x2 = (yaxis.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y2 = yaxis.max;
 	                }
 	
-	                // clip with xmin
-	                if (x1 <= x2 && x1 < xaxis.min) {
-	                    if (x2 < xaxis.min)
-	                        continue;
+	                /**
+	                 * Clip with xmin.
+	                 */
+	                if(x1 <= x2 && x1 < xaxis.min){
+	                    if(x2 < xaxis.min) continue;
 	                    y1 = (xaxis.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x1 = xaxis.min;
-	                }
-	                else if (x2 <= x1 && x2 < xaxis.min) {
-	                    if (x1 < xaxis.min)
-	                        continue;
+	                }else if(x2 <= x1 && x2 < xaxis.min){
+	                    if(x1 < xaxis.min) continue;
 	                    y2 = (xaxis.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x2 = xaxis.min;
 	                }
 	
-	                // clip with xmax
-	                if (x1 >= x2 && x1 > xaxis.max) {
-	                    if (x2 > xaxis.max)
-	                        continue;
+	                /**
+	                 * Clip with xmax.
+	                 */
+	                if(x1 >= x2 && x1 > xaxis.max){
+	                    if (x2 > xaxis.max) continue;
 	                    y1 = (xaxis.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x1 = xaxis.max;
-	                }
-	                else if (x2 >= x1 && x2 > xaxis.max) {
-	                    if (x1 > xaxis.max)
-	                        continue;
+	                }else if(x2 >= x1 && x2 > xaxis.max){
+	                    if(x1 > xaxis.max) continue;
 	                    y2 = (xaxis.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x2 = xaxis.max;
 	                }
 	
-	                if (prevx != tHoz(x1) || prevy != tVert(y1) + offset)
+	                if(prevx != tHoz(x1) || prevy != tVert(y1) + offset)
 	                    ctx.moveTo(tHoz(x1), tVert(y1) + offset);
 	                
 	                prevx = tHoz(x2);
@@ -1072,9 +1070,12 @@ var Flotr = (function(){
 	            ctx.stroke();
 	        }
 			
-	        function plotLineArea(data) {
-	            if (data.length < 2)
-	                return;
+			/**
+			 * Function used to fill
+			 * @param {Object} data
+			 */
+	        function plotLineArea(data){
+	            if (data.length < 2) return;
 	
 	            var bottom = Math.min(Math.max(0, yaxis.min), yaxis.max);
 	            var top, lastX = 0;
@@ -1082,108 +1083,98 @@ var Flotr = (function(){
 	            var first = true;
 	            
 	            ctx.beginPath();
-	            for (var i = 0; i < data.length - 1; ++i) {
+	            for(var i = 0; i < data.length - 1; ++i){
 	                var x1 = data[i][0], y1 = data[i][1],
 	                    x2 = data[i+1][0], y2 = data[i+1][1];
 	
-	                // clip x values
-	                
-	                // clip with xmin
-	                if (x1 <= x2 && x1 < xaxis.min) {
-	                    if (x2 < xaxis.min)
-	                        continue;
+	                if(x1 <= x2 && x1 < xaxis.min){
+	                    if(x2 < xaxis.min) continue;
 	                    y1 = (xaxis.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x1 = xaxis.min;
-	                }
-	                else if (x2 <= x1 && x2 < xaxis.min) {
-	                    if (x1 < xaxis.min)
-	                        continue;
+	                }else if(x2 <= x1 && x2 < xaxis.min){
+	                    if(x1 < xaxis.min) continue;
 	                    y2 = (xaxis.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x2 = xaxis.min;
 	                }
-	
-	                // clip with xmax
-	                if (x1 >= x2 && x1 > xaxis.max) {
-	                    if (x2 > xaxis.max)
-	                        continue;
+										
+	                if(x1 >= x2 && x1 > xaxis.max){
+	                    if(x2 > xaxis.max) continue;
 	                    y1 = (xaxis.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x1 = xaxis.max;
-	                }
-	                else if (x2 >= x1 && x2 > xaxis.max) {
-	                    if (x1 > xaxis.max)
-	                        continue;
+	                }else if(x2 >= x1 && x2 > xaxis.max){
+	                    if (x1 > xaxis.max) continue;
 	                    y2 = (xaxis.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x2 = xaxis.max;
 	                }
 	
-	                if (first) {
+	                if(first){
 	                    ctx.moveTo(tHoz(x1), tVert(bottom));
 	                    first = false;
 	                }
 	                
-	                // now first check the case where both is outside
-	                if (y1 >= yaxis.max && y2 >= yaxis.max) {
+	                /**
+	                 * Now check the case where both is outside.
+	                 */
+	                if(y1 >= yaxis.max && y2 >= yaxis.max){
 	                    ctx.lineTo(tHoz(x1), tVert(yaxis.max));
 	                    ctx.lineTo(tHoz(x2), tVert(yaxis.max));
 	                    continue;
-	                }
-	                else if (y1 <= yaxis.min && y2 <= yaxis.min) {
+	                }else if(y1 <= yaxis.min && y2 <= yaxis.min){
 	                    ctx.lineTo(tHoz(x1), tVert(yaxis.min));
 	                    ctx.lineTo(tHoz(x2), tVert(yaxis.min));
 	                    continue;
 	                }
 	                
-	                // else it's a bit more complicated, there might
-	                // be two rectangles and two triangles we need to fill
-	                // in; to find these keep track of the current x values
+	                /**
+	                 * Else it's a bit more complicated, there might
+	                 * be two rectangles and two triangles we need to fill
+	                 * in; to find these keep track of the current x values.
+	                 */
 	                var x1old = x1, x2old = x2;
-	
-	                // and clip the y values, without shortcutting
 	                
-	                // clip with ymin
-	                if (y1 <= y2 && y1 < yaxis.min && y2 >= yaxis.min) {
+	                /**
+	                 * And clip the y values, without shortcutting.
+	                 * Clip with ymin.
+	                 */
+	                if(y1 <= y2 && y1 < yaxis.min && y2 >= yaxis.min){
 	                    x1 = (yaxis.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y1 = yaxis.min;
-	                }
-	                else if (y2 <= y1 && y2 < yaxis.min && y1 >= yaxis.min) {
+	                }else if(y2 <= y1 && y2 < yaxis.min && y1 >= yaxis.min){
 	                    x2 = (yaxis.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y2 = yaxis.min;
 	                }
 	
-	                // clip with ymax
-	                if (y1 >= y2 && y1 > yaxis.max && y2 <= yaxis.max) {
+	                /**
+	                 * Clip with ymax.
+	                 */
+	                if(y1 >= y2 && y1 > yaxis.max && y2 <= yaxis.max){
 	                    x1 = (yaxis.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y1 = yaxis.max;
-	                }
-	                else if (y2 >= y1 && y2 > yaxis.max && y1 <= yaxis.max) {
+	                }else if(y2 >= y1 && y2 > yaxis.max && y1 <= yaxis.max){
 	                    x2 = (yaxis.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 	                    y2 = yaxis.max;
 	                }
 	
-	
-	                // if the x value was changed we got a rectangle
-	                // to fill
-	                if (x1 != x1old) {
-	                    if (y1 <= yaxis.min)
-	                        top = yaxis.min;
-	                    else
-	                        top = yaxis.max;
-	                    
+					/**
+					 * If the x value was changed we got a rectangle to fill./
+					 */
+	                if(x1 != x1old){
+						top = (y1 <= yaxis.min) ? top = yaxis.min : yaxis.max;	                    
 	                    ctx.lineTo(tHoz(x1old), tVert(top));
 	                    ctx.lineTo(tHoz(x1), tVert(top));
 	                }
 	                
-	                // fill the triangles
+	                /**
+	                 * Fill the triangles.
+	                 */
 	                ctx.lineTo(tHoz(x1), tVert(y1));
 	                ctx.lineTo(tHoz(x2), tVert(y2));
 	
-	                // fill the other rectangle if it's there
-	                if (x2 != x2old) {
-	                    if (y2 <= yaxis.min)
-	                        top = yaxis.min;
-	                    else
-	                        top = yaxis.max;
-	                    
+	                /**
+	                 * Fill the other rectangle if it's there.
+	                 */
+	                if(x2 != x2old){
+						top = (y2 <= yaxis.min) ? yaxis.min : yaxis.max;
 	                    ctx.lineTo(tHoz(x2old), tVert(top));
 	                    ctx.lineTo(tHoz(x2), tVert(top));
 	                }
@@ -1203,13 +1194,14 @@ var Flotr = (function(){
 	        
 	        ctx.save();
 	        ctx.translate(plotOffset.left, plotOffset.top);
-	        ctx.lineJoin = "round";
+	        ctx.lineJoin = 'round';
 	
 	        var lw = series.lines.lineWidth;
 	        var sw = series.shadowSize;
-	        // FIXME: consider another form of shadow when filling is turned on
-	        if (sw > 0) {
-	            // draw shadow in two steps
+	        /**
+	         * @todo: consider another form of shadow when filling is turned on
+	         */
+	        if(sw > 0){
 	            ctx.lineWidth = sw / 2;
 	            ctx.strokeStyle = "rgba(0,0,0,0.1)";
 	            plotLine(series.data, lw/2 + sw/2 + ctx.lineWidth/2);
@@ -1221,7 +1213,7 @@ var Flotr = (function(){
 	
 	        ctx.lineWidth = lw;
 	        ctx.strokeStyle = series.color;
-	        if (series.lines.fill) {
+	        if(series.lines.fill){
 	            ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : parseColor(series.color).scale(null, null, null, 0.4).toString();
 	            plotLineArea(series.data, 0);
 	        }
@@ -1313,7 +1305,6 @@ var Flotr = (function(){
 	                if(right < xaxis.min || left > xaxis.max || top < yaxis.min || bottom > yaxis.max)
 	                    continue;
 	
-	                // clip
 	                if(left < xaxis.min){
 	                    left = xaxis.min;
 	                    drawLeft = false;
@@ -1412,56 +1403,47 @@ var Flotr = (function(){
 	        
 	        var fragments = [];
 	        var rowStarted = false;
-	        for (i = 0; i < series.length; ++i) {
-	            if (!series[i].label)
-	                continue;
+	        for(var i = 0; i < series.length; ++i){
+	            if(!series[i].label) continue;
 	            
-	            if (i % options.legend.noColumns == 0) {
-	                if (rowStarted)
-	                    fragments.push('</tr>');
-	                fragments.push('<tr>');
+	            if(i % options.legend.noColumns == 0){
+	                fragments.push((rowStarted) ? '</tr><tr>' : '<tr>');
 	                rowStarted = true;
 	            }
 	
 	            var label = series[i].label;
-	            if (options.legend.labelFormatter != null)
+	            if(options.legend.labelFormatter != null)
 	                label = options.legend.labelFormatter(label);
 	            
-	            fragments.push(
-	                '<td class="legendColorBox"><div style="border:1px solid ' + options.legend.labelBoxBorderColor + ';padding:1px"><div style="width:14px;height:10px;background-color:' + series[i].color + '"></div></div></td>' +
+	            fragments.push('<td class="legendColorBox"><div style="border:1px solid ' + options.legend.labelBoxBorderColor + ';padding:1px"><div style="width:14px;height:10px;background-color:' + series[i].color + '"></div></div></td>' +
 	                '<td class="legendLabel">' + label + '</td>');
 	        }
-	        if (rowStarted)
-	            fragments.push('</tr>');
+	        if(rowStarted) fragments.push('</tr>');
 	        
-	        if (fragments.length > 0) {
+	        if(fragments.length > 0){
 	            var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join("") + '</table>';
-	            if (options.legend.container != null)
+	            if(options.legend.container != null){
 	                options.legend.container.append(table);
-	            else {
-	                var pos = "";
+	            }else{
+	                var pos = '';
 	                var p = options.legend.position, m = options.legend.margin;
-	                if (p.charAt(0) == "n")
-	                    pos += 'top:' + (m + plotOffset.top) + 'px;';
-	                else if (p.charAt(0) == "s")
-	                    pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';
-	                if (p.charAt(1) == "e")
-	                    pos += 'right:' + (m + plotOffset.right) + 'px;';
-	                else if (p.charAt(1) == "w")
-	                    pos += 'left:' + (m + plotOffset.bottom) + 'px;';
+	                
+					if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
+	                else if (p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';
+	                
+					if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
+	                else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
 	                var div = target.insert('<div class="legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').getElementsBySelector('div.legend').first();
 					
-	                if (options.legend.backgroundOpacity != 0.0) {
-	                    // put in the transparent background
-	                    // separately to avoid blended labels and
-	                    // label boxes
+	                if(options.legend.backgroundOpacity != 0.0){
+						/**
+						 * Put in the transparent background separately to avoid blended labels and
+	                     * label boxes.
+						 */
+	                    
 	                    var c = options.legend.backgroundColor;
-	                    if (c == null) {
-	                        var tmp;
-	                        if (options.grid.backgroundColor != null)
-	                            tmp = options.grid.backgroundColor;
-	                        else
-	                            tmp = extractColor(div);
+	                    if(c == null){
+	                        var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : extractColor(div);
 	                        c = parseColor(tmp).adjust(null, null, null, 1).toString();
 	                    }
 	                    target.insert('<div class="legend-bg" style="position:absolute;width:' + div.getWidth() + 'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>').select('div.legend-bg').first().setStyle({
