@@ -76,14 +76,28 @@ var Flotr = (function(){
 	 * Formats the ticks.
 	 * 
 	 * Parameters:
-	 * 		val - Tick value string.
+	 * 		val - Tick value integer.
 	 * 
 	 * Returns:
 	 * 		Formatted tick string.
 	 */
     function defaultTickFormatter(val){
         return val.toString();
-    }   
+    }
+	/**
+	 * Function: (private) defaultTrackFormatter
+	 * 
+	 * Formats the mouse tracker values.
+	 * 
+	 * Parameters:
+	 * 		val - Track value Object {x:..,y:..}.
+	 * 
+	 * Returns:
+	 * 		Formatted track string.
+	 */
+    function defaultTrackFormatter(obj){
+        return '('+obj.x+', '+obj.y+')';
+    }     
 	/**
 	 * Function: (private) getMagnitude
 	 * 
@@ -417,6 +431,15 @@ var Flotr = (function(){
 	                color: '#e8cfac',
 					fps: 10
 	            },
+				mouse: {
+					track: null,
+					position: 'se',
+					trackFormatter: defaultTrackFormatter,
+					margin: 3,
+					color: '#ff3f19',
+					trackDecimals: 1,
+					sensibility: 2
+				},
 	            shadowSize: 4
 	        });
 			
@@ -489,7 +512,8 @@ var Flotr = (function(){
 				s.lines = Object.extend(Object.clone(options.lines), s.lines);
 				s.points = Object.extend(Object.clone(options.points), s.points);
 				s.bars = Object.extend(Object.clone(options.bars), s.bars);
-			
+				s.mouse = Object.extend(Object.clone(options.mouse), s.mouse);
+				
 	            if(s.shadowSize == null) s.shadowSize = options.shadowSize;
 	        }
 	    }
@@ -537,13 +561,13 @@ var Flotr = (function(){
 			 */
 			overlay = $(document.createElement('canvas')).writeAttribute({
 				'width': canvasWidth,
-				'height': canvasHeight			
+				'height': canvasHeight
 			}).setStyle({
 				'position': 'absolute',
 				'left': '0px',
 				'top': '0px'
 			});
-			target.appendChild(overlay);
+			target.setStyle({cursor:'default'}).appendChild(overlay);
 			if(Prototype.Browser.IE){
 				overlay = $(window.G_vmlCanvasManager.initElement(overlay));
 			}			
@@ -1430,7 +1454,7 @@ var Flotr = (function(){
 	                var p = options.legend.position, m = options.legend.margin;
 	                
 					if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
-	                else if (p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';
+	                else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';
 	                
 					if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
 	                else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
@@ -1475,15 +1499,12 @@ var Flotr = (function(){
                 ignoreClick = false;
                 return;
             }
-            
-            var offset = overlay.cumulativeOffset();
-            var pos = {};
-            pos.x = event.pageX - offset.left - plotOffset.left;
-            pos.x = xaxis.min + pos.x / hozScale;
-            pos.y = event.pageY - offset.top - plotOffset.top;
-            pos.y = yaxis.max - pos.y / vertScale;
-			console.log(pos)
-            overlay.fire('flotr:click', [pos]);
+
+            var offset = overlay.cumulativeOffset();			
+            overlay.fire('flotr:click', [{
+				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
+				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
+			}]);
         }
 		/**
 		 * Function: (private) mouseMoveHandler
@@ -1506,6 +1527,15 @@ var Flotr = (function(){
                 lastMousePos.pageX = event.pageX;
                 lastMousePos.pageY = event.pageY;
             }
+			
+			if(options.mouse.track && selectionInterval == null){
+				var offset = overlay.cumulativeOffset();
+				hit({
+					x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
+					y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
+				})
+			}
+			
 			overlay.fire('flotr:mousemove', [event]);
         }
         /**
@@ -1731,6 +1761,93 @@ var Flotr = (function(){
             return Math.abs(selection.second.x - selection.first.x) >= minSize &&
                 Math.abs(selection.second.y - selection.first.y) >= minSize;
         }
+		
+		/**
+		 * EXPERIMENTAL
+		 */
+		var prevHit = null
+		function clearHit(){
+			if(prevHit){
+				octx.clearRect(
+					tHoz(prevHit.x) + plotOffset.left - options.points.radius*2,
+					tVert(prevHit.y) + plotOffset.top - options.points.radius*2,
+					options.points.radius*3 + options.points.lineWidth*3, 
+					options.points.radius*3 + options.points.lineWidth*3
+				);
+				prevHit = null;
+			}		
+		}
+		function hit(mouse){			
+			/**
+			 * Nearest data element.
+			 */
+			var n = {
+				dist:Number.MAX_VALUE,
+				x:null,
+				y:null,
+				mouse:null
+			};
+			
+			for(var i = 0, data, xsens, ysens; i < series.length; i++){
+	            if(!series[i].mouse.track) continue;
+				data = series[i].data;				
+				xsens = (hozScale*series[i].mouse.sensibility);
+				ysens = (vertScale*series[i].mouse.sensibility);
+				for(var j = 0, xabs, yabs; j < data.length; j++){
+					xabs = hozScale*Math.abs(data[j][0] - mouse.x);
+					yabs = vertScale*Math.abs(data[j][1] - mouse.y);
+					
+					if(xabs < xsens && yabs < ysens && (xabs+yabs) < n.dist){
+						n.dist = (xabs+yabs);
+						n.x = data[j][0];
+						n.y = data[j][1];
+						n.mouse = series[i].mouse;
+					}
+				}
+	        }
+			
+			if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
+				var el = target.select('.flotr-mouse-value').first();
+				if(!el){
+					var pos = '', p = options.mouse.position, m = options.mouse.margin;	                
+					if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
+	                else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';	                
+					if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
+	                else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
+					
+					target.insert('<div class="flotr-mouse-value" style="opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;'+pos+'"></div>');
+					return;
+				}
+				if(n.x !== null && n.y !== null){
+	                el.setStyle({display:'block'});					
+					
+					clearHit();
+					octx.save();
+	        		octx.translate(plotOffset.left, plotOffset.top);
+					octx.lineWidth = options.points.lineWidth;
+	        		octx.strokeStyle = n.mouse.color;
+	        		octx.fillStyle = '#ffffff';
+					octx.beginPath();
+	                octx.arc(tHoz(n.x), tVert(n.y), options.points.radius, 0, 2 * Math.PI, true);
+	                octx.fill();
+	                octx.stroke();
+					octx.restore();
+					prevHit = n;
+									
+					var decimals = n.mouse.trackDecimals;
+	                if(decimals == null || decimals < 0) decimals = 0;
+					
+					el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
+					
+				}else if(prevHit){
+					el.setStyle({display:'none'});
+					clearHit();
+				}
+			}
+		}
+		/**
+		 * EXPERIMENTAL
+		 */	
     } 
 
 return {
