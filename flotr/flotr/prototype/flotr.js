@@ -1075,18 +1075,18 @@ var Flotr = (function(){
 			 * @param {Object} data
 			 */
 	        function plotLineArea(data){
-	            if (data.length < 2) return;
+	            if(data.length < 2) return;
 	
 	            var bottom = Math.min(Math.max(0, yaxis.min), yaxis.max);
 	            var top, lastX = 0;
-	
-	            var first = true;
+				var first = true;
 	            
 	            ctx.beginPath();
 	            for(var i = 0; i < data.length - 1; ++i){
+					
 	                var x1 = data[i][0], y1 = data[i][1],
 	                    x2 = data[i+1][0], y2 = data[i+1][1];
-	
+					
 	                if(x1 <= x2 && x1 < xaxis.min){
 	                    if(x2 < xaxis.min) continue;
 	                    y1 = (xaxis.min - x1) / (x2 - x1) * (y2 - y1) + y1;
@@ -1106,7 +1106,7 @@ var Flotr = (function(){
 	                    y2 = (xaxis.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 	                    x2 = xaxis.max;
 	                }
-	
+
 	                if(first){
 	                    ctx.moveTo(tHoz(x1), tVert(bottom));
 	                    first = false;
@@ -1156,20 +1156,20 @@ var Flotr = (function(){
 	                }
 	
 					/**
-					 * If the x value was changed we got a rectangle to fill./
+					 * If the x value was changed we got a rectangle to fill.
 					 */
 	                if(x1 != x1old){
 						top = (y1 <= yaxis.min) ? top = yaxis.min : yaxis.max;	                    
 	                    ctx.lineTo(tHoz(x1old), tVert(top));
 	                    ctx.lineTo(tHoz(x1), tVert(top));
 	                }
-	                
+	               	
 	                /**
 	                 * Fill the triangles.
 	                 */
 	                ctx.lineTo(tHoz(x1), tVert(y1));
 	                ctx.lineTo(tHoz(x2), tVert(y2));
-	
+
 	                /**
 	                 * Fill the other rectangle if it's there.
 	                 */
@@ -1189,9 +1189,10 @@ var Flotr = (function(){
 	            }
 	            ctx.lineTo(tHoz(data[data.length - 1][0]), tVert(0));*/
 	            ctx.lineTo(tHoz(lastX), tVert(bottom));
+				ctx.closePath();
 	            ctx.fill();
 	        }
-	        
+			
 	        ctx.save();
 	        ctx.translate(plotOffset.left, plotOffset.top);
 	        ctx.lineJoin = 'round';
@@ -1481,7 +1482,7 @@ var Flotr = (function(){
             pos.x = xaxis.min + pos.x / hozScale;
             pos.y = event.pageY - offset.top - plotOffset.top;
             pos.y = yaxis.max - pos.y / vertScale;
-
+			console.log(pos)
             overlay.fire('flotr:click', [pos]);
         }
 		/**
