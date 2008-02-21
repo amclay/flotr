@@ -13,29 +13,10 @@ var Flotr = (function(){
 	 * 		Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
 	 */
 	function getSeries(data){
-		return data.collect(function(serie){
-			return (serie.data) ? Object.clone(serie) : {'data': serie};
+		return data.map(function(serie){
+			return (serie.data) ? $extend(serie,{}) : {'data': serie};
 		});
 	}
-	/**
-	 * Function: (private) merge
-	 * 
-	 * Recursively merges two objects.
-	 * 
-	 * Parameters:
-	 * 		src - Source object (likely the object with the least properties)
-	 * 		dest - Destination object (optional, object with the most properties)
-	 * 
-	 * Returns:
-	 * 		Recursively merged Object.
-	 */
-	function merge(src, dest){
-		var result = dest || {};
-		for(var i in src){          
-			result[i] = (typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp)) ? merge(src[i], dest[i]) : result[i] = src[i];        
-		}
-		return result;	
-	}	
 	/**
 	 * Function: (private) getTickSize
 	 * 
@@ -82,7 +63,7 @@ var Flotr = (function(){
 	 * 		Formatted tick string.
 	 */
     function defaultTickFormatter(val){
-        return val.toString();
+        return val+'';
     }
 	/**
 	 * Function: (private) defaultTrackFormatter
@@ -162,7 +143,7 @@ var Flotr = (function(){
 		/**
 		 * Otherwise, we're most likely dealing with a named color.
 		 */
-        var name = str.strip().toLowerCase();
+        var name = str.trim().toLowerCase();
         if(name == 'transparent'){
             return new Color(255, 255, 255, 0);
 		}
@@ -188,7 +169,7 @@ var Flotr = (function(){
 		do{
 			color = element.getStyle('background-color').toLowerCase();
 			if (color != '' && color != 'transparent') break;			
-			element = element.up(0);
+			element = element.getParent();//up(0);
 		}while(element.nodeName.toLowerCase() != 'body');
 
         /**
@@ -336,7 +317,7 @@ var Flotr = (function(){
         calculateTicks(yaxis, options.yaxis);
         calculateSpacing();
         draw();
-        insertLegend();
+//        insertLegend();
 
         this.getCanvas = function(){ return canvas; };
         this.getPlotOffset = function(){ return plotOffset; };
@@ -357,7 +338,7 @@ var Flotr = (function(){
 		 */
 	    function setOptions(o){
 			
-			options = merge(o, {
+			options = $merge(o, {
 	            // the color theme used for graphs
 	            colors: ['#00A8F0', '#C0D800', '#cb4b4b', '#4da74d', '#9440ed'],
 	            legend: {
@@ -442,7 +423,7 @@ var Flotr = (function(){
 	            var sc = series[i].color;
 	            if(sc != null){
 	                --neededColors;
-	                if(Object.isNumber(sc)) assignedColors.push(sc);
+	                if($type(sc) == 'number') assignedColors.push(sc);
 	                else usedColors.push(parseColor(series[i].color));
 	            }
 	        }
@@ -494,15 +475,15 @@ var Flotr = (function(){
 	            if(s.color == null){
 	                s.color = colors[colori].toString();
 	                ++colori;
-	            }else if(Object.isNumber(s.color)){
+	            }else if($type(s.color) == 'number'){
 	                s.color = colors[s.color].toString();
 				}
-	
-				s.lines = Object.extend(Object.clone(options.lines), s.lines);
-				s.points = Object.extend(Object.clone(options.points), s.points);
-				s.bars = Object.extend(Object.clone(options.bars), s.bars);
-				s.mouse = Object.extend(Object.clone(options.mouse), s.mouse);
-				
+
+				s.lines = $extend($extend({}, options.lines), s.lines||{});
+				s.points = $extend($extend({}, options.points), s.points||{});
+				s.bars = $extend($extend({}, options.bars), s.bars||{});
+				s.mouse = $extend($extend({}, options.mouse), s.mouse||{});
+
 	            if(s.shadowSize == null) s.shadowSize = options.shadowSize;
 	        }
 	    }
@@ -519,14 +500,14 @@ var Flotr = (function(){
 		 * 		void
 		 */
 	    function constructCanvas(){
-	        canvasWidth = target.getWidth();
-	        canvasHeight = target.getHeight();
+	        canvasWidth = target.getSize().size.x;
+	        canvasHeight = target.getSize().size.y;
 			target.innerHTML = '';
-			
+
 	        /**
 	         * For positioning labels and overlay.
 	         */
-			target.setStyle({'position': 'relative'});
+			target.setStyle('position', 'relative');
 			
 	        if(canvasWidth <= 0 || canvasHeight <= 0){
 				throw 'Invalid dimensions for plot, width = ' + canvasWidth + ', height = ' + canvasHeight;
@@ -535,12 +516,12 @@ var Flotr = (function(){
 	        /**
 	         * Insert main canvas.
 	         */
-			canvas = $(document.createElement('canvas')).writeAttribute({
+			canvas = $(document.createElement('canvas')).setProperties({
 				'width': canvasWidth,
 				'height': canvasHeight	
 			});
 			target.appendChild(canvas);
-			if(Prototype.Browser.IE){
+			if(window.ie){
 				canvas = $(window.G_vmlCanvasManager.initElement(canvas));
 			} 
 			ctx = canvas.getContext('2d');
@@ -548,16 +529,16 @@ var Flotr = (function(){
 			/**
 			 * Insert overlay canvas for interactive features.
 			 */
-			overlay = $(document.createElement('canvas')).writeAttribute({
+			overlay = $(document.createElement('canvas')).setProperties({
 				'width': canvasWidth,
 				'height': canvasHeight
-			}).setStyle({
+			}).setStyles({
 				'position': 'absolute',
 				'left': '0px',
 				'top': '0px'
 			});
-			target.setStyle({cursor:'default'}).appendChild(overlay);
-			if(Prototype.Browser.IE){
+			target.setStyle('cursor', 'default').appendChild(overlay);
+			if(window.ie){
 				overlay = $(window.G_vmlCanvasManager.initElement(overlay));
 			}			
 			octx = overlay.getContext('2d');
@@ -575,11 +556,11 @@ var Flotr = (function(){
 		 */
 		function bindEvents() {
             if(options.selection.mode != null){
-            	overlay.observe('mousedown', mouseDownHandler);				
+            	overlay.addEvent('mousedown', mouseDownHandler);				
             }
 					
-			overlay.observe('mousemove', mouseMoveHandler)
-			overlay.observe('click', clickHandler)
+			overlay.addEvent('mousemove', mouseMoveHandler)
+			overlay.addEvent('click', clickHandler)
         }
 		/**
 		 * Function: (private) findDataRanges
@@ -723,7 +704,7 @@ var Flotr = (function(){
 	        if(axisOptions.ticks){
 	            var ticks = axisOptions.ticks;
 	
-	            if(Object.isFunction(ticks)){
+	            if($type(ticks) == 'function'){
 	                ticks = ticks({ min: axis.min, max: axis.max });
 				}
 	            
@@ -776,9 +757,6 @@ var Flotr = (function(){
 		 * 		void
 		 */
 	    function calculateSpacing(){
-	        // calculate spacing for labels, using the heuristic
-	        // that the longest string is probably the one that takes
-	        // up the most space
 	        var max_label = '';
 	        for(var i = 0; i < yaxis.ticks.length; ++i){
 	            var l = yaxis.ticks[i].label.length;
@@ -787,10 +765,17 @@ var Flotr = (function(){
 				}
 	        }
 	
-	        var dummyDiv = target.insert('<div style="position:absolute;top:-10000px;font-size:smaller" class="gridLabel">' + max_label + '</div>').down(0).next(1);
-		
-	        labelMaxWidth = dummyDiv.getWidth();
-	        labelMaxHeight = dummyDiv.getHeight();
+	        var dummyDiv = new Element('div')
+				.setStyles({
+					'position': 'absolute',
+					'top': '-10000px',
+					'font-size': 'small'
+				})
+				.setHTML(max_label)
+				.addClass('gridLabel')
+				.injectInside(target);
+	        labelMaxWidth = dummyDiv.getSize().size.x;
+	        labelMaxHeight = dummyDiv.getSize().size.y;
 	        dummyDiv.remove();
 	
 			/**
@@ -805,7 +790,6 @@ var Flotr = (function(){
 	                maxOutset = Math.max(maxOutset, series[j].points.radius + series[j].points.lineWidth/2);
 				}
 	        }
-	
 	        plotOffset.left = plotOffset.right = plotOffset.top = plotOffset.bottom = maxOutset;
 	        plotOffset.left += labelMaxWidth + options.grid.labelMargin;
 	        plotOffset.bottom += labelMaxHeight + options.grid.labelMargin;	        
@@ -889,14 +873,14 @@ var Flotr = (function(){
 	        ctx.lineWidth = 1;
 	        ctx.strokeStyle = options.grid.tickColor;
 	        ctx.beginPath();
-	        for(var i = 0, v = null; i < xaxis.ticks.length; ++i){
+	        for(var i = 0, v = null; i < xaxis.ticks.length; ++i){				
 	            v = xaxis.ticks[i].v;
 				/**
 				 * Don't show lines on upper and lower bounds.
 				 */
 	            if (v == xaxis.min || v == xaxis.max)
 	                continue;
-	
+					
 	            ctx.moveTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, 0);
 	            ctx.lineTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, plotHeight);
 	        }
@@ -911,7 +895,7 @@ var Flotr = (function(){
 				 */
 				if (v == yaxis.min || v == yaxis.max)
 	                continue;
-	
+				
 	            ctx.moveTo(0, Math.floor(tVert(v)) + ctx.lineWidth/2);
 	            ctx.lineTo(plotWidth, Math.floor(tVert(v)) + ctx.lineWidth/2);
 	        }
@@ -947,27 +931,44 @@ var Flotr = (function(){
 	                ++noLabels;
 	            }
 	        }
+			
 	        var xBoxWidth = plotWidth / noLabels;
-	        var html = '<div style="font-size:smaller;color:' + options.grid.color + '">';
+			var wrapper = new Element('div').setStyles({
+				'font-size': 'smaller',
+				'color': options.grid.color
+			});
+			
 	        /**
 	         * Add xlabels.
 	         */
 	        for(var j = 0, tick = null; j < xaxis.ticks.length; ++j){
 	            tick = xaxis.ticks[j];
 	            if(!tick.label) continue;
-	            html += '<div style="position:absolute;top:' + (plotOffset.top + plotHeight + options.grid.labelMargin) + 'px;left:' + (plotOffset.left + tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center" class="gridLabel">' + tick.label + "</div>";
+				wrapper.adopt(new Element('div').setStyles({
+					'position': 'absolute',
+					'top': (plotOffset.top + plotHeight + options.grid.labelMargin) + 'px',
+					'left': (plotOffset.left + tHoz(tick.v) - xBoxWidth/2) + 'px',
+					'width': xBoxWidth + 'px',
+					'text-align': 'center'			
+				}).setText(tick.label))
 	        }
-	        
+
 	        /**
 	         * Add ylabels.
 	         */
 	        for(var k = 0, tick = null; k < yaxis.ticks.length; ++k){
 	            tick = yaxis.ticks[k];
 	            if (!tick.label || tick.label.length == 0) continue;
-	            html += '<div style="position:absolute;top:' + (plotOffset.top + tVert(tick.v) - labelMaxHeight/2) + 'px;left:0;width:' + labelMaxWidth + 'px;text-align:right" class="gridLabel">' + tick.label + "</div>";
+				wrapper.adopt(new Element('div').setStyles({
+					'position': 'absolute',
+					'top': (plotOffset.top + tVert(tick.v) - labelMaxHeight/2) + 'px',
+					'left': 0,
+					'width': labelMaxWidth + 'px',
+					'text-align': 'right'			
+				}).addClass('gridLabel').setText(tick.label))
 	        }
-	        html += '</div>';        
-	        target.insert(html);
+
+			target.adopt(wrapper);
 	    }
 		
 	    /**
@@ -983,7 +984,7 @@ var Flotr = (function(){
 		 */
 	    function drawSeries(series){
 	        if(series.lines.show || (!series.bars.show && !series.points.show))
-	            drawSeriesLines(series);
+			    drawSeriesLines(series);			
 	        if(series.bars.show)
 	            drawSeriesBars(series);
 	        if(series.points.show)
@@ -1012,7 +1013,7 @@ var Flotr = (function(){
 	            for(var i = 0; i < data.length - 1; ++i){
 	                var x1 = data[i][0], y1 = data[i][1],
 	                    x2 = data[i+1][0], y2 = data[i+1][1];
-	
+						
 	                /**
 	                 * Clip with ymin.
 	                 */
@@ -1079,7 +1080,7 @@ var Flotr = (function(){
 	                prevx = tHoz(x2);
 	                prevy = tVert(y2) + offset;
 	                ctx.lineTo(prevx, prevy);
-	            }
+	            }				
 	            ctx.stroke();
 	        }
 			
@@ -1201,6 +1202,7 @@ var Flotr = (function(){
 	                ctx.lineTo(tHoz(data[i][0]), tVert(data[i][1]));
 	            }
 	            ctx.lineTo(tHoz(data[data.length - 1][0]), tVert(0));*/
+				
 	            ctx.lineTo(tHoz(lastX), tVert(bottom));
 				ctx.closePath();
 	            ctx.fill();
@@ -1231,7 +1233,7 @@ var Flotr = (function(){
 	            ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : parseColor(series.color).scale(null, null, null, 0.4).toString();
 	            plotLineArea(series.data, 0);
 	        }
-	
+			
 	        plotLine(series.data, 0);
 	        ctx.restore();
 	    }
@@ -1460,7 +1462,7 @@ var Flotr = (function(){
 	                        var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : extractColor(div);
 	                        c = parseColor(tmp).adjust(null, null, null, 1).toString();
 	                    }
-	                    target.insert('<div class="legend-bg" style="position:absolute;width:' + div.getWidth() + 'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>').select('div.legend-bg').first().setStyle({
+	                    target.insert('<div class="legend-bg" style="position:absolute;width:' + div.getSize().size.x + 'px;height:' + div.getSize().size.y + 'px;' + pos +'background-color:' + c + ';"> </div>').select('div.legend-bg').first().setStyle({
 							'opacity': options.legend.backgroundOpacity
 						});	                    
 	                }
@@ -1489,7 +1491,7 @@ var Flotr = (function(){
                 return;
             }
 
-            var offset = overlay.cumulativeOffset();			
+            var offset = overlay.getCoordinates();			
             target.fire('flotr:click', [{
 				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
 				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
@@ -1518,7 +1520,7 @@ var Flotr = (function(){
             }
 			
 			if(options.mouse.track && selectionInterval == null){
-				var offset = overlay.cumulativeOffset();
+				var offset = overlay.getCoordinates();
 				hit({
 					x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
 					y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
@@ -1548,7 +1550,7 @@ var Flotr = (function(){
             lastMousePos.pageX = null;
             selectionInterval = setInterval(updateSelection, 1000/options.selection.fps);
 			
-            $(document).observe('mouseup', mouseUpHandler);
+            $(document).addEvent('mouseup', mouseUpHandler);
         }
 		/**
 		 * Function: (private) fireSelectedEvent
@@ -1615,7 +1617,7 @@ var Flotr = (function(){
 		 * 		void
 		 */
         function setSelectionPos(pos, event) {
-            var offset = $(overlay).cumulativeOffset();
+            var offset = $(overlay).getCoordinates();
             if(options.selection.mode == 'y'){
 				pos.x = (pos == selection.first) ? 0 : plotWidth;               
             }else{
@@ -1796,7 +1798,7 @@ var Flotr = (function(){
 	        }
 			
 			if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
-				var el = target.select('.flotr-mouse-value').first();
+				var el = target.select('.flotr-mouse-value').getFirst();
 				if(!el){
 					var pos = '', p = options.mouse.position, m = options.mouse.margin;	                
 					if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
@@ -1804,11 +1806,11 @@ var Flotr = (function(){
 					if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
 	                else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
 					
-					target.insert('<div class="flotr-mouse-value" style="opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;'+pos+'"></div>');
+					target.setHTML(target.innerHTML+'<div class="flotr-mouse-value" style="opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;'+pos+'"></div>');
 					return;
 				}
 				if(n.x !== null && n.y !== null){
-	                el.setStyle({display:'block'});					
+	                el.setStyle('display', 'block');					
 					
 					clearHit();
 					octx.save();
@@ -1829,7 +1831,7 @@ var Flotr = (function(){
 					el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
 					
 				}else if(prevHit){
-					el.setStyle({display:'none'});
+					el.setStyle('display','none');
 					clearHit();
 				}
 			}

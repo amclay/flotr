@@ -4,9 +4,9 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<title>Flotr: Basic Axis Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
-		<!--[if IE]><script language="javascript" type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script><![endif]-->
-		<script language="javascript" type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
-		<script language="javascript" type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+		<!--[if IE]><script language="javascript" type="text/javascript" src="../../flotr/mootools/lib/excanvas.js"></script><![endif]-->
+		<script language="javascript" type="text/javascript" src="../../flotr/mootools/lib/mootools-release-1.11.js"></script>
+		<script language="javascript" type="text/javascript" src="../../flotr/mootools/flotr.js"></script>
 	</head>
 	<body>
 		<div id="wrapper">
@@ -43,7 +43,7 @@ var f = Flotr.draw(
 			/**
 			 * Wait till dom's finished loading. This graph show a 5 series. The axis are configured.
 			 */
-			document.observe('dom:loaded', function(){
+			window.addEvent('domready', function(){
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -54,7 +54,7 @@ var f = Flotr.draw(
 				var d5 = [];
 				
 				for(var i = 0; i <= 10; i += 0.1){
-					d1.push([i, 4 + Math.pow(i,1.5)]);
+				d1.push([i, 4 + Math.pow(i,1.5)]);
 					d2.push([i, Math.pow(i,3)]);
 					d3.push([i, i*5+3*Math.sin(i*4)]);
 					d4.push([i, i]);

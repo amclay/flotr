@@ -15,18 +15,38 @@
 			<h2>Example</h2>
 			<p>This example show how to hook into events that are fired by Flotr. Note that the events are
 			fired from the container element.</p>
+			<p><button id="reset-btn">Reset</button></p>
 			<h2>The Code</h2>
 			<pre><code class="javascript">/**
- * Draw the graph.
+ * Global options object.
  */
 var options = {
 	selection:{mode:'xy'}
 };
 
 /**
- * Draw the graph.
+ * Function displays a graph in the 'container' element, extending
+ * the global options object with the optionally passed options.
  */
-var f = Flotr.draw($('container'), [ d1, d2, d3 ], options);
+function drawGraph(opts){
+	/**
+	 * Clone the options, so the 'options' variable always keeps intact.
+	 */
+	var o = Object.extend(Object.clone(options), opts || {});
+	/**
+	 * Return a new graph.
+	 */
+	return Flotr.draw(
+		$('container'), 
+		[ d1, d2, d3 ],
+		o
+	);
+}	
+
+/**
+ * Actually draw the graph.
+ */
+var f = drawGraph();			
 
 /**
  * Hook into the 'flotr:selected' event.
@@ -36,20 +56,25 @@ $('container').observe('flotr:selected', function(evt){
 	 * Get the selected area coordinates passed as event memo.
 	 */
 	var area = evt.memo[0];
-	/**
-	 * Clone the options, so the 'options' variable always keeps intact.
-	 */
-	var opts = Object.clone(options);
+	
 	/**
 	 * What happens: empty the container element, and draw a new 
 	 * graph with bounded axis. The axis correspond to the selection
 	 * you just made.
 	 */
-	f = Flotr.draw($('container'), [ d1, d2, d3 ], Object.extend(opts,{
+	f = drawGraph({
 		xaxis: {min:area.x1, max:area.x2},
 		yaxis: {min:area.y1, max:area.y2}						
-	}))
-});</code></pre>
+	});
+});
+
+/**
+ * Observe click event on the reset-btn. Reset the graph when clicked.
+ * The drawGraph function wrapped in another function otherwise it get's 
+ * an Event object passed as first argument, while it expects an options
+ * object.
+ */
+$('reset-btn').observe('click', function(){drawGraph()});</code></pre>
 			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
 		</div>
 		
@@ -71,16 +96,35 @@ $('container').observe('flotr:selected', function(evt){
 				}
 			    
 				/**
-				 * Draw the graph.
+				 * Global options object.
 				 */
 				var options = {
 					selection:{mode:'xy'}
 				};
 				
 				/**
-				 * Draw the graph.
+				 * Function displays a graph in the 'container' element, extending
+				 * the global options object with the optionally passed options.
 				 */
-				var f = Flotr.draw($('container'), [ d1, d2, d3 ], options);
+				function drawGraph(opts){
+					/**
+					 * Clone the options, so the 'options' variable always keeps intact.
+					 */
+					var o = Object.extend(Object.clone(options), opts || {});
+					/**
+					 * Return a new graph.
+					 */
+					return Flotr.draw(
+						$('container'), 
+						[ d1, d2, d3 ],
+						o
+					);
+				}	
+				
+				/**
+				 * Actually draw the graph.
+				 */
+				var f = drawGraph();			
 				
 				/**
 				 * Hook into the 'flotr:selected' event.
@@ -90,20 +134,25 @@ $('container').observe('flotr:selected', function(evt){
 					 * Get the selected area coordinates passed as event memo.
 					 */
 					var area = evt.memo[0];
-					/**
-					 * Clone the options, so the 'options' variable always keeps intact.
-					 */
-					var opts = Object.clone(options);
+					
 					/**
 					 * What happens: empty the container element, and draw a new 
 					 * graph with bounded axis. The axis correspond to the selection
 					 * you just made.
 					 */
-					f = Flotr.draw($('container'), [ d1, d2, d3 ], Object.extend(opts,{
+					f = drawGraph({
 						xaxis: {min:area.x1, max:area.x2},
 						yaxis: {min:area.y1, max:area.y2}						
-					}))
+					});
 				});
+				
+				/**
+				 * Observe click event on the reset-btn. Reset the graph when clicked.
+				 * The drawGraph function wrapped in another function otherwise it get's 
+				 * an Event object passed as first argument, while it expects an options
+				 * object.
+				 */
+				$('reset-btn').observe('click', function(){drawGraph()});
 			});			
 		</script>
 	</body>
