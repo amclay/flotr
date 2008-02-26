@@ -1510,15 +1510,16 @@ var Flotr = (function(){
                 lastMousePos.pageY = event.pageY;
             }
 			
-			if(options.mouse.track && selectionInterval == null){
-				var offset = overlay.cumulativeOffset();
-				hit({
-					x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
-					y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
-				})
+			var offset = overlay.cumulativeOffset();
+			var pos = {
+				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
+				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
+			};
+			if(options.mouse.track && selectionInterval == null){				
+				hit(pos)
 			}
 			
-			target.fire('flotr:mousemove', [event]);
+			target.fire('flotr:mousemove', [event, pos]);
         }
         /**
 		 * Function: (private) mouseDownHandler
@@ -1546,7 +1547,7 @@ var Flotr = (function(){
 		/**
 		 * Function: (private) fireSelectedEvent
 		 * 
-		 * Fires the 'flotr:selected' event when the user made a selection.
+		 * Fires the 'flotr:select' event when the user made a selection.
 		 * 
 		 * Parameters:
 		 * 		none
@@ -1565,7 +1566,7 @@ var Flotr = (function(){
             y1 = yaxis.max - y1 / vertScale;
             y2 = yaxis.max - y2 / vertScale;
 
-            target.fire('flotr:selected', [ { x1: x1, y1: y1, x2: x2, y2: y2 } ]);
+            target.fire('flotr:select', [ { x1: x1, y1: y1, x2: x2, y2: y2 } ]);
         }
         /**
 		 * Function: (private) mouseUpHandler
@@ -1840,7 +1841,8 @@ var Flotr = (function(){
 					var decimals = n.mouse.trackDecimals;
 	                if(decimals == null || decimals < 0) decimals = 0;
 					
-					el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});					
+					el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
+					target.fire( 'flotr:hit', [n] )					
 				}else if(prevHit){
 					el.setStyle({display:'none'});
 					clearHit();
