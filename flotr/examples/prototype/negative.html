@@ -7,6 +7,11 @@
 		<!--[if IE]><script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script><![endif]-->
 		<script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
 		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+		<style type="text/css">
+			.flotr-legend{
+				border: 2px solid #B6D9FF;
+			}			
+		</style>
 	</head>
 	<body>
 		<div id="wrapper">
@@ -14,8 +19,9 @@
 			<div id="container" class="graph" style="width:600px;height:300px;"></div>
 			
 			<h2>Example</h2>
-			<p>This example shows a graph with negative values. As you can see from the legend, 
-			there are three series.</p>
+			<p>This example shows a graph with negative values. There are three series, but the legend
+			shows only two. This is because I didn't supply a <code>label</code> property in the d1 series.
+			Read more about <a href="http://www.solutoire.com/flotr/docs/legend/" title="Configure And Style Flotr Legends">Flotr legends</a>.</p>
 			
 			<ul>
 				<li>The first series is just a line through y = 0.</li>
@@ -26,10 +32,13 @@
 			<h2>The Code</h2>
 			<pre><code class="javascript">var f = Flotr.draw(
 	$('container'), [ 
-		{data:d0, label:'y = 0', shadowSize:0, color:'#545454'}, // => Horizontal line through y = 0
+		{data:d0, shadowSize:0, color:'#545454'}, // => Horizontal line through y = 0
 		{data:d1, label:'y = x + (Math.random() * 8) - 15', points:{ show:true } },	// => Scatterplot
-		{data:d2, label:'y = '+alpha.toFixed(2)+' + ' + beta.toFixed(2) + '*x'}	// => Regression line
-	]
+		{data:d2, label:'y = '+alpha.toFixed(2)+' + ' + beta.toFixed(2) + '*x'}	// => Regression line																
+	],
+	{
+		legend:{position:'se',backgroundColor: '#D2E8FF'}
+	}
 );
 </code></pre>
 		<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
@@ -85,10 +94,13 @@
 			 */
 		    var f = Flotr.draw(
 				$('container'), [ 
-					{data:d0, label:'y = 0', shadowSize:0, color:'#545454'}, // => Horizontal line through y = 0
+					{data:d0, shadowSize:0, color:'#545454'}, // => Horizontal line through y = 0
 					{data:d1, label:'y = x + (Math.random() * 8) - 15', points:{ show:true } },	// => Scatterplot
 					{data:d2, label:'y = '+alpha.toFixed(2)+' + ' + beta.toFixed(2) + '*x'}	// => Regression line																
-				]
+				],
+				{
+					legend:{position:'se',backgroundColor: '#D2E8FF'}
+				}
 			);				
 		});			
 		</script>
