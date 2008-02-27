@@ -68,3 +68,13 @@ pre code{
 	margin: 30px 0;
 	text-align:center;
 }
+
+iframe {
+	border:3px solid #B6D9FF;
+}
+
+.ad{
+	width: 740px;
+	margin: 10px auto;
+}
+
