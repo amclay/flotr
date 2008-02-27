@@ -358,79 +358,78 @@ var Flotr = (function(){
 	    function setOptions(o){
 			
 			options = merge(o, {
-	            // the color theme used for graphs
-	            colors: ['#00A8F0', '#C0D800', '#cb4b4b', '#4da74d', '#9440ed'],
+	            colors: ['#00A8F0', '#C0D800', '#cb4b4b', '#4da74d', '#9440ed'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
 	            legend: {
-				show: true,				// setting to true will show the legend, hide otherwise
-				noColumns: 1, 			// number of colums in legend table
-				labelFormatter: null, 	// fn: string -> string
-				labelBoxBorderColor: '#ccc', // border color for the little label boxes
-				container: null, 		// container (as jQuery object) to put legend in, null means default on top of graph
-				position: 'ne', 		// position of default legend container within plot
-				margin: 5, 				// distance from grid edge to default legend container within plot
-				backgroundColor: null, 	// null means auto-detect
-				backgroundOpacity: 0.85	// set to 0 to avoid background
+					show: true,				// => setting to true will show the legend, hide otherwise
+					noColumns: 1, 			// => number of colums in legend table
+					labelFormatter: null, 	// => fn: string -> string
+					labelBoxBorderColor: '#ccc', // => border color for the little label boxes
+					container: null, 		// => container (as jQuery object) to put legend in, null means default on top of graph
+					position: 'ne', 		// => position of default legend container within plot
+					margin: 5, 				// => distance from grid edge to default legend container within plot
+					backgroundColor: null, 	// => null means auto-detect
+					backgroundOpacity: 0.85	// => set to 0 to avoid background, set to 1 for a solid background
 				},
 	            xaxis: {
-	                ticks: null, // either [1, 3] or [[1, 'a'], 3]
-	                noTicks: 5, // approximate number of ticks for auto-ticks
-	                tickFormatter: defaultTickFormatter, // fn: number -> string
-	                tickDecimals: null, // no. of decimals, null means auto
-	                min: null, // min. value to show, null means set automatically
-	                max: null, // max. value to show, null means set automatically
-	                autoscaleMargin: 0 // margin in % to add if auto-setting min/max
+	                ticks: null, 			// => format: either [1, 3] or [[1, 'a'], 3]
+	                noTicks: 5, 			// => number of ticks for automagically generated ticks
+	                tickFormatter: defaultTickFormatter, // => fn: number -> string
+	                tickDecimals: null, 	// => no. of decimals, null means auto
+	                min: null, 				// => min. value to show, null means set automatically
+	                max: null, 				// => max. value to show, null means set automatically
+	                autoscaleMargin: 0 		// => margin in % to add if auto-setting min/max
 	            },
 	            yaxis: {
-	                noTicks: 5,
-	                ticks: null,
-	                tickFormatter: defaultTickFormatter,
-	                min: null,
-	                max: null,
-	                autoscaleMargin: 0.02
+	                ticks: null, 			// => format: either [1, 3] or [[1, 'a'], 3]
+	                noTicks: 5, 			// => number of ticks for automagically generated ticks
+	                tickFormatter: defaultTickFormatter, // => fn: number -> string
+	                tickDecimals: null, 	// => no. of decimals, null means auto
+	                min: null, 				// => min. value to show, null means set automatically
+	                max: null, 				// => max. value to show, null means set automatically
+	                autoscaleMargin: 0 		// => margin in % to add if auto-setting min/max
 	            },
 	            points: {
-	                show: false,
-	                radius: 3,
-	                lineWidth: 2, // in pixels
-	                fill: true,
-	                fillColor: '#ffffff'
+	                show: false,			// => setting to true will show points, false will hide
+	                radius: 3,				// => point radius (pixels)
+	                lineWidth: 2, 			// => line width in pixels
+	                fill: true,				// => true to fill the points with a color, false for (transparent) no fill
+	                fillColor: '#ffffff'	// => fill color
 	            },
 	            lines: {
-	                show: false,
-	                lineWidth: 2, // in pixels
-	                fill: false,
-	                fillColor: null
+	                show: false,			// => setting to true will show lines, false will hide
+	                lineWidth: 2, 			// => line width in pixels
+	                fill: false,			// => true to fill the area from the line to the x axis, false for (transparent) no fill
+	                fillColor: null			// => fill color
 	            },
 	            bars: {
-	                show: false,
-	                lineWidth: 2, // in pixels
-	                barWidth: 1, // in units of the x axis
-	                fill: true,
-	                fillColor: null
+	                show: false,			// => setting to true will show bars, false will hide
+	                lineWidth: 2, 			// => in pixels
+	                barWidth: 1, 			// => in units of the x axis
+	                fill: true,				// => true to fill the area from the line to the x axis, false for (transparent) no fill
+	                fillColor: null			// => fill color
 	            },
 	            grid: {
-	                color: '#545454', // primary color used for outline and labels
-	                backgroundColor: null, // null for transparent, else color
-	                tickColor: '#dddddd', // color used for the ticks
-	                labelMargin: 3, // in pixels
-	                clickable: null
+	                color: '#545454', 		// => primary color used for outline and labels
+	                backgroundColor: null, 	// => null for transparent, else color
+	                tickColor: '#dddddd', 	// => color used for the ticks
+	                labelMargin: 3	 		// => margin in pixels
 	            },
 				selection: {
-				    mode: null, // one of null, 'x', 'y' or 'xy'
-				    color: '#B6D9FF',
-					fps: 10
+				    mode: null, 			// => one of null, 'x', 'y' or 'xy'
+				    color: '#B6D9FF',		// => selection box color
+					fps: 10					// => frames-per-second
 				},
 				mouse: {
-					track: null,					
-					position: 'se',
-					trackFormatter: defaultTrackFormatter,
-					margin: 3,
-					color: '#ff3f19',
-					trackDecimals: 1,
-					sensibility: 2,
-					radius: 3
+					track: null,			// => true to track the mouse, no tracking otherwise
+					position: 'se',			// => position of the value box (default south-east)
+					trackFormatter: defaultTrackFormatter, // => formats the values in the value box
+					margin: 3,				// => margin in pixels of the valuebox
+					color: '#ff3f19',		// => line color of points that are drawn when mouse comes near a value of a series
+					trackDecimals: 1,		// => decimals for the track values
+					sensibility: 2,			// => the lower this number, the more precise you have to aim to show a value
+					radius: 3				// => radius of the tracck point
 				},
-	            shadowSize: 4
+	            shadowSize: 4				// => size of the 'fake' shadow
 	        });
 			
 			/**
@@ -1515,8 +1514,9 @@ var Flotr = (function(){
 				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
 				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
 			};
+			
 			if(options.mouse.track && selectionInterval == null){				
-				hit(pos)
+				hit(pos);
 			}
 			
 			target.fire('flotr:mousemove', [event, pos]);
@@ -1824,11 +1824,11 @@ var Flotr = (function(){
 	                el.setStyle({display:'block'});					
 					
 					clearHit();
-					if(n.mouse.color != null){
+					if(n.mouse.lineColor != null){
 						octx.save();
 		        		octx.translate(plotOffset.left, plotOffset.top);
 						octx.lineWidth = options.points.lineWidth;
-		        		octx.strokeStyle = n.mouse.color;
+		        		octx.strokeStyle = n.mouse.lineColor;
 		        		octx.fillStyle = '#ffffff';
 						octx.beginPath();
 		                octx.arc(tHoz(n.x), tVert(n.y), options.points.radius, 0, 2 * Math.PI, true);
