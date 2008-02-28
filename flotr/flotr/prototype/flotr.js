@@ -424,7 +424,7 @@ var Flotr = (function(){
 					position: 'se',			// => position of the value box (default south-east)
 					trackFormatter: defaultTrackFormatter, // => formats the values in the value box
 					margin: 3,				// => margin in pixels of the valuebox
-					color: '#ff3f19',		// => line color of points that are drawn when mouse comes near a value of a series
+					lineColor: '#ff3f19',		// => line color of points that are drawn when mouse comes near a value of a series
 					trackDecimals: 1,		// => decimals for the track values
 					sensibility: 2,			// => the lower this number, the more precise you have to aim to show a value
 					radius: 3				// => radius of the tracck point
@@ -762,9 +762,9 @@ var Flotr = (function(){
 			}
 		}
 		/**
-		 * Function: (private)
+		 * Function: (private) calculateSpacing
 		 * 
-		 * 
+		 * Calculates axis label sizes.
 		 * 
 		 * Parameters:
 		 * 		none
@@ -1463,7 +1463,24 @@ var Flotr = (function(){
 		var prevSelection = null;
 		var selectionInterval = null;
 		var ignoreClick = false;		
-		var prevHit = null
+		var prevHit = null;/**
+		 * Function: (private) getEventPosition
+		 * 
+		 * Calculates the coordinates from a mouse event object.
+		 * 
+		 * Parameters:
+		 * 		event - Mouse Event object.
+		 * 
+		 * Returns:
+		 * 		Object with x and y coordinates of the mouse.
+		 */
+		function getEventPosition(event){
+			var offset = overlay.cumulativeOffset();
+			return {
+				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
+				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
+			};
+		}
 		/**
 		 * Function: (private) clickHandler
 		 * 
@@ -1482,10 +1499,7 @@ var Flotr = (function(){
 			}
 
 			var offset = overlay.cumulativeOffset();			
-			target.fire('flotr:click', [{
-				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
-				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
-			}]);
+			target.fire('flotr:click', [getEventPosition(event)]);
 		}
 		/**
 		 * Function: (private) mouseMoveHandler
@@ -1509,12 +1523,7 @@ var Flotr = (function(){
 				lastMousePos.pageY = event.pageY;
 			}
 			
-			var offset = overlay.cumulativeOffset();
-			var pos = {
-				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
-				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
-			};
-			
+			var pos = getEventPosition(event)			
 			if(options.mouse.track && selectionInterval == null){				
 				hit(pos);
 			}
