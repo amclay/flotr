@@ -1,0 +1,8 @@
+0.1.1 beta, Feb 27, 2008
+=========================
+ - Added Mootools release.
+ - Renamed private function fireSelectedEvent to fireSelectEvent.
+
+0.1.0 alpha, Feb 27, 2008
+=========================
+ - First release Prototype.

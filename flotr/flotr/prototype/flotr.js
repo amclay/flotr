@@ -1523,8 +1523,8 @@ var Flotr = (function(){
 				lastMousePos.pageY = event.pageY;
 			}
 			
-			var pos = getEventPosition(event)			
-			if(options.mouse.track && selectionInterval == null){				
+			var pos = getEventPosition(event);		
+			if(options.mouse.track && selectionInterval == null){	
 				hit(pos);
 			}
 			
@@ -1554,7 +1554,7 @@ var Flotr = (function(){
 			$(document).observe('mouseup', mouseUpHandler);
 		}
 		/**
-		 * Function: (private) fireSelectedEvent
+		 * Function: (private) fireSelectEvent
 		 * 
 		 * Fires the 'flotr:select' event when the user made a selection.
 		 * 
@@ -1564,7 +1564,7 @@ var Flotr = (function(){
 		 * Returns:
 		 * 		void
 		 */
-		function fireSelectedEvent(){
+		function fireSelectEvent(){
 			var x1 = (selection.first.x <= selection.second.x) ? selection.first.x : selection.second.x;
 			var x2 = (selection.first.x <= selection.second.x) ? selection.second.x : selection.first.x;
 			var y1 = (selection.first.y >= selection.second.y) ? selection.first.y : selection.second.y;
@@ -1600,7 +1600,7 @@ var Flotr = (function(){
 			
 			if(selectionIsSane() || event.isLeftClick()){
 				drawSelection();
-				fireSelectedEvent();
+				fireSelectEvent();
 				ignoreClick = true;
 			}
 			Event.stop(event);
@@ -1692,13 +1692,13 @@ var Flotr = (function(){
 		function setSelection(area){
 			clearSelection();
 						
-			selection.first.y = (options.selection.mode == "x") ? 0 : (yaxis.max - area.y1) * vertScale;
-			selection.second.y = (options.selection.mode == "x") ? plotHeight : (yaxis.max - area.y2) * vertScale;			
-			selection.first.x = (options.selection.mode == "y") ? 0 : (area.x1 - xaxis.min) * hozScale;
-			selection.second.x = (options.selection.mode == "y") ? plotWidth : (area.x2 - xaxis.min) * hozScale;
+			selection.first.y = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
+			selection.second.y = (options.selection.mode == 'x') ? plotHeight : (yaxis.max - area.y2) * vertScale;			
+			selection.first.x = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
+			selection.second.x = (options.selection.mode == 'y') ? plotWidth : (area.x2 - xaxis.min) * hozScale;
 			
 			drawSelection();
-			fireSelectedEvent();
+			fireSelectEvent();
 		}
 		/**
 		 * Function: (private) drawSelection

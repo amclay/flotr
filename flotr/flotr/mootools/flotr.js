@@ -1444,10 +1444,10 @@ var Flotr = (function(){
 					var pos = {};
 					var p = options.legend.position, m = options.legend.margin;
 					
-					if(p.charAt(0) == 'n') pos.top = (m + plotOffset.top) + 'px;';
-					else if(p.charAt(0) == 's') pos.bottom = (m + plotOffset.bottom) + 'px;';					
-					if(p.charAt(1) == 'e') pos.right = (m + plotOffset.right) + 'px;';
-					else if(p.charAt(1) == 'w') pos.left = (m + plotOffset.bottom) + 'px;';
+					if(p.charAt(0) == 'n') pos.top = (m + plotOffset.top) + 'px';
+					else if(p.charAt(0) == 's') pos.bottom = (m + plotOffset.bottom) + 'px';					
+					if(p.charAt(1) == 'e') pos.right = (m + plotOffset.right) + 'px';
+					else if(p.charAt(1) == 'w') pos.left = (m + plotOffset.bottom) + 'px';
 					var div = new Element('div').addClass('flotr-legend').setStyles($extend(pos, {
 						'position': 'absolute',
 						'z-index': 2
@@ -1579,7 +1579,7 @@ var Flotr = (function(){
             $(document).addEvent('mouseup', mouseUpHandler);
 		}
 		/**
-		 * Function: (private) fireSelectedEvent
+		 * Function: (private) fireSelectEvent
 		 * 
 		 * Fires the 'flotr:select' event when the user made a selection.
 		 * 
@@ -1589,7 +1589,7 @@ var Flotr = (function(){
 		 * Returns:
 		 * 		void
 		 */
-		function fireSelectedEvent(){
+		function fireSelectEvent(){
 			var x1 = (selection.first.x <= selection.second.x) ? selection.first.x : selection.second.x;
 			var x2 = (selection.first.x <= selection.second.x) ? selection.second.x : selection.first.x;
 			var y1 = (selection.first.y >= selection.second.y) ? selection.first.y : selection.second.y;
@@ -1626,7 +1626,7 @@ var Flotr = (function(){
 			event = new Event(event)
 			if(selectionIsSane() || event.rightClick){
 				drawSelection();
-				fireSelectedEvent();
+				fireSelectEvent();
 				ignoreClick = true;
 			}
 			event.stop();
@@ -1719,13 +1719,13 @@ var Flotr = (function(){
 		function setSelection(area){
 			clearSelection();
 						
-			selection.first.y = (options.selection.mode == "x") ? 0 : (yaxis.max - area.y1) * vertScale;
-			selection.second.y = (options.selection.mode == "x") ? plotHeight : (yaxis.max - area.y2) * vertScale;			
-			selection.first.x = (options.selection.mode == "y") ? 0 : (area.x1 - xaxis.min) * hozScale;
-			selection.second.x = (options.selection.mode == "y") ? plotWidth : (area.x2 - xaxis.min) * hozScale;
+			selection.first.y = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
+			selection.second.y = (options.selection.mode == 'x') ? plotHeight : (yaxis.max - area.y2) * vertScale;			
+			selection.first.x = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
+			selection.second.x = (options.selection.mode == 'y') ? plotWidth : (area.x2 - xaxis.min) * hozScale;
 			
 			drawSelection();
-			fireSelectedEvent();
+			fireSelectEvent();
 		}
 		/**
 		 * Function: (private) drawSelection
@@ -1849,10 +1849,19 @@ var Flotr = (function(){
 
 				if(!el){
 					var pos = {}, p = options.mouse.position, m = options.mouse.margin;					
-					if(p.charAt(0) == 'n') pos.top = (m + plotOffset.top) + 'px;';
-					else if(p.charAt(0) == 's') pos.bottom = (m + plotOffset.bottom) + 'px;';					
-					if(p.charAt(1) == 'e') pos.right = (m + plotOffset.right) + 'px;';
-					else if(p.charAt(1) == 'w') pos.left = (m + plotOffset.bottom) + 'px;';	
+					if(p.charAt(0) == 'n') pos.top = (m + plotOffset.top) + 'px';
+					else if(p.charAt(0) == 's') pos.bottom = (m + plotOffset.bottom) + 'px';					
+					if(p.charAt(1) == 'e') pos.right = (m + plotOffset.right) + 'px';
+					else if(p.charAt(1) == 'w') pos.left = (m + plotOffset.bottom) + 'px';
+					
+					console.log(pos,$extend(pos,{
+						'position': 'absolute',
+						'display': 'none',
+						'color': '#fff',
+						'background-color': '#000',
+						'opacity': '0.7'
+					}))
+						
 					target.adopt(new Element('div').addClass('flotr-mouse-value').setStyles($extend(pos,{
 						'position': 'absolute',
 						'display': 'none',
