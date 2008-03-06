@@ -1828,12 +1828,11 @@ var Flotr = (function(){
 				data = series[i].data;				
 				xsens = (hozScale*series[i].mouse.sensibility);
 				ysens = (vertScale*series[i].mouse.sensibility);
-				for(var j = 0, xabs, yabs; j < data.length; j++){
-					xabs = hozScale*Math.abs(data[j][0] - mouse.x);
-					yabs = vertScale*Math.abs(data[j][1] - mouse.y);
-					
-					if(xabs < xsens && yabs < ysens && (xabs+yabs) < n.dist){
-						n.dist = (xabs+yabs);
+				for(var j = 0, xpow, ypow; j < data.length; j++){
+					xpow = Math.pow(hozScale*(data[j][0] - mouse.x), 2);
+					ypow = Math.pow(vertScale*(data[j][1] - mouse.y), 2);
+					if(xpow < xsens && ypow < ysens && Math.sqrt(xpow+ypow) < n.dist){
+						n.dist = Math.sqrt(xpow+ypow);
 						n.x = data[j][0];
 						n.y = data[j][1];
 						n.mouse = series[i].mouse;

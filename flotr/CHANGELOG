@@ -4,6 +4,7 @@
  - Renamed private function fireSelectedEvent to fireSelectEvent.
  - Added json example for Prototype.
  - Added json example for Mootools.
+ - Improved mouse tracking.
 
 0.1.0 alpha, Feb 27, 2008
 =========================
