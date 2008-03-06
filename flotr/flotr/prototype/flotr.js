@@ -412,7 +412,9 @@ var Flotr = (function(){
 					color: '#545454',		// => primary color used for outline and labels
 					backgroundColor: null,	// => null for transparent, else color
 					tickColor: '#dddddd',	// => color used for the ticks
-					labelMargin: 3			// => margin in pixels
+					labelMargin: 3,			// => margin in pixels
+					verticalLines: true,	// => whether to show gridlines in vertical direction
+					horizontalLines: true	// => whether to show gridlines in horizontal direction
 				},
 				selection: {
 					mode: null,				// => one of null, 'x', 'y' or 'xy'
@@ -881,31 +883,35 @@ var Flotr = (function(){
 			ctx.lineWidth = 1;
 			ctx.strokeStyle = options.grid.tickColor;
 			ctx.beginPath();
-			for(var i = 0, v = null; i < xaxis.ticks.length; ++i){
-				v = xaxis.ticks[i].v;
-				/**
-				 * Don't show lines on upper and lower bounds.
-				 */
-				if (v == xaxis.min || v == xaxis.max)
-					continue;
-	
-				ctx.moveTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, 0);
-				ctx.lineTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, plotHeight);
+			if(options.grid.verticalLines){
+				for(var i = 0, v = null; i < xaxis.ticks.length; ++i){
+					v = xaxis.ticks[i].v;
+					/**
+					 * Don't show lines on upper and lower bounds.
+					 */
+					if (v == xaxis.min || v == xaxis.max)
+						continue;
+		
+					ctx.moveTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, 0);
+					ctx.lineTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, plotHeight);
+				}
 			}
 			
 			/**
 			 * Draw grid lines in horizontal direction.
 			 */
-			for(var j = 0, v = null; j < yaxis.ticks.length; ++j){
-				v = yaxis.ticks[j].v;
-				/**
-				 * Don't show lines on upper and lower bounds.
-				 */
-				if (v == yaxis.min || v == yaxis.max)
-					continue;
-	
-				ctx.moveTo(0, Math.floor(tVert(v)) + ctx.lineWidth/2);
-				ctx.lineTo(plotWidth, Math.floor(tVert(v)) + ctx.lineWidth/2);
+			if(options.grid.horizontalLines){
+				for(var j = 0, v = null; j < yaxis.ticks.length; ++j){
+					v = yaxis.ticks[j].v;
+					/**
+					 * Don't show lines on upper and lower bounds.
+					 */
+					if (v == yaxis.min || v == yaxis.max)
+						continue;
+		
+					ctx.moveTo(0, Math.floor(tVert(v)) + ctx.lineWidth/2);
+					ctx.lineTo(plotWidth, Math.floor(tVert(v)) + ctx.lineWidth/2);
+				}
 			}
 			ctx.stroke();
 			
