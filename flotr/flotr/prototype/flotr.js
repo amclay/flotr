@@ -1524,7 +1524,7 @@ var Flotr = (function(){
 			}
 			
 			var pos = getEventPosition(event);		
-			if(options.mouse.track && selectionInterval == null){	
+			if((options.mouse.track || series.any(function(s){return s.mouse && s.mouse.track;})) && selectionInterval == null){	
 				hit(pos);
 			}
 			

@@ -192,9 +192,6 @@ var Flotr = (function(){
 	 * Returns:
 	 * 		void
 	 */
-	/**
-	 * @todo create class from function.
-	 */
 	function Color(r, g, b, a){	   
 		var rgba = ['r','g','b','a'];
 		var x = 4;
@@ -1549,7 +1546,7 @@ var Flotr = (function(){
 			}
 			
 			var pos = getEventPosition(event);			
-			if(options.mouse.track && selectionInterval == null){				
+			if((options.mouse.track || series.some(function(s){return s.mouse && s.mouse.track;})) && selectionInterval == null){				
 				hit(pos);
 			}
 			
