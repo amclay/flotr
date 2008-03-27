@@ -41,8 +41,8 @@
 				var d1 = [];
 				var d2 = [];				
 			    for(var i = 0; i < 4; i++ ){
-					d1.push([i,Math.ceil(Math.random()*10)]);
-					d2.push([i+0.5, Math.ceil(Math.random()*10)]);
+					d1.push([Math.ceil(Math.random()*10),i]);
+					d2.push([Math.ceil(Math.random()*10),i+0.5]);
 				}
 				
 				/**
@@ -51,7 +51,7 @@
 				Flotr.draw(
 					$('container'),
 					[d1, d2],
-					{bars: {show:true, barWidth:0.5}}
+					{bars: {show:true, barWidth:0.5, horizontal: true}}
 				);
 			});			
 		</script>

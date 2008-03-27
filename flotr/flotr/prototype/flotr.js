@@ -32,7 +32,7 @@ var Flotr = (function(){
 	function merge(src, dest){
 		var result = dest || {};
 		for(var i in src){		  
-			result[i] = (typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp)) ? merge(src[i], dest[i]) : result[i] = src[i];		
+			result[i] = (src[i] != null && typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp)) ? merge(src[i], dest[i]) : result[i] = src[i];		
 		}
 		return result;	
 	}	
@@ -330,6 +330,7 @@ var Flotr = (function(){
 		calculateRange(xaxis, options.xaxis);
 		extendXRangeIfNeededByBar();
 		calculateRange(yaxis, options.yaxis);
+		extendYRangeIfNeededByBar();
 		calculateTicks(xaxis, options.xaxis);
 		calculateTicks(yaxis, options.yaxis);
 		calculateSpacing();
@@ -342,7 +343,7 @@ var Flotr = (function(){
 		/**
 		 * Function: (private) setOptions
 		 * 
-		 * Merges usedefined and default options. Also generates colors for series for which 
+		 * Merges user-defined and default options. Also generates colors for series for which 
 		 * the user didn't specify a color, and merge user-defined series options with default options. 
 		 * 
 		 * Parameters:
@@ -389,20 +390,24 @@ var Flotr = (function(){
 					radius: 3,				// => point radius (pixels)
 					lineWidth: 2,			// => line width in pixels
 					fill: true,				// => true to fill the points with a color, false for (transparent) no fill
-					fillColor: '#ffffff'	// => fill color
+					fillColor: '#ffffff',	// => fill color
+					fillOpacity: 0.4
 				},
 				lines: {
 					show: false,			// => setting to true will show lines, false will hide
 					lineWidth: 2, 			// => line width in pixels
 					fill: false,			// => true to fill the area from the line to the x axis, false for (transparent) no fill
-					fillColor: null			// => fill color
+					fillColor: null,		// => fill color
+					fillOpacity: 0.4		// => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
 				},
 				bars: {
 					show: false,			// => setting to true will show bars, false will hide
 					lineWidth: 2,			// => in pixels
 					barWidth: 1,			// => in units of the x axis
 					fill: true,				// => true to fill the area from the line to the x axis, false for (transparent) no fill
-					fillColor: null			// => fill color
+					fillColor: null,		// => fill color
+					fillOpacity: 0.4,		// => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+					horizontal: false
 				},
 				grid: {
 					color: '#545454',		// => primary color used for outline and labels
@@ -410,7 +415,8 @@ var Flotr = (function(){
 					tickColor: '#dddddd',	// => color used for the ticks
 					labelMargin: 3,			// => margin in pixels
 					verticalLines: true,	// => whether to show gridlines in vertical direction
-					horizontalLines: true	// => whether to show gridlines in horizontal direction
+					horizontalLines: true,	// => whether to show gridlines in horizontal direction
+					outlineWidth: 2			// => width of the grid outline/border in pixels
 				},
 				selection: {
 					mode: null,				// => one of null, 'x', 'y' or 'xy'
@@ -676,7 +682,7 @@ var Flotr = (function(){
 		/**
 		 * Function: (private) extendXRangeIfNeededByBar
 		 * 
-		 * Bar series autoscaling.
+		 * Bar series autoscaling in x direction.
 		 * 
 		 * Parameters:
 		 * 		none
@@ -691,11 +697,36 @@ var Flotr = (function(){
 				 */
 				var newmax = xaxis.max;
 				for(var i = series.length - 1; i > -1; --i){
-					if(series[i].bars.show && series[i].bars.barWidth + xaxis.datamax > newmax){
+					if(series[i].bars.show&& !series[i].bars.horizontal && series[i].bars.barWidth + xaxis.datamax > newmax){
 						newmax = xaxis.max + series[i].bars.barWidth;
 					}
 				}
 				xaxis.max = newmax;
+			}
+		}
+		/**
+		 * Function: (private) extendYRangeIfNeededByBar
+		 * 
+		 * Bar series autoscaling in y direction.
+		 * 
+		 * Parameters:
+		 * 		none
+		 * 
+		 * Returns:
+		 * 		void
+		 */
+		function extendYRangeIfNeededByBar(){
+			if(options.yaxis.max == null){
+				/**
+				 * Autoscaling.
+				 */
+				var newmax = yaxis.max;
+				for(var i = series.length - 1; i > -1; --i){
+					if(series[i].bars.show && series[i].bars.horizontal && series[i].bars.barWidth + yaxis.datamax > newmax){
+						newmax = yaxis.max + series[i].bars.barWidth;
+					}
+				}
+				yaxis.max = newmax;
 			}
 		}
 		/**
@@ -881,7 +912,7 @@ var Flotr = (function(){
 					/**
 					 * Don't show lines on upper and lower bounds.
 					 */
-					if (v == xaxis.min || v == xaxis.max)
+					if ((v == xaxis.min || v == xaxis.max) && options.grid.outlineWidth != 0)
 						continue;
 		
 					ctx.moveTo(Math.floor(tHoz(v)) + ctx.lineWidth/2, 0);
@@ -898,7 +929,7 @@ var Flotr = (function(){
 					/**
 					 * Don't show lines on upper and lower bounds.
 					 */
-					if (v == yaxis.min || v == yaxis.max)
+					if ((v == yaxis.min || v == yaxis.max) && options.grid.outlineWidth != 0)
 						continue;
 		
 					ctx.moveTo(0, Math.floor(tVert(v)) + ctx.lineWidth/2);
@@ -910,10 +941,12 @@ var Flotr = (function(){
 			/**
 			 * Draw axis/grid border.
 			 */
-			ctx.lineWidth = 2;
-			ctx.strokeStyle = options.grid.color;
-			ctx.lineJoin = 'round';
-			ctx.strokeRect(0, 0, plotWidth, plotHeight);
+			if(options.grid.outlineWidth != 0) {
+				ctx.lineWidth = options.grid.outlineWidth;
+				ctx.strokeStyle = options.grid.color;
+				ctx.lineJoin = 'round';
+				ctx.strokeRect(0, 0, plotWidth, plotHeight);
+			}
 			ctx.restore();
 		}
 	 	/**
@@ -1218,7 +1251,7 @@ var Flotr = (function(){
 			ctx.lineWidth = lw;
 			ctx.strokeStyle = series.color;
 			if(series.lines.fill){
-				ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : parseColor(series.color).scale(null, null, null, 0.4).toString();
+				ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : parseColor(series.color).scale(null, null, null, series.lines.fillOpacity).toString();
 				plotLineArea(series.data, 0);
 			}
 	
@@ -1298,13 +1331,13 @@ var Flotr = (function(){
 		 */
 		function drawSeriesBars(series) {
 			function plotBars(data, barWidth, offset, fill){
-				if(data.length < 2)
-					return;
+				if(data.length < 1) return;
 	
 				for(var i = 0; i < data.length; i++){
 					var x = data[i][0], y = data[i][1];
 					var drawLeft = true, drawTop = true, drawRight = true;
-					var left = x, right = x + barWidth, bottom = 0, top = y;
+					if(series.bars.horizontal) var left = 0, right = x, bottom = y, top = y + barWidth;
+					else var left = x, right = x + barWidth, bottom = 0, top = y;
 	
 					if(right < xaxis.min || left > xaxis.max || top < yaxis.min || bottom > yaxis.max)
 						continue;
@@ -1342,7 +1375,7 @@ var Flotr = (function(){
 					/**
 					 * Draw bar outline/border.
 					 */
-					if(drawLeft || drawRight || drawTop){
+					if(series.bars.lineWidth != 0 && (drawLeft || drawRight || drawTop)){
 						ctx.beginPath();
 						ctx.moveTo(tHoz(left), tVert(bottom) + offset);
 						if(drawLeft) ctx.lineTo(tHoz(left), tVert(top) + offset);
@@ -1384,7 +1417,7 @@ var Flotr = (function(){
 			ctx.lineWidth = lw;
 			ctx.strokeStyle = series.color;
 			if(series.bars.fill){
-				ctx.fillStyle = series.bars.fillColor != null ? series.bars.fillColor : parseColor(series.color).scale(null, null, null, 0.4).toString();
+				ctx.fillStyle = series.bars.fillColor != null ? series.bars.fillColor : parseColor(series.color).scale(null, null, null, series.bars.fillOpacity).toString();
 			}
 	
 			plotBars(series.data, bw, 0, series.bars.fill);
@@ -1461,7 +1494,8 @@ var Flotr = (function(){
 		var prevSelection = null;
 		var selectionInterval = null;
 		var ignoreClick = false;		
-		var prevHit = null;/**
+		var prevHit = null;
+		/**
 		 * Function: (private) getEventPosition
 		 * 
 		 * Calculates the coordinates from a mouse event object.
@@ -1473,12 +1507,28 @@ var Flotr = (function(){
 		 * 		Object with x and y coordinates of the mouse.
 		 */
 		function getEventPosition(event){
-			var offset = overlay.cumulativeOffset();
-			return {
-				x: xaxis.min + (event.pageX - offset.left - plotOffset.left) / hozScale,
-				y: yaxis.max - (event.pageY - offset.top - plotOffset.top) / vertScale
-			};
-		}
+ 			var offset = overlay.cumulativeOffset();
+			var rx = (event.pageX - offset.left - plotOffset.left);
+			var ry = (event.pageY - offset.top - plotOffset.top);
+			var ax = 0, ay = 0
+			if(event.pageX == null && event.clientX != null){
+				var de = document.documentElement, b = document.body;
+				ax = event.clientX + (de && de.scrollLeft || b.scrollLeft || 0);
+				ay = event.clientY + (de && de.scrollTop || b.scrollTop || 0);
+			}else{
+				ax = event.pageX;
+				ay = event.pageY;
+			}
+			
+ 			return {
+				x: xaxis.min + rx / hozScale,
+				y: yaxis.max - ry / vertScale,
+				relX: rx,
+				relY: ry,
+				absX: ax,
+				absY: ay
+ 			};
+ 		}
 		/**
 		 * Function: (private) clickHandler
 		 * 
@@ -1512,20 +1562,12 @@ var Flotr = (function(){
 		 * 		void
 		 */
 		function mouseMoveHandler(event){
-			if(event.pageX == null && event.clientX != null){
-				var de = document.documentElement, b = document.body;
-				lastMousePos.pageX = event.clientX + (de && de.scrollLeft || b.scrollLeft || 0);
-				lastMousePos.pageY = event.clientY + (de && de.scrollTop || b.scrollTop || 0);
-			}else{
-				lastMousePos.pageX = event.pageX;
-				lastMousePos.pageY = event.pageY;
-			}
-			
-			var pos = getEventPosition(event);		
+	 		var pos = getEventPosition(event);		
+			lastMousePos.pageX = pos.absX;
+			lastMousePos.pageY = pos.absY;	
 			if((options.mouse.track || series.any(function(s){return s.mouse && s.mouse.track;})) && selectionInterval == null){	
 				hit(pos);
-			}
-			
+			}			
 			target.fire('flotr:mousemove', [event, pos]);
 		}
 		/**
@@ -1794,6 +1836,10 @@ var Flotr = (function(){
 				dist:Number.MAX_VALUE,
 				x:null,
 				y:null,
+				relX:mouse.relX,
+				relY:mouse.relY,
+				absX:mouse.absX,
+				absY:mouse.absY,
 				mouse:null
 			};
 			
