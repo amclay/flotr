@@ -30,7 +30,7 @@
 			/**
 			 * Wait till dom's finished loading.
 			 */
-			document.observe('dom:loaded', function(){
+			window.addEvent('domready', function(){
 				/**
 				 * Fill series d1 and d2.
 				 */

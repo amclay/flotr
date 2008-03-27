@@ -51,24 +51,21 @@ var Flotr = (function(){
 	 * 		Returns the size of a tick.
 	 */
 	function getTickSize(noTicks, min, max, decimals){
-		var delta = (max - min) / noTicks;
+		var delta = (max - min) / noTicks;	
 		var magn = getMagnitude(delta);
+		
 		/**
 		 * Norm is between 1.0 and 10.0.
 		 */
 		var norm = delta / magn;
-
+		
 		var tickSize = 10;
 		if(norm < 1.5) tickSize = 1;
 		else if(norm < 2.25) tickSize = 2;
-		else if(norm < 3) tickSize = 2.5;
+		else if(norm < 3) tickSize = ((decimals == 0) ? 2 : 2.5);
 		else if(norm < 7.5) tickSize = 5;
-
-		if(tickSize == 2.5 && decimals == 0)
-			tickSize = 2;
-		
-		tickSize *= magn;
-		return tickSize;
+				
+		return tickSize * magn;
 	}
 	/**
 	 * Function: (private) defaultTickFormatter
@@ -82,7 +79,7 @@ var Flotr = (function(){
 	 * 		Formatted tick string.
 	 */
 	function defaultTickFormatter(val){
-		return val.toString();
+		return val+'';
 	}
 	/**
 	 * Function: (private) defaultTrackFormatter
@@ -187,15 +184,14 @@ var Flotr = (function(){
 		 */
 		do{
 			color = element.getStyle('background-color').toLowerCase();
-			if (color != '' && color != 'transparent') break;			
+			if(!(color == '' || color == 'transparent')) break;			
 			element = element.up(0);
 		}while(element.nodeName.toLowerCase() != 'body');
 
 		/**
 		 * Catch Safari's way of signalling transparent
 		 */ 
-		if(color == 'rgba(0, 0, 0, 0)') return 'transparent';		
-		return color;
+		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
 	}
 	/**
 	 * Function: (private) Color
@@ -261,6 +257,7 @@ var Flotr = (function(){
 
 		this.normalize();
 	}
+
 	var lookupColors = {
 		aqua:[0,255,255],
 		azure:[240,255,255],
@@ -311,11 +308,12 @@ var Flotr = (function(){
 		 * Initialize variables.
 		 */
 		var options, canvas, overlay, ctx, octx;
-		var id = 'flotr-' + plotCnt++;
-		var series = getSeries(data);
 		var target = container;
-		var xaxis = {}, yaxis = {};		
-		var plotOffset = { left: 0, right: 0, top: 0, bottom: 0};
+		this.id = id = 'flotr-' + plotCnt++;
+		this.series = series = getSeries(data);
+		this.xaxis = xaxis = {};
+		this.yaxis = yaxis = {};		
+		this.plotOffset = plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
 		var labelMaxWidth = 0;
 		var labelMaxHeight = 0;
 		var canvasWidth = 0;
@@ -325,7 +323,7 @@ var Flotr = (function(){
 		var hozScale = 0;
 		var vertScale = 0;
 						
-		setOptions(opts);		
+		this.options = setOptions(opts);		
 		constructCanvas();
 		bindEvents();
 		findDataRanges();
@@ -337,12 +335,10 @@ var Flotr = (function(){
 		calculateSpacing();
 		draw();
 		insertLegend();
-
-		this.getCanvas = function(){ return canvas; };
-		this.getPlotOffset = function(){ return plotOffset; };
+		
 		this.clearSelection = clearSelection;
 		this.setSelection = setSelection;
-			
+		
 		/**
 		 * Function: (private) setOptions
 		 * 
@@ -437,10 +433,8 @@ var Flotr = (function(){
 			/**
 			 * Collect colors assigned by the user to a serie.
 			 */
-			var neededColors = series.length;
-			var usedColors = [];
-			var assignedColors = [];
-			for(var i = 0; i < series.length; ++i){
+			var neededColors = series.length, usedColors = [], assignedColors = [];
+			for(var i = series.length - 1; i > -1; --i){
 				var sc = series[i].color;
 				if(sc != null){
 					--neededColors;
@@ -452,16 +446,13 @@ var Flotr = (function(){
 			/**
 			 * Calculate the number of colors that need to be generated.
 			 */
-			for(var j = 0; j < assignedColors.length; ++j){
+			for(var j = assignedColors.length - 1; j > -1; --j)
 				neededColors = Math.max(neededColors, assignedColors[j] + 1);
-			}
-	
+				
 			/**
 			 * Generate colors.
 			 */
-			var colors = [];
-			var variation = 0;
-			var k = 0;
+			var colors = [], variation = 0, k = 0;
 			while(colors.length < neededColors){
 				var c = (options.colors.length == k) ? new Color(100, 100, 100) : parseColor(options.colors[k]);
 				
@@ -486,16 +477,14 @@ var Flotr = (function(){
 			/**
 			 * Fill the options with the generated colors.
 			 */
-			var colori = 0;
-			for(var m = 0, s; m < series.length; ++m){
+			for(var m = 0, ln = series.length, n = 0, s; m < ln; ++m){
 				s = series[m];
 	
 				/**
 				 * Assign the color.
 				 */
 				if(s.color == null){
-					s.color = colors[colori].toString();
-					++colori;
+					s.color = colors[n++].toString();
 				}else if(Object.isNumber(s.color)){
 					s.color = colors[s.color].toString();
 				}
@@ -507,6 +496,8 @@ var Flotr = (function(){
 				
 				if(s.shadowSize == null) s.shadowSize = options.shadowSize;
 			}
+			
+			return options;
 		}
 		/**
 		 * Function: (private) constructCanvas
@@ -528,7 +519,7 @@ var Flotr = (function(){
 			/**
 			 * For positioning labels and overlay.
 			 */
-			target.setStyle({'position': 'relative'});
+			target.setStyle({position: 'relative',cursor:'default'});
 			
 			if(canvasWidth <= 0 || canvasHeight <= 0){
 				throw 'Invalid dimensions for plot, width = ' + canvasWidth + ', height = ' + canvasHeight;
@@ -539,7 +530,8 @@ var Flotr = (function(){
 			 */
 			canvas = $(document.createElement('canvas')).writeAttribute({
 				'width': canvasWidth,
-				'height': canvasHeight	
+				'height': canvasHeight,
+				'id': id		
 			});
 			target.appendChild(canvas);
 			if(Prototype.Browser.IE){
@@ -558,7 +550,7 @@ var Flotr = (function(){
 				'left': '0px',
 				'top': '0px'
 			});
-			target.setStyle({cursor:'default'}).appendChild(overlay);
+			target.appendChild(overlay);
 			if(Prototype.Browser.IE){
 				overlay = $(window.G_vmlCanvasManager.initElement(overlay));
 			}			
@@ -576,9 +568,9 @@ var Flotr = (function(){
 		 * 		void
 		 */
 		function bindEvents() {
-			if(options.selection.mode != null){
+			if(options.selection.mode != null)
 				overlay.observe('mousedown', mouseDownHandler);				
-			}					
+								
 			overlay.observe('mousemove', mouseMoveHandler)
 			overlay.observe('click', clickHandler)
 		}
@@ -619,9 +611,9 @@ var Flotr = (function(){
 			/**
 			 * then find real datamin, datamax
 			 */
-			for(var j = 0; j < series.length; ++j){
+			for(var j = series.length - 1; j > -1; --j){
 				var data = series[j].data;
-				for(var h = 0; h < data.length; ++h){
+				for(var h = data.length - 1; h > -1; --h){
 					var x = data[h][0];
 					var y = data[h][1];
 					if(x < xaxis.datamin) xaxis.datamin = x;
@@ -698,7 +690,7 @@ var Flotr = (function(){
 				 * Autoscaling.
 				 */
 				var newmax = xaxis.max;
-				for(var i = 0; i < series.length; ++i){
+				for(var i = series.length - 1; i > -1; --i){
 					if(series[i].bars.show && series[i].bars.barWidth + xaxis.datamax > newmax){
 						newmax = xaxis.max + series[i].bars.barWidth;
 					}
@@ -822,8 +814,8 @@ var Flotr = (function(){
 		function draw() {
 			drawGrid();
 			drawLabels();
-			for(var i = 0; i < series.length; i++){
-				drawSeries(series[i]);
+			for(var i = 0; i < series.length;){
+				drawSeries(series[i++]);
 			}
 		}
 		/**
