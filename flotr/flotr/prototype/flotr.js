@@ -1547,7 +1547,7 @@ var Flotr = (function(){
 			}
 
 			var offset = overlay.cumulativeOffset();			
-			target.fire('flotr:click', [getEventPosition(event)]);
+			target.fire('flotr:click', [getEventPosition(event), this]);
 		}
 		/**
 		 * Function: (private) mouseMoveHandler
@@ -1911,6 +1911,11 @@ return {
 	draw: function(target, data, options){	
 		var plot = new Plot(target, data, options);
 		return plot;
+	},
+	
+	privates: {
+		getTickSize: getTickSize,
+		getSeries: getSeries
 	}
 }
 })();

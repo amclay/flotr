@@ -279,7 +279,7 @@ var Flotr = (function(){
 		silver:[192,192,192],
 		white:[255,255,255],
 		yellow:[255,255,0]
-	};
+	};	
 	function Plot(container, data, opts) {
 		/**
 		 * Initialize variables.
@@ -1555,7 +1555,7 @@ var Flotr = (function(){
 				ignoreClick = false;
 				return;
 			}			
-			target.fireEvent('flotr:click', [getEventPosition(event)]);
+			target.fireEvent('flotr:click', [getEventPosition(event), this]);
 		}
 		/**
 		 * Function: (private) mouseMoveHandler
@@ -1929,6 +1929,11 @@ return {
 	draw: function(target, data, options){	
 		var plot = new Plot(target, data, options);
 		return plot;
+	},
+	
+	privates: {		
+		getTickSize: getTickSize,
+		getSeries: getSeries
 	}
 }
 })();
