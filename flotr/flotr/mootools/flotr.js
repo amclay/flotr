@@ -1577,7 +1577,7 @@ var Flotr = (function(){
 			if((options.mouse.track || series.some(function(s){return s.mouse && s.mouse.track;})) && selectionInterval == null){				
 				hit(pos);
 			}			
-			target.fireEvent('flotr:mousemove', [event, pos]);
+			target.fireEvent('flotr:mousemove', [event, pos, this]);
 		}
 		/**
 		 * Function: (private) mouseDownHandler
@@ -1624,7 +1624,7 @@ var Flotr = (function(){
 			y1 = yaxis.max - y1 / vertScale;
 			y2 = yaxis.max - y2 / vertScale;
 
-			target.fireEvent('flotr:select', [ { x1: x1, y1: y1, x2: x2, y2: y2 } ]);
+			target.fireEvent('flotr:select', [{x1:x1, y1:y1, x2:x2, y2:y2}, this]);
 		}
 		/**
 		 * Function: (private) mouseUpHandler
@@ -1912,7 +1912,7 @@ var Flotr = (function(){
 					if(decimals == null || decimals < 0) decimals = 0;
 					
 					el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
-					target.fireEvent( 'flotr:hit', [n] )					
+					target.fireEvent( 'flotr:hit', [n, this] )					
 				}else if(prevHit){
 					el.setStyle('display','none');
 					clearHit();
