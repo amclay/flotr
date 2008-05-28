@@ -844,10 +844,15 @@ var Flotr = (function(){
 		 */
 		function draw() {
 			drawGrid();
+			
 			drawLabels();
-			for(var i = 0; i < series.length;){
-				drawSeries(series[i++]);
+			if(series.length){
+				target.fire('flotr:beforedraw', [series, this]);
+				for(var i = 0; i < series.length; i++){
+					drawSeries(series[i]);
+				}
 			}
+			target.fire('flotr:afterdraw', [series, this]);
 		}
 		/**
 		 * Function: (private) tHoz
@@ -889,6 +894,9 @@ var Flotr = (function(){
 		 * 		void
 		 */
 		function drawGrid(){
+			if(options.grid.verticalLines || options.grid.horizontalLines){			
+				target.fire('flotr:beforegrid', [xaxis, yaxis, options, this]);
+			}
 			ctx.save();
 			ctx.translate(plotOffset.left, plotOffset.top);
 	
@@ -948,6 +956,9 @@ var Flotr = (function(){
 				ctx.strokeRect(0, 0, plotWidth, plotHeight);
 			}
 			ctx.restore();
+			if(options.grid.verticalLines || options.grid.horizontalLines){			
+				target.fire('flotr:aftergrid', [xaxis, yaxis, options, this]);
+			}
 		}
 	 	/**
 		 * Function: (private) drawLabels
@@ -1883,7 +1894,7 @@ var Flotr = (function(){
 						octx.strokeStyle = n.mouse.lineColor;
 						octx.fillStyle = '#ffffff';
 						octx.beginPath();
-						octx.arc(tHoz(n.x), tVert(n.y), options.points.radius, 0, 2 * Math.PI, true);
+						octx.arc(tHoz(n.x), tVert(n.y), options.mouse.radius, 0, 2 * Math.PI, true);
 						octx.fill();
 						octx.stroke();
 						octx.restore();
