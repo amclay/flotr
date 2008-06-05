@@ -1,4 +1,27 @@
 var Flotr = {
+	version: '%version%',
+	author: 'Bas Wenneker',
+	website: 'http://www.solutoire.com',
+	_registeredTypes:{
+		'lines': 'drawSeriesLines',
+		'points': 'drawSeriesPoints',
+		'bars': 'drawSeriesBars'
+	},
+	/**
+	 * Function: register
+	 * 
+	 * Register you own chart type. Default types are 'lines', 'points' and 'bars'.
+	 * 
+	 * Parameters:
+	 * 		data - Object or array of dataseries
+	 * 
+	 * Returns:
+	 * 		Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
+	 */
+	register: function(type, fn){
+		Flotr._registeredTypes[type] = fn+'';	
+	},
+		
 	draw: function(el, data, options){	
 		return new Flotr.Graph(el, data, options);
 	},
@@ -296,7 +319,8 @@ Flotr.Graph = Class.create({
 				sensibility: 2,			// => the lower this number, the more precise you have to aim to show a value
 				radius: 3				// => radius of the tracck point
 			},
-			shadowSize: 4				// => size of the 'fake' shadow
+			shadowSize: 4,				// => size of the 'fake' shadow
+			defaultType: 'lines'		// => default series type
 		});
 				
 		var assignedColors = [],
@@ -863,6 +887,7 @@ Flotr.Graph = Class.create({
 		 */
 		var noLabels = 0,
 			xBoxWidth, i;
+			
 		for(i = 0; i < this.xaxis.ticks.length; ++i){
 			if (this.xaxis.ticks[i].label) {
 				++noLabels;
@@ -903,12 +928,18 @@ Flotr.Graph = Class.create({
 	 */
 	drawSeries: function(series){
 		series = series || this.series;
-		if(series.lines.show || (!series.bars.show && !series.points.show))
-			this.drawSeriesLines(series);
-		if(series.bars.show)
-			this.drawSeriesBars(series);
-		if(series.points.show)
-			this.drawSeriesPoints(series);
+		
+		var drawn = false;
+		for(var type in Flotr._registeredTypes){
+			if(series[type] && series[type].show){
+				this[Flotr._registeredTypes[type]](series);
+				drawn = true;
+			}
+		}
+		
+		if(!drawn){
+			this[Flotr._registeredTypes[this.options.defaultType]](series);
+		}
 	},
 	
 	plotLine: function(data, offset){
@@ -1232,6 +1263,117 @@ Flotr.Graph = Class.create({
 		}
 	},
 	/**
+	 * Function: drawSeriesBars
+	 * 
+	 * Function draws bar series in the canvas element.
+	 * 
+	 * Parameters:
+	 * 		series - Series with options.bars.show = true.
+	 * 
+	 * Returns:
+	 * 		void
+	 */
+	drawSeriesBars: function(series) {
+		var ctx = this.ctx,
+			bw = series.bars.barWidth,
+			lw = Math.min(series.bars.lineWidth, bw);
+		ctx.save();
+		ctx.translate(this.plotOffset.left, this.plotOffset.top);
+		ctx.lineJoin = 'round';
+
+		/**
+		 * @todo linewidth not interpreted the right way.
+		 */
+		/**
+		 * @todo figure out a way to add shadows.
+		 */
+		/*
+		var sw = series.shadowSize;
+		if (sw > 0) {
+			// draw shadow in two steps
+			ctx.lineWidth = sw / 2;
+			ctx.strokeStyle = "rgba(0,0,0,0.1)";
+			plotBars(series.data, bw, lw/2 + sw/2 + ctx.lineWidth/2, false);
+
+			ctx.lineWidth = sw / 2;
+			ctx.strokeStyle = "rgba(0,0,0,0.2)";
+			plotBars(series.data, bw, lw/2 + ctx.lineWidth/2, false);
+		}*/
+
+		ctx.lineWidth = lw;
+		ctx.strokeStyle = series.color;
+		if(series.bars.fill){
+			ctx.fillStyle = series.bars.fillColor != null ? series.bars.fillColor : Flotr.parseColor(series.color).scale(null, null, null, series.bars.fillOpacity).toString();
+		}
+
+		this.plotBars(series.data, series, bw, 0, series.bars.fill);
+		ctx.restore();
+	},
+	plotBars: function(data, series, barWidth, offset, fill){
+		if(data.length < 1) return;
+		
+		var xaxis = this.xaxis,
+			yaxis = this.yaxis,
+			ctx = this.ctx,
+			tHoz = this.tHoz.bind(this),
+			tVert = this.tVert.bind(this);
+
+		for(var i = 0; i < data.length; i++){
+			var x = data[i][0], y = data[i][1];
+			var drawLeft = true, drawTop = true, drawRight = true;
+			if(series.bars.horizontal) var left = 0, right = x, bottom = y, top = y + barWidth;
+			else var left = x, right = x + barWidth, bottom = 0, top = y;
+
+			if(right < xaxis.min || left > xaxis.max || top < yaxis.min || bottom > yaxis.max)
+				continue;
+
+			if(left < xaxis.min){
+				left = xaxis.min;
+				drawLeft = false;
+			}
+
+			if(right > xaxis.max){
+				right = xaxis.max;
+				drawRight = false;
+			}
+
+			if(bottom < yaxis.min)
+				bottom = yaxis.min;
+
+			if(top > yaxis.max){
+				top = yaxis.max;
+				drawTop = false;
+			}
+
+			/**
+			 * Fill the bar.
+			 */
+			if(fill){
+				ctx.beginPath();
+				ctx.moveTo(tHoz(left), tVert(bottom) + offset);
+				ctx.lineTo(tHoz(left), tVert(top) + offset);
+				ctx.lineTo(tHoz(right), tVert(top) + offset);
+				ctx.lineTo(tHoz(right), tVert(bottom) + offset);
+				ctx.fill();
+			}
+
+			/**
+			 * Draw bar outline/border.
+			 */
+			if(series.bars.lineWidth != 0 && (drawLeft || drawRight || drawTop)){
+				ctx.beginPath();
+				ctx.moveTo(tHoz(left), tVert(bottom) + offset);
+				if(drawLeft) ctx.lineTo(tHoz(left), tVert(top) + offset);
+				else ctx.moveTo(tHoz(left), tVert(top) + offset);
+				if(drawTop) ctx.lineTo(tHoz(right), tVert(top) + offset);
+				else ctx.moveTo(tHoz(right), tVert(top) + offset);
+				if(drawRight) ctx.lineTo(tHoz(right), tVert(bottom) + offset);
+				else ctx.moveTo(tHoz(right), tVert(bottom) + offset);
+				ctx.stroke();
+			}
+		}
+	},
+	/**
 	 * Function: insertLegend
 	 * 
 	 * Function adds a legend div to the canvas container.
@@ -1516,13 +1658,14 @@ Flotr.Graph = Class.create({
 			
 		var prevSelection = this.prevSelection,
 			octx = this.octx,
+			plotOffset = this.plotOffset,
 			x = Math.min(prevSelection.first.x, prevSelection.second.x),
 			y = Math.min(prevSelection.first.y, prevSelection.second.y),
 			w = Math.abs(prevSelection.second.x - prevSelection.first.x),
 			h = Math.abs(prevSelection.second.y - prevSelection.first.y);
 		
-		octx.clearRect(x + this.plotOffset.left - octx.lineWidth,
-					   y + this.plotOffset.top - octx.lineWidth,
+		octx.clearRect(x + plotOffset.left - octx.lineWidth,
+					   y + plotOffset.top - octx.lineWidth,
 					   w + octx.lineWidth*2,
 					   h + octx.lineWidth*2);
 		
@@ -1540,13 +1683,17 @@ Flotr.Graph = Class.create({
 	 * 		void
 	 */
 	setSelection: function(area){
-		var options = this.options;
+		var options = this.options,
+			xaxis = this.xaxis,
+			yaxis = this.yaxis,
+			vertScale = this.vertScale,
+			hozScale = this.hozScale;
 		this.clearSelection();
 					
-		this.selection.first.y = (options.selection.mode == 'x') ? 0 : (this.yaxis.max - area.y1) * this.vertScale;
-		this.selection.second.y = (options.selection.mode == 'x') ? this.plotHeight : (this.yaxis.max - area.y2) * this.vertScale;			
-		this.selection.first.x = (options.selection.mode == 'y') ? 0 : (area.x1 - this.xaxis.min) * this.hozScale;
-		this.selection.second.x = (options.selection.mode == 'y') ? this.plotWidth : (area.x2 - this.xaxis.min) * this.hozScale;
+		this.selection.first.y = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
+		this.selection.second.y = (options.selection.mode == 'x') ? this.plotHeight : (yaxis.max - area.y2) * vertScale;			
+		this.selection.first.x = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
+		this.selection.second.x = (options.selection.mode == 'y') ? this.plotWidth : (area.x2 - xaxis.min) * hozScale;
 		
 		this.drawSelection();
 		this.fireSelectEvent();
@@ -1622,10 +1769,13 @@ Flotr.Graph = Class.create({
 	 */
 	clearHit: function(){
 		if(this.prevHit){
-			var options = this.options;
+			var options = this.options,
+				plotOffset = this.plotOffset,
+				prevHit = this.prevHit;		
+					
 			this.octx.clearRect(
-				this.tHoz(this.prevHit.x) + this.plotOffset.left - options.points.radius*2,
-				this.tVert(this.prevHit.y) + this.plotOffset.top - options.points.radius*2,
+				this.tHoz(prevHit.x) + plotOffset.left - options.points.radius*2,
+				this.tVert(prevHit.y) + plotOffset.top - options.points.radius*2,
 				options.points.radius*3 + options.points.lineWidth*3, 
 				options.points.radius*3 + options.points.lineWidth*3
 			);
@@ -1655,7 +1805,7 @@ Flotr.Graph = Class.create({
 			/**
 			 * Nearest data element.
 			 */
-			n = {
+			i, n = {
 				dist:Number.MAX_VALUE,
 				x:null,
 				y:null,
@@ -1666,7 +1816,7 @@ Flotr.Graph = Class.create({
 				mouse:null
 			};
 		
-		for(var i = 0, data, xsens, ysens; i < series.length; i++){
+		for(i = 0, data, xsens, ysens; i < series.length; i++){
 			if(!series[i].mouse.track) continue;
 			data = series[i].data;				
 			xsens = (this.hozScale*series[i].mouse.sensibility);
@@ -1754,10 +1904,11 @@ var Color = Class.create({
 	},
 	
 	normalize: function(){
-		this.r = this.limit(parseInt(this.r), 0, 255);
-		this.g = this.limit(parseInt(this.g), 0, 255);
-		this.b = this.limit(parseInt(this.b), 0, 255);
-		this.a = this.limit(this.a, 0, 1);
+		var limit = this.limit;
+		this.r = limit(parseInt(this.r), 0, 255);
+		this.g = limit(parseInt(this.g), 0, 255);
+		this.b = limit(parseInt(this.b), 0, 255);
+		this.a = limit(this.a, 0, 1);
 		return this;
 	},
 	

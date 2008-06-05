@@ -11,6 +11,9 @@
  - Fixed small bug in merge method (used by Prototype version for merging options with default options)
  - Added options.bars.horizontal (set to true for horizontal bars, false = vertical)
  - Added JSSPEC testing suite for both Mootools and Prototype versions.
+ 
+ rewrite
+ - Added options.defaultType = lines
 0.1.0 alpha, Feb 27, 2008
 =========================
  - First release Prototype.
