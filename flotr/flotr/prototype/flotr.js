@@ -22,8 +22,9 @@ var Flotr = {
 		Flotr._registeredTypes[type] = fn+'';	
 	},
 		
-	draw: function(el, data, options){	
-		return new Flotr.Graph(el, data, options);
+	draw: function(el, data, options, _GraphKlass_){	
+		_GraphKlass_ = _GraphKlass_ || Flotr.Graph;
+		return new _GraphKlass_(el, data, options);
 	},
 	/**
 	 * Function: getSeries
