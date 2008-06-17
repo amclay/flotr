@@ -2,41 +2,43 @@ var Flotr = {
 	version: '%version%',
 	author: 'Bas Wenneker',
 	website: 'http://www.solutoire.com',
+	/**
+	 * An object of the default registered grpah types. Use Flotr.register(type, functionName)
+	 * to add your own type.
+	 */
 	_registeredTypes:{
 		'lines': 'drawSeriesLines',
 		'points': 'drawSeriesPoints',
 		'bars': 'drawSeriesBars'
 	},
 	/**
-	 * Function: register
-	 * 
-	 * Register you own chart type. Default types are 'lines', 'points' and 'bars'.
-	 * 
-	 * Parameters:
-	 * 		data - Object or array of dataseries
-	 * 
-	 * Returns:
-	 * 		Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
+	 * Can be used to register your own chart type. Default types are 'lines', 'points' and 'bars'.
+	 * This is still experimental.
+	 * @todo Test and confirm.
+	 * @param {String} type - type of chart, like 'pies', 'bars' etc.
+	 * @param {String} functionName - Name of the draw function, like 'drawSeriesPies', 'drawSeriesBars' etc.
 	 */
-	register: function(type, fn){
-		Flotr._registeredTypes[type] = fn+'';	
+	register: function(type, functionName){		
+		Flotr._registeredTypes[type] = functionName+'';	
 	},
-		
+	/**
+	 * Draws the graph. This function is here for backwards compatibility with Flotr version 0.1.0alhpa.
+	 * You could also draw graphs by directly calling Flotr.Graph(element, data, options).
+	 * @param {Element} el - element to insert the graph into
+	 * @param {Object} data - an array or object of dataseries
+	 * @param {Object} options - an object containing options
+	 * @param {Class} _GraphKlass_ - (optional) Class to pass the arguments to, defaults to Flotr.Graph
+	 * @return {Class} returns a new graph object and of course draws the graph.
+	 */
 	draw: function(el, data, options, _GraphKlass_){	
 		_GraphKlass_ = _GraphKlass_ || Flotr.Graph;
 		return new _GraphKlass_(el, data, options);
 	},
 	/**
-	 * Function: getSeries
-	 * 
-	 * Collects dataseries from input and parses the series into the right format. It 
-	 * returns an Array of Objects each having at least the 'data' key set.
-	 * 
-	 * Parameters:
-	 * 		data - Object or array of dataseries
-	 * 
-	 * Returns:
-	 * 		Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
+	 * Collects dataseries from input and parses the series into the right format. It returns an Array 
+	 * of Objects each having at least the 'data' key set.
+	 * @param {Array/Object} data - Object or array of dataseries
+	 * @return {Array} Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
 	 */
 	getSeries: function(data){
 		return data.collect(function(serie){
@@ -44,16 +46,10 @@ var Flotr = {
 		});
 	},
 	/**
-	 * Function: merge
-	 * 
 	 * Recursively merges two objects.
-	 * 
-	 * Parameters:
-	 * 		src - Source object (likely the object with the least properties)
-	 * 		dest - Destination object (optional, object with the most properties)
-	 * 
-	 * Returns:
-	 * 		Recursively merged Object.
+	 * @param {Object} src - source object (likely the object with the least properties)
+	 * @param {Object} dest - destination object (optional, object with the most properties)
+	 * @return {Object} recursively merged Object
 	 */
 	merge: function(src, dest){
 		var result = dest || {};
@@ -63,18 +59,12 @@ var Flotr = {
 		return result;	
 	},	
 	/**
-	 * Function: (private) getTickSize
-	 * 
 	 * Function calculates the ticksize and returns it.
-	 * 
-	 * Parameters:
-	 * 		noTicks - Number of ticks
-	 * 		min - Lower bound integer value for the current axis.
-	 * 		max - Upper bound integer value for the current axis.
-	 * 		decimals - Number of decimals for the ticks.
-	 * 
-	 * Returns:
-	 * 		Returns the size of a tick.
+	 * @param {Integer} noTicks - number of ticks
+	 * @param {Integer} min - lower bound integer value for the current axis
+	 * @param {Integer} max - upper bound integer value for the current axis
+	 * @param {Integer} decimals - number of decimals for the ticks
+	 * @return {Integer} returns the ticksize in pixels
 	 */
 	getTickSize: function(noTicks, min, max, decimals){
 		var delta = (max - min) / noTicks;	
@@ -94,54 +84,33 @@ var Flotr = {
 		return tickSize * magn;
 	},
 	/**
-	 * Function: (private) defaultTickFormatter
-	 * 
-	 * Formats the ticks.
-	 * 
-	 * Parameters:
-	 * 		val - Tick value integer.
-	 * 
-	 * Returns:
-	 * 		Formatted tick string.
+	 * Default tick formatter.
+	 * @param {String/Integer} val - tick value integer
+	 * @return {String} formatted tick string
 	 */
 	defaultTickFormatter: function(val){
 		return val+'';
 	},
 	/**
-	 * Function: (private) defaultTrackFormatter
-	 * 
 	 * Formats the mouse tracker values.
-	 * 
-	 * Parameters:
-	 * 		val - Track value Object {x:..,y:..}.
-	 * 
-	 * Returns:
-	 * 		Formatted track string.
+	 * @param {Object} obj - Track value Object {x:..,y:..}
+	 * @return {String} Formatted track string
 	 */
 	defaultTrackFormatter: function(obj){
 		return '('+obj.x+', '+obj.y+')';
 	}, 
 	/**
-	 * Function: (private) getMagnitude
-	 * 
 	 * Returns the magnitude of the input value.
-	 * 
-	 * Parameters:
-	 * 		x - Integer or float value
-	 * 
-	 * Returns:
-	 * 		Returns the magnitude of the input value.
+	 * @param {Integer/Float} x - integer or float value
+	 * @return {Integer/Float} returns the magnitude of the input value
 	 */
 	getMagnitude: function(x){
 		return Math.pow(10, Math.floor(Math.log(x) / Math.LN10));
 	},
 	/**
-	 * Function: (private) parseColor
-	 * 
 	 * Parses a color string and returns a corresponding Color.
-	 * 
-	 * Parameters:
-	 * 		str - String that represents a color.
+	 * @param {String} str - string thats representing a color
+	 * @return {Color} returns a Color object or false
 	 */
 	parseColor: function(str){
 		var result;
@@ -189,19 +158,13 @@ var Flotr = {
 		if(name == 'transparent'){
 			return new Color(255, 255, 255, 0);
 		}
-		result = lookupColors[name];
-		return new Color(result[0], result[1], result[2]);
+
+		return ((result = lookupColors[name])) ? new Color(result[0], result[1], result[2]) : false;
 	},
 	/**
-	 * Function: extractColor
-	 * 
-	 * Returns the background-color of the canvas container color string.
-	 * 
-	 * Parameters:
-	 * 		element - String that represents a color.
-	 * 
-	 * Returns:
-	 * 		Returns the background-color of the canvas container color string.
+	 * Extracts the background-color of the passed element.
+	 * @param {Element} element
+	 * @return {String} color string
 	 */
 	extractColor: function(element){
 		var color;
@@ -220,8 +183,17 @@ var Flotr = {
 		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
 	}
 };
+/**
+ * Flotr Graph class that plots a graph on creation.
 
+ */
 Flotr.Graph = Class.create({
+	/**
+	 * Flotr Graph constructor.
+	 * @param {Element} el - element to insert the graph into
+	 * @param {Object} data - an array or object of dataseries
+ 	 * @param {Object} options - an object containing options
+	 */
 	initialize: function(el, data, options){
 		this.el = el;
 		this.data = data;
@@ -239,7 +211,10 @@ Flotr.Graph = Class.create({
 		
 		this.insertLegend();	
 	},
-	
+	/**
+	 * Sets options and initializes some variables and color specific values, used by the constructor. 
+	 * @param {Object} opts - options object
+	 */
 	setOptions: function(opts){		
 		this.options = Flotr.merge((opts || {}), {
 			colors: ['#00A8F0', '#C0D800', '#cb4b4b', '#4da74d', '#9440ed'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
@@ -1423,7 +1398,7 @@ Flotr.Graph = Class.create({
 				if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
-				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
+				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
 				var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').getElementsBySelector('div.flotr-legend').first();
 				
 				if(options.legend.backgroundOpacity != 0.0){
@@ -1841,7 +1816,7 @@ Flotr.Graph = Class.create({
 				if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
-				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.bottom) + 'px;';
+				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
 				
 				this.el.insert('<div class="flotr-mouse-value" style="opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;'+pos+'"></div>');
 				return;
