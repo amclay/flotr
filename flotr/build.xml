@@ -20,6 +20,14 @@
 	<property 	name="ie7_exe"
 				value="C:\Program Files\Internet Explorer\iexplore.exe"
 				description="Location of iexplore.exe, used for testing"/>
+				
+	<property 	name="opera_exe"
+				value="D:\Program Files\Opera\opera.exe"
+				description="Location of opera.exe, used for testing"/>
+				
+	<property 	name="safari_exe"
+				value="D:\Program Files\Safari\Safari.exe"
+				description="Location of Safari.exe, used for testing"/>
 	
 	<property	name="prototype_testsuite"
 				value="http://127.0.0.1:8000/Flotr/tests/testRunner.html?testpage=127.0.0.1:8000/Flotr/tests/prototype/prototypeTestSuite.html&amp;autorun=true"
@@ -137,14 +145,22 @@ src=&quot;http://pagead2.googlesyndication.com/pagead/show_ads.js&quot;&gt;
 		</replace>
 	</target>
 	
-	<target name="test.prototype" description="Opens mulitple browsers and starts unit testing.">
-		<exec executable="${firefox_exe}">
+	<target name="test.prototype" 
+		description="Opens mulitple browsers and starts unit testing.">
+			
+		<exec executable="${safari_exe}" spawn="true">		
+			<arg value="-url"/>
+			<arg value="${prototype_testsuite}"/>
+  		</exec>
+		<exec executable="${firefox_exe}" spawn="true">
 			<arg value="-new-tab"/>
     		<arg value="${prototype_testsuite}" />
   		</exec>
-  		<exec executable="${ie7_exe}">
+  		<exec executable="${ie7_exe}" spawn="true">
     		<arg value="${prototype_testsuite}" />
   		</exec>
-	</target>
-	
+		<exec executable="${opera_exe}" spawn="true">
+			<arg value="${prototype_testsuite}"/>
+  		</exec>		
+	</target>	
 </project>

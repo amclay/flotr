@@ -111,7 +111,7 @@ var Flotr = {
 	 * @return {Color} returns a Color object or false
 	 */
 	parseColor: function(str){
-		var result;
+		var result, Color = Flotr.Color;
 	
 		// rgb(num,num,num)
 		if((result = /rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(str)))
@@ -142,7 +142,7 @@ var Flotr = {
 		if(name == 'transparent'){
 			return new Color(255, 255, 255, 0);
 		}
-		return ((result = lookupColors[name])) ? new Color(result[0], result[1], result[2]) : false;
+		return ((result = Color.lookupColors[name])) ? new Color(result[0], result[1], result[2]) : false;
 	},
 	/**
 	 * Extracts the background-color of the passed element.
@@ -178,15 +178,15 @@ Flotr.Graph = Class.create({
 		this.data = data;
 		this.series = Flotr.getSeries(data);
 		this.setOptions(options);
+		// Create and prepare canvas.
 		this.constructCanvas();
+		// Add event handlers for mouse tracking, clicking and selection
 		this.initEvents();
 		this.findDataRanges();
 		this.calculateTicks(this.xaxis, this.options.xaxis);
-		this.calculateTicks(this.yaxis, this.options.yaxis);
-		
+		this.calculateTicks(this.yaxis, this.options.yaxis);		
 		this.calculateSpacing();
 		this.draw();		
-		
 		this.insertLegend();	
 	},
 	/**
@@ -303,7 +303,7 @@ Flotr.Graph = Class.create({
 			
 		// Generate needed number of colors.
 		for(i = 0; colors.length < neededColors;){
-			c = (oc.length == i) ? new Color(100, 100, 100) : Flotr.parseColor(oc[i]);
+			c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.parseColor(oc[i]);
 			
 			// Make sure each serie gets a different color.
 			var sign = variation % 2 == 1 ? -1 : 1;
@@ -372,8 +372,7 @@ Flotr.Graph = Class.create({
 		}
 
 		// Insert main canvas.
-		this.canvas = $(document.createElement('canvas')).writeAttribute(size);
-		c = this.canvas;
+		c = this.canvas = $(document.createElement('canvas')).writeAttribute(size);
 		c.className = 'flotr-canvas';		
 		el.appendChild(c);
 		if(Prototype.Browser.IE){
@@ -382,16 +381,14 @@ Flotr.Graph = Class.create({
 		this.ctx = c.getContext('2d');
 
 		// Insert overlay canvas for interactive features.	
-		this.overlay = $(document.createElement('canvas')).writeAttribute(size);
-		oc = this.overlay;	
+		oc = this.overlay = $(document.createElement('canvas')).writeAttribute(size);
 		oc.className = 'flotr-overlay';		
 		el.appendChild(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));				
 		
 		if(Prototype.Browser.IE){
 			oc = window.G_vmlCanvasManager.initElement(oc);
 		}		
-		this.octx = oc.getContext('2d');
-		
+		this.octx = oc.getContext('2d');		
 	},
 	/**
 	 * Initializes event some handlers.
@@ -1683,7 +1680,7 @@ Flotr.Graph = Class.create({
 	}
 });
 
-var Color = Class.create({
+Flotr.Color = Class.create({
 	initialize: function(r, g, b, a){
 		this.rgba = ['r','g','b','a'];
 		var x = 4;
@@ -1703,7 +1700,7 @@ var Color = Class.create({
 	},
 	
 	clone: function(){
-		return new Color(this.r, this.b, this.g, this.a);
+		return new Flotr.Color(this.r, this.b, this.g, this.a);
 	},
 	
 	limit: function(val,minVal,maxVal){
@@ -1733,7 +1730,7 @@ var Color = Class.create({
 	}
 });
 
-Color.lookupColors = {
+Flotr.Color.lookupColors = {
 	aqua:[0,255,255],
 	azure:[240,255,255],
 	beige:[245,245,220],
