@@ -67,7 +67,7 @@ var f = Flotr.draw(
 					d2.push([i, i*1.5+1.5*Math.sin(i)]);
 			        d3.push([i, 3*Math.cos(i)+10]);
 				}
-						    
+				
 				/**
 				 * The following configuration disables mouse tracking for series d1,
 				 * and configures mousetracking for series d2 and d3.
@@ -83,7 +83,7 @@ var f = Flotr.draw(
 						sensibility: 1, // => The smaller this value, the more precise you've to point
 						trackDecimals: 2,
 						trackFormatter: function(obj){ return 'x = ' + obj.x +', y = ' + obj.y; }
-					}}
+					},selection:{mode:'x',fps:30}}
 				);
 			});			
 		</script>

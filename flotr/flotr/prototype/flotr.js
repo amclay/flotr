@@ -1995,7 +1995,7 @@ Flotr.Graph = Class.create({
 		this.setSelectionPos(this.selection.second, event);
 		this.clearSelection();
 		
-		if(this.selectionIsSane() || event.isLeftClick()){
+		if(this.selectionIsSane()){
 			this.drawSelection();
 			this.fireSelectEvent();
 			this.ignoreClick = true;
@@ -2015,16 +2015,17 @@ Flotr.Graph = Class.create({
 	 */
 	setSelectionPos: function(pos, event) {
 		var options = this.options,
-			offset = $(this.overlay).cumulativeOffset();
-		if(options.selection.mode == 'y'){
-			pos.x = (pos == selection.first) ? 0 : this.plotWidth;			   
+		    offset = $(this.overlay).cumulativeOffset();
+		
+		if(options.selection.mode.indexOf('x') == -1){
+			pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;			   
 		}else{
 			pos.x = event.pageX - offset.left - this.plotOffset.left;
 			pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
 		}
 
-		if (options.selection.mode == 'x'){
-			pos.y = (pos == selection.first) ? 0: this.plotHeight;
+		if (options.selection.mode.indexOf('y') == -1){
+			pos.y = (pos == this.selection.first) ? 0: this.plotHeight;
 		}else{
 			pos.y = event.pageY - offset.top - this.plotOffset.top;
 			pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
@@ -2094,13 +2095,16 @@ Flotr.Graph = Class.create({
 			xaxis = this.xaxis,
 			yaxis = this.yaxis,
 			vertScale = this.vertScale,
-			hozScale = this.hozScale;
+			hozScale = this.hozScale,
+			selX = options.selection.mode.indexOf('x') != -1,
+			selY = options.selection.mode.indexOf('y') != -1;
+		
 		this.clearSelection();
-					
-		this.selection.first.y  = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
-		this.selection.second.y = (options.selection.mode == 'x') ? this.plotHeight : (yaxis.max - area.y2) * vertScale;			
-		this.selection.first.x  = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
-		this.selection.second.x = (options.selection.mode == 'y') ? this.plotWidth : (area.x2 - xaxis.min) * hozScale;
+
+		this.selection.first.y  = selX ? 0 : (yaxis.max - area.y1) * vertScale;
+		this.selection.second.y = selX ? this.plotHeight : (yaxis.max - area.y2) * vertScale;			
+		this.selection.first.x  = selY ? 0 : (area.x1 - xaxis.min) * hozScale;
+		this.selection.second.x = selY ? this.plotWidth : (area.x2 - xaxis.min) * hozScale;
 		
 		this.drawSelection();
 		this.fireSelectEvent();
@@ -2122,6 +2126,7 @@ Flotr.Graph = Class.create({
 			octx = this.octx,
 			options = this.options,
 			plotOffset = this.plotOffset;
+		
 		if(prevSelection != null &&
 			selection.first.x == prevSelection.first.x &&
 			selection.first.y == prevSelection.first.y && 
@@ -2243,9 +2248,9 @@ Flotr.Graph = Class.create({
 		if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
 			var el = this.mouseTrack;
 			var elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;';
-			var pos = '', p = options.mouse.position, m = options.mouse.margin, r = options.mouse.relative;
+			var pos = '', p = options.mouse.position, m = options.mouse.margin;
 			
-			if (!r) { // absolute to the canvas
+			if (!options.mouse.relative) { // absolute to the canvas
 						 if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
