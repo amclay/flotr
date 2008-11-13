@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>Flotr: Basic Legend Example</title>
+		<title>Flotr: Basic Stacked Bars Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
     <script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
     <!--[if IE]>
@@ -15,7 +15,7 @@
 		<style type="text/css">
 			.flotr-legend{
 				border: 2px solid #B6D9FF;
-			}
+			}			
 		</style>
 	</head>
 	<body>
@@ -23,7 +23,7 @@
 		<!-- ad -->
 		
 		<div id="wrapper">
-			<h1>Flotr: Basic Legend Example</h1>
+			<h1>Flotr: Basic Stacked Bars Example</h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
 			<p>This example shows how to configure the legend. Note I also added a <code>style</code> tag 
@@ -48,7 +48,7 @@ var f = Flotr.draw(
 	$('container'), [ 
 		{data:d1, label:'x + sin(x + &pi;)'},
 		{data:d2, label:'x'},
-		{data:d3, label:'15 - cos(x)'}											
+		{data:d3, label:'15 - cos(x)'}
 	],{
 		legend:{
 			position: 'se', // => position the legend 'south-east'.
@@ -68,39 +68,33 @@ var f = Flotr.draw(
 			 */
 			document.observe('dom:loaded', function(){
 				/**
-				 * Fill series d1 and d2.
+				 * Fill series.
 				 */
-				var d1 = [];
-				var d2 = [];
-				var d3 = [];
-			    for(var i = 0; i < 15; i += 0.5){
-			        d1.push([i, i + Math.sin(i+Math.PI)]);
-					d2.push([i, i]);
-					d3.push([i, 15-Math.cos(i)]);
-				}
-			
-				/**
-				 * This function prepend each label with 'y = '.
-				 */
-				function myLabelFunc(label){
-					return 'y = ' + label;
-				}
+				var d1 = [[0,6.05],[1,2.2],[2,8],[3,2.8],[4,8]];
+				var d2 = [[0,1.7],[1,7.1],[2,4],[3,3.05],[4,4.08]];
+				var d3 = [[0,4.3],[1,6],[2,1],[3,7.5],[4,1]];
 			
 				/**
 				 * Draw the graph.
 				 */
 			    var f = Flotr.draw(
-					$('container'), [ 
-						{data:d1, label:'x + sin(x+&pi;)'},
-						{data:d2, label:'x'},
-						{data:d3, label:'15 - cos(x)'}											
+					$('container'), [
+						{data:d1, label:'Canvas'},
+						{data:d2, label:'Flash'},
+						{data:d3, label:'SVG'}
 					],{
 						legend:{
 							position: 'se', // => position the legend 'south-east'.
-							labelFormatter: myLabelFunc, // => format the labels.
 							backgroundColor: '#D2E8FF' // => a light blue background color.
 						},
-						HtmlText: false
+						bars: {
+						  show: true,
+              stacked: true,
+              barWidth: 0.6
+						},
+						grid: {
+						  verticalLines: false
+						}
 					}
 				);
 			});			

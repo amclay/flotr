@@ -19,38 +19,59 @@
 		<!-- ad -->
 		
 		<div id="wrapper">
-			<h1>Flotr: Basic Example</h1>
+			<h1>Flotr: Basic Pie Example</h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
 			<p>This example shows the ease of using Flotr. With just one line of javascript you can
 			draw a nice looking graph.</p>
 			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a> or the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
 			<h2>The Code</h2>
-			<pre><code class="javascript">var f = Flotr.draw($('container'), [ d1, d2 ]);</code></pre>
+			<pre id="code-view"><code class="javascript"></code></pre>
 			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
 		</div>
 		
 		<!-- ad -->
 		
+		<script type="text/javascript" id="code">
+document.observe('dom:loaded', function(){
+	// Fill series.
+	var d1 = [[0, 4]];
+	var d2 = [[0, 3]];
+	var d3 = [[0, 1]];
+	var d4 = [[0, 3.5]];
+	
+	//Draw the graph.
+	var f = Flotr.draw($('container'), [
+		{data:d1, label: 'Comedy'}, 
+		{data:d2, label: 'Action'}, 
+		{data:d3, label: 'Romance', pie: {explode: 20}}, 
+		{data:d4, label: 'Drama'}
+ ], {
+			HtmlText: false, 
+			grid: {
+				verticalLines: false, 
+				horizontalLines: false
+			},
+			xaxis: {showLabels: false},
+			yaxis: {showLabels: false}, 
+			pie: {show: true},
+			legend:{
+				position: 'se',
+				backgroundColor: '#D2E8FF'
+			}
+	});
+});
+		</script>
+
 		<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading.
-			 */
 			document.observe('dom:loaded', function(){
-				/**
-				 * Fill series d1 and d2.
-				 */
-				var d1 = [];
-			    for(var i = 0; i < 14; i += 0.5)
-			        d1.push([i, Math.sin(i)]);
-			
-			    var d2 = [[0, 3], [4, 8], [8, 5], [9, 13]];
-			    
-				/**
-				 * Draw the graph.
-				 */
-			    var f = Flotr.draw($('container'), [ d1, d2 ]);
-			});			
+				var view = $('code-view');
+				var code = $('code').innerHTML.strip();
+				if (view.outerHTML)
+					view.outerHTML = '<pre id="code-view"><code class="javascript">'+code+'</code></pre>';
+				else
+					view.innerHTML = code;
+			});
 		</script>
 		
 		<!-- analytics -->
