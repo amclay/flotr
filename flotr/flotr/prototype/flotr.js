@@ -308,8 +308,9 @@ Flotr.Graph = Class.create({
       mouse: {
         track: false,          // => true to track the mouse, no tracking otherwise
         position: 'se',        // => position of the value box (default south-east)
+        relative: false,       // => next to the mouse cursor
         trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
-        margin: 3,             // => margin in pixels of the valuebox
+        margin: 5,             // => margin in pixels of the valuebox
         lineColor: '#FF3F19',  // => line color of points that are drawn when mouse comes near a value of a series
         trackDecimals: 1,      // => decimals for the track values
         sensibility: 2,        // => the lower this number, the more precise you have to aim to show a value
@@ -1811,7 +1812,8 @@ Flotr.Graph = Class.create({
 	  				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 	  				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
 	  				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
-	  				var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').getElementsBySelector('div.flotr-legend').first();
+	  				     
+	  				var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').select('div.flotr-legend').first();
 	  				
 	  				if(options.legend.backgroundOpacity != 0.0){
 	  					/**
@@ -1882,7 +1884,7 @@ Flotr.Graph = Class.create({
 		if(this.ignoreClick){
 			this.ignoreClick = false;
 			return;
-		}			
+		}
 		this.el.fire('flotr:click', [this.getEventPosition(event), this]);
 	},
 	/**
@@ -1902,7 +1904,7 @@ Flotr.Graph = Class.create({
     
 		this.lastMousePos.pageX = pos.absX;
 		this.lastMousePos.pageY = pos.absY;	
-		if((this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;})) && this.selectionInterval == null){	
+		if(this.selectionInterval == null && (this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;}))){	
 			this.hit(pos);
 		}
     
@@ -1927,9 +1929,9 @@ Flotr.Graph = Class.create({
       
       function cancelContextMenu () {
         overlay.show();
-        $(document).stopObserving('mouseup', cancelContextMenu);
+        $(document).stopObserving('mousemove', cancelContextMenu);
       }
-      $(document).observe('mouseup', cancelContextMenu);
+      $(document).observe('mousemove', cancelContextMenu);
       return;
     }
     
@@ -1942,7 +1944,8 @@ Flotr.Graph = Class.create({
 		this.lastMousePos.pageX = null;
 		this.selectionInterval = setInterval(this.updateSelection.bind(this), 1000/this.options.selection.fps);
 		
-		$(document).observe('mouseup', this.mouseUpHandler.bind(this));
+		this.mouseUpHandler = this.mouseUpHandler.bind(this);
+		$(document).observe('mouseup', this.mouseUpHandler);
 	},
 	/**
 	 * Function: (private) fireSelectEvent
@@ -2069,9 +2072,9 @@ Flotr.Graph = Class.create({
 			h = Math.abs(prevSelection.second.y - prevSelection.first.y);
 		
 		octx.clearRect(x + plotOffset.left - octx.lineWidth,
-					   y + plotOffset.top - octx.lineWidth,
-					   w + octx.lineWidth*2,
-					   h + octx.lineWidth*2);
+		               y + plotOffset.top - octx.lineWidth,
+		               w + octx.lineWidth*2,
+		               h + octx.lineWidth*2);
 		
 		this.prevSelection = null;
 	},
@@ -2094,9 +2097,9 @@ Flotr.Graph = Class.create({
 			hozScale = this.hozScale;
 		this.clearSelection();
 					
-		this.selection.first.y = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
+		this.selection.first.y  = (options.selection.mode == 'x') ? 0 : (yaxis.max - area.y1) * vertScale;
 		this.selection.second.y = (options.selection.mode == 'x') ? this.plotHeight : (yaxis.max - area.y2) * vertScale;			
-		this.selection.first.x = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
+		this.selection.first.x  = (options.selection.mode == 'y') ? 0 : (area.x1 - xaxis.min) * hozScale;
 		this.selection.second.x = (options.selection.mode == 'y') ? this.plotWidth : (area.x2 - xaxis.min) * hozScale;
 		
 		this.drawSelection();
@@ -2137,9 +2140,9 @@ Flotr.Graph = Class.create({
 		};
 
 		var x = Math.min(selection.first.x, selection.second.x),
-			y = Math.min(selection.first.y, selection.second.y),
-			w = Math.abs(selection.second.x - selection.first.x),
-			h = Math.abs(selection.second.y - selection.first.y);
+		    y = Math.min(selection.first.y, selection.second.y),
+		    w = Math.abs(selection.second.x - selection.first.x),
+		    h = Math.abs(selection.second.y - selection.first.y);
 		
 		octx.fillRect(x + plotOffset.left, y + plotOffset.top, w, h);
 		octx.strokeRect(x + plotOffset.left, y + plotOffset.top, w, h);
@@ -2158,7 +2161,7 @@ Flotr.Graph = Class.create({
 	selectionIsSane: function(){
 		var selection = this.selection;
 		return Math.abs(selection.second.x - selection.first.x) >= 5 &&
-			Math.abs(selection.second.y - selection.first.y) >= 5;
+		       Math.abs(selection.second.y - selection.first.y) >= 5;
 	},
 	/**
 	 * Function: clearHit
@@ -2174,8 +2177,8 @@ Flotr.Graph = Class.create({
 	clearHit: function(){
 		if(this.prevHit){
 			var options = this.options,
-				plotOffset = this.plotOffset,
-				prevHit = this.prevHit;		
+			    plotOffset = this.plotOffset,
+			    prevHit = this.prevHit;		
 					
 			this.octx.clearRect(
 				this.tHoz(prevHit.x) + plotOffset.left - options.points.radius*2,
@@ -2238,19 +2241,35 @@ Flotr.Graph = Class.create({
 		}
 		
 		if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
-			var el = this.el.select('.flotr-mouse-value').first();
-			if(!el){
-				var pos = '', p = options.mouse.position, m = options.mouse.margin;					
-				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
+			var el = this.mouseTrack;
+			var elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;';
+			var pos = '', p = options.mouse.position, m = options.mouse.margin, r = options.mouse.relative;
+			
+			if (!r) { // absolute to the canvas
+						 if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
 				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
-				
-				this.el.insert('<div class="flotr-mouse-value" style="opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;'+pos+'"></div>');
-				return;
 			}
+			else { // relative to the mouse
+			       if(p.charAt(0) == 'n') pos += 'bottom:' + (this.canvasHeight - plotOffset.top - this.tVert(n.y) + m) + 'px;';
+				else if(p.charAt(0) == 's') pos += 'top:' + (this.tVert(n.y) + m + plotOffset.top) + 'px;';
+				     if(p.charAt(1) == 'e') pos += 'left:' + (this.tHoz(n.x) + m + plotOffset.left) + 'px;';
+				else if(p.charAt(1) == 'w') pos += 'right:' + (this.canvasWidth - plotOffset.left - this.tHoz(n.x) + m) + 'px;';
+			}
+			
+			elStyle += pos;
+				     
+			if(!el){
+				this.el.insert('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
+				el = this.mouseTrack = this.el.select('.flotr-mouse-value').first();
+			}
+			else {
+				el.setStyle(elStyle);
+			}
+			
 			if(n.x !== null && n.y !== null){
-				el.setStyle({display:'block'});					
+				el.setStyle({display:'block'});
 				
 				this.clearHit();
 				if(n.mouse.lineColor != null){
@@ -2264,15 +2283,16 @@ Flotr.Graph = Class.create({
 					octx.fill();
 					octx.stroke();
 					octx.restore();
-				} 
+				}
 				this.prevHit = n;
-								
+				
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;
 				
 				el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
-				this.el.fire( 'flotr:hit', [n, this] )					
-			}else if(prevHit){
+				this.el.fire('flotr:hit', [n, this]);
+			}
+			else if(prevHit){
 				el.setStyle({display:'none'});
 				this.clearHit();
 			}
