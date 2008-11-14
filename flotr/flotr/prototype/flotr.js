@@ -324,7 +324,9 @@ Flotr.Graph = Class.create({
       defaultType: 'lines',    // => default series type
       HtmlText: true,          // => wether to draw the text using HTML or on the canvas
       fontSize: 7,             // => canvas' text font size
-      showDataGrid: false      // => show the data grid using two tabs
+      showDataGrid: false,      // => show the data grid using two tabs
+      tabGraphLabel: 'Graph',
+      tabDataLabel: 'Data'
     });
 				
 		// Initialize some variables used throughout this function.
@@ -473,10 +475,10 @@ Flotr.Graph = Class.create({
     var tabs = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
     this.el.insert({bottom: tabs});
     
-    var tabGraph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update('Graph');
+    var tabGraph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.tabGraphLabel);
     tabs.insert(tabGraph);
 
-    var tabData = new Element('div', {className:'flotr-tab', style:'float:left;'}).update('Data');
+    var tabData = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.tabDataLabel);
     tabs.insert(tabData);
     
     this.el.setStyle({height: this.canvasHeight+tabData.getHeight()+2+'px'});
@@ -512,7 +514,7 @@ Flotr.Graph = Class.create({
 		
 		// First row : series' labels
 		var html = ['<tr class="first-row">'];
-		html.push('<th>x</th>');
+		html.push('<th>&nbsp;</th>');
 		for (i = 0; i < s.length; ++i) {
 			html.push('<th>'+(s[i].label || String.fromCharCode(65+i))+'</th>');
 		}
@@ -522,8 +524,16 @@ Flotr.Graph = Class.create({
 		for (j = 0; j < datagrid.length; ++j) {
 			html.push('<tr>');
 			for (i = 0; i < s.length+1; ++i) {
-        var tag = (i > 0 ? 'td' : 'th');
-				html.push('<'+tag+'>'+(datagrid[j][i] != null ? Math.round(datagrid[j][i]*100000)/100000 : '')+'</'+tag+'>');
+        var tag = 'td';
+        var content = (datagrid[j][i] != null ? Math.round(datagrid[j][i]*100000)/100000 : '');
+        
+        if (i == 0) {
+          tag = 'th';
+          var label = this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] })[1];
+          if (label) content = label;
+        }
+
+				html.push('<'+tag+'>'+content+'</'+tag+'>');
 			}
 			html.push('</tr>');
 		}
