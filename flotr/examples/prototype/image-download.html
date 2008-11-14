@@ -110,7 +110,7 @@
             }
         });
         
-        if (!Prototype.Browser.Gecko) {
+        if (Prototype.Browser.IE) {
           var form = $(document.forms['image-download']);
           form.disable().insert({top: "Your browser doesn't allow you to use this feature, sorry :(<br />"});
         }

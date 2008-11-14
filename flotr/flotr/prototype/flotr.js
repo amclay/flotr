@@ -529,7 +529,10 @@ Flotr.Graph = Class.create({
         
         if (i == 0) {
           tag = 'th';
-          var label = this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] })[1];
+          var label = this.options.xaxis.ticks ? 
+                          this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] })[1] :
+                          this.options.xaxis.tickFormatter(content);
+          
           if (label) content = label;
         }
 
@@ -539,7 +542,7 @@ Flotr.Graph = Class.create({
 		}
     t.update(html.join(''));
 		
-		var container = new Element('div', {className:'flotr-datagrid-container', style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'});
+		var container = new Element('div', {className:'flotr-datagrid-container', style:'left:0px;top:0px;width:'+(this.canvasWidth-50)+'px;height:'+this.canvasHeight+'px;overflow:auto;'});
 		t.wrap(container.hide());
 		this.el.insert(container);
     
@@ -1569,20 +1572,20 @@ Flotr.Graph = Class.create({
     
     var fraction = 0.0;
     var angle = series.pie.startAngle;
+    var value = 0.0;
     var slices = portions.collect(function(slice){
       angle += fraction;
-      if(slice.value[1] > 0){
-        fraction = slice.value[1]/sum;
-        return {
-          name:     slice.name,
-          fraction: fraction,
-          x:        slice.value[0],
-          y:        slice.value[1],
-          explode:  slice.explode,
-          startAngle: 2 * angle * Math.PI,
-          endAngle:   2 * (angle + fraction) * Math.PI
-        };
-      }
+      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
+      fraction = value/sum;
+      return {
+        name:     slice.name,
+        fraction: fraction,
+        x:        slice.value[0],
+        y:        value,
+        explode:  slice.explode,
+        startAngle: 2 * angle * Math.PI,
+        endAngle:   2 * (angle + fraction) * Math.PI
+      };
     });
     
     ctx.save();
