@@ -23,7 +23,7 @@ var Flotr = {
 		Flotr._registeredTypes[type] = functionName+'';	
 	},
 	/**
-	 * Draws the graph. This function is here for backwards compatibility with Flotr version 0.1.0alhpa.
+	 * Draws the graph. This function is here for backwards compatibility with Flotr version 0.1.0alpha.
 	 * You could also draw graphs by directly calling Flotr.Graph(element, data, options).
 	 * @param {Element} el - element to insert the graph into
 	 * @param {Object} data - an array or object of dataseries
@@ -43,7 +43,11 @@ var Flotr = {
 	 */
 	getSeries: function(data){
 		return data.collect(function(serie){
-			return (serie.data) ? Object.clone(serie) : {'data': serie};
+			var i, serie = (serie.data) ? Object.clone(serie) : {'data': serie};
+			for (i = serie.data.length-1; i > -1; --i) {
+				serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
+			}
+			return serie;
 		});
 	},
 	/**
@@ -159,11 +163,11 @@ var Flotr = {
 	extractColor: function(element){
 		var color;
 		// Loop until we find an element with a background color and stop when we hit the body element. 
-		do{
+		do {
 			color = element.getStyle('background-color').toLowerCase();
 			if(!(color == '' || color == 'transparent')) break;
 			element = element.up(0);
-		}while(element.nodeName.toLowerCase() != 'body');
+		} while(element.nodeName.match(/^body$/i));
 
 		// Catch Safari's way of signalling transparent.
 		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
@@ -396,13 +400,14 @@ Flotr.Graph = Class.create({
 	constructCanvas: function(){
 		var el = this.el,
 			size, c, oc;
-		el.update('');
+
+		// For positioning labels and overlay.
+		el.update('').setStyle({position:'relative', cursor:'default'});
+
 		this.canvasWidth = el.getWidth();
 		this.canvasHeight = el.getHeight();
 		size = {'width': this.canvasWidth, 'height': this.canvasHeight};
-		
-		// For positioning labels and overlay.
-		el.setStyle({position:'relative', cursor:'default'});
+
 		if(this.canvasWidth <= 0 || this.canvasHeight <= 0){
 			throw 'Invalid dimensions for plot, width = ' + this.canvasWidth + ', height = ' + this.canvasHeight;
 		}
@@ -669,18 +674,18 @@ Flotr.Graph = Class.create({
 
 			for(i = 0; i < this.series.length; ++i){
 				b = this.series[i].bars;
-		      if(b.show) {
-					if(!b.horizontal && b.barWidth + this.xaxis.datamax > newmax){
+				if(b.show) {
+					if (!b.horizontal && b.barWidth + this.xaxis.datamax > newmax){
 						newmax = this.xaxis.max + this.series[i].bars.barWidth;
 					}
-					else if(b.stacked && b.horizontal){
-				    for (j = 0; j < this.series[i].data.length; j++) {
-				    	if (this.series[i].bars.show && this.series[i].bars.stacked) {
-					    	var y = this.series[i].data[j][1];
-					      stackedSums[y] = (stackedSums[y] || 0) + this.series[i].data[j][0];
-					      lastSerie = this.series[i];
-				    	}
-				    }
+					if(b.stacked && b.horizontal){
+						for (j = 0; j < this.series[i].data.length; j++) {
+							if (this.series[i].bars.show && this.series[i].bars.stacked) {
+								var y = this.series[i].data[j][1];
+								stackedSums[y] = (stackedSums[y] || 0) + this.series[i].data[j][0];
+								lastSerie = this.series[i];
+							}
+						}
 				    
 						for (j = 0; j < stackedSums.length; j++) {
 				    	newmax = Math.max(stackedSums[j], newmax);
@@ -688,7 +693,7 @@ Flotr.Graph = Class.create({
 					}
 				}
 			}
-			this.yaxis.lastSerie = lastSerie;
+			this.xaxis.lastSerie = lastSerie;
 			this.xaxis.max = newmax;
 		}
 	},
@@ -706,10 +711,10 @@ Flotr.Graph = Class.create({
 			for(i = 0; i < this.series.length; ++i){
 				b = this.series[i].bars;
 				if (b.show) {
-					if(b.horizontal && b.barWidth + this.yaxis.datamax > newmax){
+					if (b.horizontal && b.barWidth + this.yaxis.datamax > newmax){
 						newmax = this.yaxis.max + b.barWidth;
 					}
-					else if(b.stacked && !b.horizontal){
+					if(b.stacked && !b.horizontal){
 						for (j = 0; j < this.series[i].data.length; j++) {
 							if (this.series[i].bars.show && this.series[i].bars.stacked) {
 								var x = this.series[i].data[j][0];
@@ -948,7 +953,8 @@ Flotr.Graph = Class.create({
 		  if (this.options.xaxis.showLabels)
 		  for(i = 0; i < this.xaxis.ticks.length; ++i){
 		    tick = this.xaxis.ticks[i];
-		    if(!tick.label) continue;
+		    if(!tick.label || tick.label.length == 0) continue;
+        
 		    ctx.drawTextCenter(
 		      tick.label,
 		      this.plotOffset.left + this.tHoz(tick.v), 
@@ -972,14 +978,14 @@ Flotr.Graph = Class.create({
 		  }
 		} 
 		else if (this.options.yaxis.showLabels || this.options.yaxis.showLabels) {
-			html = ['<div style="font-size:smaller;color:' + this.options.grid.color + '" class="flotr-labels">'];
+			html = ['<div style="font-size:smaller;color:' + this.options.grid.color + ';" class="flotr-labels">'];
 			
 			// Add xlabels.
 			if (this.options.xaxis.showLabels){
 				for(i = 0; i < this.xaxis.ticks.length; ++i){
 					tick = this.xaxis.ticks[i];
-					if(!tick.label) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + this.options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center" class="flotr-grid-label">' + tick.label + '</div>');
+					if(!tick.label || tick.label.length == 0) continue;
+					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + this.options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
 			
@@ -988,7 +994,7 @@ Flotr.Graph = Class.create({
 				for(i = 0; i < this.yaxis.ticks.length; ++i){
 					tick = this.yaxis.ticks[i];
 					if (!tick.label || tick.label.length == 0) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v) - this.labelMaxHeight/2) + 'px;left:0;width:' + this.labelMaxWidth + 'px;text-align:right" class="flotr-grid-label">' + tick.label + '</div>');
+					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v) - this.labelMaxHeight/2) + 'px;left:0;width:' + this.labelMaxWidth + 'px;text-align:right;" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
 			
@@ -1245,10 +1251,10 @@ Flotr.Graph = Class.create({
 		 */
 		if(sw > 0){
 			ctx.lineWidth = sw / 2;
+      
 			ctx.strokeStyle = "rgba(0,0,0,0.1)";
 			this.plotLine(series.data, lw/2 + sw/2 + ctx.lineWidth/2);
 
-			ctx.lineWidth = sw / 2;
 			ctx.strokeStyle = "rgba(0,0,0,0.2)";
 			this.plotLine(series.data, lw/2 + ctx.lineWidth/2);
 		}
@@ -1290,10 +1296,10 @@ Flotr.Graph = Class.create({
 		
 		if(sw > 0){
 			ctx.lineWidth = sw / 2;
+      
 			ctx.strokeStyle = 'rgba(0,0,0,0.1)';
 			this.plotPointShadows(series.data, sw/2 + ctx.lineWidth/2, series.points.radius);
 
-			ctx.lineWidth = sw / 2;
 			ctx.strokeStyle = 'rgba(0,0,0,0.2)';
 			this.plotPointShadows(series.data, ctx.lineWidth/2, series.points.radius);
 		}
@@ -1379,7 +1385,7 @@ Flotr.Graph = Class.create({
 
 		for(var i = 0; i < data.length; i++){
 			var x = data[i][0],
-				y = data[i][1];
+			    y = data[i][1];
 			var drawLeft = true, drawTop = true, drawRight = true;
 			
 			// Stacked bars
@@ -1524,8 +1530,7 @@ Flotr.Graph = Class.create({
     var radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2;
     var html = [];
     
-    
-    var vScale = Math.cos(series.pie.viewAngle);
+    var vScale = 1;//Math.cos(series.pie.viewAngle);
     var plotTickness = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
     
     var style = {
@@ -1579,7 +1584,7 @@ Flotr.Graph = Class.create({
         var xOffset = center.x + Math.cos(bisection) * slice.explode + sw;
         var yOffset = center.y + Math.sin(bisection) * slice.explode + sw;
         
-        this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false/*, vScale*/);
+		    this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
 
         ctx.fillStyle = 'rgba(0,0,0,0.1)';
         ctx.fill();
@@ -1597,7 +1602,7 @@ Flotr.Graph = Class.create({
       var xOffset = center.x + Math.cos(bisection) * slice.explode;
       var yOffset = center.y + Math.sin(bisection) * slice.explode;
       
-      this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false/*, vScale*/);
+		this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
       
       if(series.pie.fill){
         ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.pie.fillOpacity).toString();
@@ -1605,7 +1610,7 @@ Flotr.Graph = Class.create({
       }
       ctx.lineWidth = lw;
       ctx.strokeStyle = color;
-      ctx.stroke();
+      //ctx.stroke();
       
       /*ctx.save();
       ctx.scale(1, vScale);
@@ -1644,24 +1649,28 @@ Flotr.Graph = Class.create({
         label = this.options.pie.labelFormatter(slice);
       
       var textAlignRight = (Math.cos(bisection) < 0);
-      if (options.HtmlText) {
-        var divStyle = 'position:absolute;top:' + (yOffset + Math.sin(bisection) * (series.pie.explode + radius) - 5) + 'px;'; //@todo: change
-        var dist = xOffset + Math.cos(bisection) * (series.pie.explode + radius);
-        if (textAlignRight) {
-          divStyle += 'right:'+(this.canvasWidth - dist)+'px;text-align:right;';
+      var distX = xOffset + Math.cos(bisection) * (series.pie.explode + radius);
+      var distY = yOffset + Math.sin(bisection) * (series.pie.explode + radius);
+      
+      if (slice.fraction && label) {
+        if (options.HtmlText) {
+          var divStyle = 'position:absolute;top:' + (distY - 5) + 'px;'; //@todo: change
+          if (textAlignRight) {
+            divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
+          }
+          else {
+            divStyle += 'left:'+distX+'px;text-align:left;';
+          }
+          html.push('<div style="' + divStyle + '" class="flotr-grid-label">' + label + '</div>');
         }
         else {
-          divStyle += 'left:'+dist+'px;text-align:left;';
+          ctx[textAlignRight?'drawTextRight':'drawText'](
+            label, 
+            distX, 
+            distY + style.size / 2, 
+            style
+          );
         }
-        html.push('<div style="' + divStyle + '" class="flotr-grid-label">' + label + '</div>');
-      }
-      else {
-        ctx[textAlignRight?'drawTextRight':'drawText'](
-          label, 
-          xOffset + Math.cos(bisection) * (series.pie.explode + radius), 
-          yOffset + Math.sin(bisection) * (series.pie.explode + radius) + style.size / 2, 
-          style
-        );
       }
     }, this);
 
