@@ -30,7 +30,7 @@
 				description="Location of Safari.exe, used for testing"/>
 	
 	<property	name="prototype_testsuite"
-				value="http://127.0.0.1:8000/Flotr/tests/testRunner.html?testpage=127.0.0.1:8000/Flotr/tests/prototype/prototypeTestSuite.html&amp;autorun=true"
+				value="http://127.0.0.1:8000/FlotrTrunk/flotr/tests/testRunner.html?testpage=127.0.0.1:8000/FlotrTrunk/flotr/tests/prototype/prototypeTestSuite.html&amp;autorun=true"
 				description="URL of the prototype test suite"/>
 	
 	<target name="build.clean" description="Deletes release and online directories.">
