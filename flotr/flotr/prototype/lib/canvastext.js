@@ -1,8 +1,14 @@
-//
-// This code is released to the public domain by Jim Studt, 2007.
-// He may keep some sort of up to date copy at http://www.federated.com/~jim/canvastext/
-//
-var CanvasTextFunctions = CanvasTextFunctions || {
+/**
+ * This code is released to the public domain by Jim Studt, 2007.
+ * He may keep some sort of up to date copy at http://www.federated.com/~jim/canvastext/
+ * It as been modified by Fabien Ménager to handle font style like size, weight, color and rotation. 
+ * A partial support for accentuated letters as been added too.
+ */
+var CanvasText = CanvasText || {
+	/** The letters definition. It is a list of letters, 
+	 * with their width, and the coordinates of points compositing them.
+	 * The syntax for the points is : [x, y], null value means "pen up"
+	 */
   letters: {
     ' ': { width: 10, points: [] },
     '!': { width: 10, points: [[5,21],[5,7],null,[5,2],[4,1],[5,0],[6,1],[5,2]] },
@@ -116,6 +122,8 @@ var CanvasTextFunctions = CanvasTextFunctions || {
     'Ñ': { diacritic: '~', letter: 'N' },
     'Ô': { diacritic: '^', letter: 'O' }
   },
+  
+  /** Diacriticts, used to draw accuentuated letters */
   diacritics: {
     '¸': { points: [[6,-4],[4,-6],[2,-7],[1,-7]] },
     '´': { points: [[8,19],[13,22]] },
@@ -125,35 +133,62 @@ var CanvasTextFunctions = CanvasTextFunctions || {
     '~': { points: [[4,18],[7,22],[10,18],[13,22]] }
   },
   
+  /** The default font styling */
   style: {
-    size: 8,
-    font: null,
+    size: 8, // font height in pixels
+    font: null, // not yet implemented
     color: '#000000',
-    bold: 1
+    weight: 1, // 1 for 'normal'
+    angle: 0 // degres
   },
+  
+  /** Get the letter data correponding to a char
+   * @param {ch} The char
+   */
   letter: function(ch) {
-    return CanvasTextFunctions.letters[ch];
+    return CanvasText.letters[ch];
   },
+  
+  /** Get the font ascent for a given style
+   * @param {style} The reference style
+   */
   ascent: function(style) {
-    return (style.size || CanvasTextFunctions.style.size);
+    return (style.size || CanvasText.style.size);
   },
+  
+  /** Get the font descent for a given style 
+   * @param {style} The reference style
+   * */
   descent: function(style) {
-    return 7.0*(style.size || CanvasTextFunctions.style.size)/25.0;
+    return 7.0*(style.size || CanvasText.style.size)/25.0;
   },
+  
+  /** Measure the text horizontal size 
+   * @param {str} The text
+   * @param {style} Text style
+   * */
   measure: function(str, style) {
     if (!str) return;
     var total = 0;
     var len = str.length;
 
     for (i = 0; i < len; i++) {
-      var c = CanvasTextFunctions.letter(str.charAt(i));
+      var c = CanvasText.letter(str.charAt(i));
       if (c) {
-        var width = (c.diacritic) ? CanvasTextFunctions.letter(c.letter).width : c.width;
-        total += width * (style.size || CanvasTextFunctions.style.size) / 25.0;
+        var width = (c.diacritic) ? CanvasText.letter(c.letter).width : c.width;
+        total += width * (style.size || CanvasText.style.size) / 25.0;
       }
     }
     return total;
   },
+  
+  /** Draws serie of points at given coordinates 
+   * @param {ctx} The canvas context
+   * @param {points} The points to draw
+   * @param {x} The X coordinate
+   * @param {y} The Y coordinate
+   * @param {mag} The scale 
+   */
   drawPoints: function (ctx, points, x, y, mag) {
     ctx.beginPath();
   
@@ -175,59 +210,71 @@ var CanvasTextFunctions = CanvasTextFunctions || {
     }
     ctx.stroke();
   },
-  draw: function(ctx, str, x, y, style) {
+  
+  /** Draws a text at given coordinates and with a given style
+   * @param {ctx} The canvas context
+   * @param {str} The text to draw
+   * @param {xOrig} The X coordinate
+   * @param {yOrig} The Y coordinate
+   * @param {style} The font style
+   */
+  draw: function(ctx, str, xOrig, yOrig, style) {
     if (!str) return;
-    var total = 0;
-    var len = str.length;
-    var mag = (style.size || CanvasTextFunctions.style.size) / 25.0;
-    var xOrig = x, 
-        yOrig = y;
+    var total = 0,
+        len = str.length,
+        mag = (style.size || CanvasText.style.size) / 25.0,
+        x = 0, y = 0;
 
     ctx.save();
+    ctx.translate(xOrig, yOrig);
+    ctx.rotate(Math.PI * (style.angle || CanvasText.style.angle) / 180);
     ctx.lineCap = "round";
-    ctx.lineWidth = 2.0 * mag * (style.bold || CanvasTextFunctions.style.bold);
-    ctx.strokeStyle = style.color || CanvasTextFunctions.style.color;
+    ctx.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
+    ctx.strokeStyle = style.color || CanvasText.style.color;
     for (i = 0; i < len; i++) {
       if (str.charAt(i) == '\n') {
-        x = xOrig;
-        y = yOrig + (style.size || CanvasTextFunctions.style.size) *1.4;
-        ctx.moveTo(x, y);
+        x = 0;
+        y = (style.size || CanvasText.style.size) * 1.4;
         continue;
       }
-      var c = CanvasTextFunctions.letter(str.charAt(i));
+      var c = CanvasText.letter(str.charAt(i));
       if (!c) continue;
     
-      var points = c.points
+      var points = c.points,
           width = c.width;
           
       if (c.diacritic) {
-        var dia = CanvasTextFunctions.diacritics[c.diacritic];
-        var char = CanvasTextFunctions.letters[c.letter];
+        var dia = CanvasText.diacritics[c.diacritic];
+        var char = CanvasText.letter(c.letter);
 
-        CanvasTextFunctions.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag);
+        CanvasText.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag);
         points = char.points;
         width = char.width;
       }
 
-      CanvasTextFunctions.drawPoints(ctx, points, x, y, mag);
+      CanvasText.drawPoints(ctx, points, x, y, mag);
       x += width*mag;
     }
     ctx.restore();
     return total;
   },
+  
+  /** Enables the text function for a Canvas context
+   * @param {ctx} The canvas context
+   */
   enable: function(ctx) {
-    ctx.drawText    = function(text, x, y, style) { return CanvasTextFunctions.draw(ctx, text, x, y, style); };
-    ctx.measureText = function(text, style) { return CanvasTextFunctions.measure(text, style); };
-    ctx.fontAscent  = function(style) { return CanvasTextFunctions.ascent(style); };
-    ctx.fontDescent = function(style) { return CanvasTextFunctions.descent(style); };
+    ctx.drawText    = function(text, x, y, style) { return CanvasText.draw(ctx, text, x, y, style); };
+    ctx.measureText = function(text, style) { return CanvasText.measure(text, style); };
+    ctx.fontAscent  = function(style) { return CanvasText.ascent(style); };
+    ctx.fontDescent = function(style) { return CanvasText.descent(style); };
 
     ctx.drawTextRight = function(text, x, y, style) {
-      var w = CanvasTextFunctions.measure(text, style);
-      return CanvasTextFunctions.draw(ctx, text, x-w, y, style); 
+      var w = CanvasText.measure(text, style);
+      return CanvasText.draw(ctx, text, x-w, y, style); 
     };
     ctx.drawTextCenter = function(text, x, y, style) {
-      var w = CanvasTextFunctions.measure(text, style);
-      return CanvasTextFunctions.draw(ctx, text, x-w/2, y, style);
+      var w = CanvasText.measure(text, style);
+      return CanvasText.draw(ctx, text, x-w/2, y, style);
     };
   }
 };
