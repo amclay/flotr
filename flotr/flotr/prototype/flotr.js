@@ -478,36 +478,42 @@ Flotr.Graph = Class.create({
 		});
 		return this.seriesData = dg;
 	},
+  showTab: function(tabName, onComplete) {
+    switch(tabName) {
+      case 'graph':
+        this.datagrid.up().hide();
+        this.canvas.show();
+        this.overlay.show();
+        this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('show');
+        this.tabs.graph.addClassName('selected');
+        this.tabs.data.removeClassName('selected');
+      break;
+      case 'data':
+        this.constructDataGrid();
+        this.datagrid.up().show();
+        this.canvas.hide();
+        this.overlay.hide();
+        this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('hide');
+        this.tabs.data.addClassName('selected');
+        this.tabs.graph.removeClassName('selected');
+      break;
+    }
+  },
   constructTabs: function () {
-    var tabs = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
-    this.el.insert({bottom: tabs});
+    var tabsContainer = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
+    this.el.insert({bottom: tabsContainer});
+    this.tabs = {};
     
-    var tabGraph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.tabGraphLabel);
-    tabs.insert(tabGraph);
+    this.tabs.graph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.tabGraphLabel);
+    tabsContainer.insert(this.tabs.graph);
 
-    var tabData = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.tabDataLabel);
-    tabs.insert(tabData);
+    this.tabs.data = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.tabDataLabel);
+    tabsContainer.insert(this.tabs.data);
     
-    this.el.setStyle({height: this.canvasHeight+tabData.getHeight()+2+'px'});
+    this.el.setStyle({height: this.canvasHeight+this.tabs.data.getHeight()+2+'px'});
 
-    tabGraph.observe('click', (function () {
-      this.datagrid.up().hide();
-      this.canvas.show();
-      this.overlay.show();
-      this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('show');
-      tabGraph.addClassName('selected');
-      tabData.removeClassName('selected');
-    }).bind(this));
-    
-    tabData.observe('click', (function () {
-      this.constructDataGrid();
-      this.datagrid.up().show();
-      this.canvas.hide();
-      this.overlay.hide();
-      this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('hide');
-      tabData.addClassName('selected');
-      tabGraph.removeClassName('selected');
-    }).bind(this));
+    this.tabs.graph.observe('click', (function() {this.showTab('graph')}).bind(this));
+    this.tabs.data.observe('click', (function() {this.showTab('data')}).bind(this));
   },
 	constructDataGrid: function () {
     // If the data grid has already been built, nothing to do here
@@ -556,22 +562,31 @@ Flotr.Graph = Class.create({
     return t;
   },
   selectAllData: function () {
-    var selection, range, doc, win, node = this.constructDataGrid();
-    
-    if ((doc = node.ownerDocument) && (win = doc.defaultView) && 
-      win.getSelection && doc.createRange && 
-      (selection = window.getSelection()) && 
-      selection.removeAllRanges) {
-       range = doc.createRange();
-       range.selectNode(node);
-       selection.removeAllRanges();
-       selection.addRange(range);
+    if (this.tabs) {
+      var selection, range, doc, win, node = this.constructDataGrid();
+  
+      this.showTab('data');
+      
+      // deferred to be able to select the table
+      (function () {
+        if ((doc = node.ownerDocument) && (win = doc.defaultView) && 
+          win.getSelection && doc.createRange && 
+          (selection = window.getSelection()) && 
+          selection.removeAllRanges) {
+           range = doc.createRange();
+           range.selectNode(node);
+           selection.removeAllRanges();
+           selection.addRange(range);
+        }
+        else if (document.body && document.body.createTextRange && 
+          (range = document.body.createTextRange())) {
+           range.moveToElementText(node);
+           range.select();
+        }
+      }).defer();
+      return true;
     }
-    else if (document.body && document.body.createTextRange && 
-      (range = document.body.createTextRange())) {
-       range.moveToElementText(node);
-       range.select();
-    }
+    else return false;
   },
   downloadCSV: function() {
     var i, csv = '"x"';
