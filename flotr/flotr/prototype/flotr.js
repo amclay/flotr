@@ -59,7 +59,7 @@ var Flotr = {
 	merge: function(src, dest){
 		var result = dest || {};
 		for(var i in src){
-			result[i] = (src[i] != null && typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp)) ? Flotr.merge(src[i], dest[i]) : result[i] = src[i];		
+			result[i] = (src[i] != null && typeof(src[i]) == 'object' && !(src[i].constructor == Array || src[i].constructor == RegExp) && !Object.isElement(src[i])) ? Flotr.merge(src[i], dest[i]) : result[i] = src[i];		
 		}
 		return result;
 	},	
@@ -1070,9 +1070,12 @@ Flotr.Graph = Class.create({
 		ctx.beginPath();
 		ctx.moveTo(prevx, prevy);
 		for(var i = 0; i < data.length - 1; ++i){
-			var x1 = data[i][0], y1 = data[i][1],
-				x2 = data[i+1][0], y2 = data[i+1][1];
+			var x1 = data[i][0],   y1 = data[i][1],
+			    x2 = data[i+1][0], y2 = data[i+1][1];
 
+      // To allow empty values
+      if (y1 === null || y2 === null) continue;
+      
 			/**
 			 * Clip with ymin.
 			 */
@@ -1853,7 +1856,7 @@ Flotr.Graph = Class.create({
 	  		if(fragments.length > 0){
 	  			var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join("") + '</table>';
 	  			if(options.legend.container != null){
-	  				options.legend.container.update(table);
+	  				$(options.legend.container).update(table);
 	  			}else{
 	  				var pos = '';
 	  				var p = options.legend.position, m = options.legend.margin;
