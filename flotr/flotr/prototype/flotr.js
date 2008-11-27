@@ -542,9 +542,14 @@ Flotr.Graph = Class.create({
         
         if (i == 0) {
           tag = 'th';
-          var label = this.options.xaxis.ticks ? 
-                          this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] })[1] :
-                          this.options.xaxis.tickFormatter(content);
+          var label;
+          if(this.options.xaxis.ticks) {
+            var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] });
+            if (tick) label = tick[1];
+          } 
+          else {
+            label = this.options.xaxis.tickFormatter(content);
+          }
           
           if (label) content = label;
         }
@@ -598,7 +603,13 @@ Flotr.Graph = Class.create({
     }
     csv += "%0D%0A"; // \r\n
     
-    for (i = 0; i < dg.length; ++i) {
+    for (i = 0, label; i < dg.length; ++i) {
+      if (this.options.xaxis.ticks) {
+        var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == dg[i][0] });
+        if (tick) dg[i][0] = tick[1];
+      } else {
+        dg[i][0] = this.options.xaxis.tickFormatter(dg[i][0]);
+      }
       csv += dg[i].join('%09')+"%0D%0A"; // \t and \r\n
     }
     if (Prototype.Browser.IE) {
@@ -630,7 +641,7 @@ Flotr.Graph = Class.create({
 			
 			// Get datamin, datamax start values 
 			for(i = 0; i < s.length; ++i){
-				if (s[i].data.length > 0) {
+				if (s[i].data.length > 0 && !s[i].hide) {
 					this.xaxis.datamin = this.xaxis.datamax = s[i].data[0][0];
 					this.yaxis.datamin = this.yaxis.datamax = s[i].data[0][1];
 					found = true;
@@ -745,7 +756,7 @@ Flotr.Graph = Class.create({
 									
 			for(i = 0; i < this.series.length; ++i){
 				b = this.series[i].bars;
-				if (b.show) {
+				if (b.show && !this.series[i].hide) {
 					if (b.horizontal && b.barWidth + this.yaxis.datamax > newmax){
 						newmax = this.yaxis.max + b.barWidth;
 					}
@@ -881,7 +892,8 @@ Flotr.Graph = Class.create({
 		if(this.series.length){
 			this.el.fire('flotr:beforedraw', [this.series, this]);
 			for(var i = 0; i < this.series.length; i++){
-				this.drawSeries(this.series[i]);
+				if (!this.series[i].hide)
+					this.drawSeries(this.series[i]);
 			}
 		}
 		this.el.fire('flotr:afterdraw', [this.series, this]);
@@ -1770,7 +1782,7 @@ Flotr.Graph = Class.create({
 			ctx = this.ctx,
 			i;
 			
-		var noLegendItems = series.findAll(function(s) {return !!s.label}).size();
+		var noLegendItems = series.findAll(function(s) {return (s.label && !s.hide)}).size();
 
     if (noLegendItems) {
 	    if (!options.HtmlText && this.textEnabled) {
@@ -1793,7 +1805,7 @@ Flotr.Graph = Class.create({
 	      // We calculate the labels' max width
 	      var labelMaxWidth = 0;
 	      for(i = series.length - 1; i > -1; --i){
-	        if(!series[i].label) continue;
+	        if(!series[i].label || series[i].hide) continue;
 	        var label = options.legend.labelFormatter(series[i].label);	
 	        labelMaxWidth = Math.max(labelMaxWidth, ctx.measureText(label, style));
 	      }
@@ -1816,7 +1828,7 @@ Flotr.Graph = Class.create({
 	      var x = offsetX + lbm;
 	      var y = offsetY + lbm;
 	      for(i = 0; i < series.length; i++){
-	        if(!series[i].label) continue;
+	        if(!series[i].label || series[i].hide) continue;
 	        var label = options.legend.labelFormatter(series[i].label);
 
 	        ctx.fillStyle = series[i].color;
@@ -1839,7 +1851,7 @@ Flotr.Graph = Class.create({
 	    }
 	    else {
 	  		for(i = 0; i < series.length; ++i){
-	  			if(!series[i].label) continue;
+	  			if(!series[i].label || series[i].hide) continue;
 	  			
 	  			if(i % options.legend.noColumns == 0){
 	  				fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
@@ -2282,18 +2294,21 @@ Flotr.Graph = Class.create({
 			};
 		
 		for(i = 0; i < series.length; i++){
-			if(!series[i].mouse.track) continue;
-			data = series[i].data;		
-			xsens = (this.hozScale*series[i].mouse.sensibility);
-			ysens = (this.vertScale*series[i].mouse.sensibility);
+			s = series[i];
+			if(!s.mouse.track) continue;
+			data = s.data;
+			xsens = (this.hozScale*s.mouse.sensibility);
+			ysens = (this.vertScale*s.mouse.sensibility);
+
 			for(var j = 0, xpow, ypow; j < data.length; j++){
+				if (data[j][1] === null) continue;
 				xpow = Math.pow(this.hozScale*(data[j][0] - mouse.x), 2);
 				ypow = Math.pow(this.vertScale*(data[j][1] - mouse.y), 2);
 				if(xpow < xsens && ypow < ysens && Math.sqrt(xpow+ypow) < n.dist){
 					n.dist = Math.sqrt(xpow+ypow);
 					n.x = data[j][0];
 					n.y = data[j][1];
-					n.mouse = series[i].mouse;
+					n.mouse = s.mouse;
 				}
 			}
 		}
