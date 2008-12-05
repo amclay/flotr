@@ -37,7 +37,7 @@ var Canvas2Image = (function() {
 			strData = data;
 		} else {
 			var aData = data;
-			for (var i=0;i<aData.length;i++) {
+			for (var i = 0; i < aData.length; i++) {
 				strData += String.fromCharCode(aData[i]);
 			}
 		}
@@ -66,7 +66,7 @@ var Canvas2Image = (function() {
 		aHeader.push(0); // reserved
 		aHeader.push(0);
 
-		aHeader.push(54); // dataoffset
+		aHeader.push(54); // data offset
 		aHeader.push(0);
 		aHeader.push(0);
 		aHeader.push(0);
@@ -106,7 +106,7 @@ var Canvas2Image = (function() {
 		aInfoHeader.push(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
 		aInfoHeader.push(iDataSize % 256); 
 	
-		for (var i=0;i<16;i++) {
+		for (var i = 0; i < 16; i++) {
 			aInfoHeader.push(0);	// these bytes not used
 		}
 	
@@ -132,11 +132,8 @@ var Canvas2Image = (function() {
 			strPixelData += strPixelRow;
 		} while (--y);
 
-		var strEncoded = encodeData(aHeader.concat(aInfoHeader)) + encodeData(strPixelData);
-
-		return strEncoded;
+		return encodeData(aHeader.concat(aInfoHeader)) + encodeData(strPixelData);
 	}
-
 
 	// sends the generated file to the client
 	var saveFile = function(strData) {
@@ -173,7 +170,6 @@ var Canvas2Image = (function() {
 	}
 
 	return {
-
 		saveAsPNG : function(oCanvas, bReturnImg, iWidth, iHeight) {
 			if (!bHasDataURL) {
 				return false;
@@ -212,7 +208,6 @@ var Canvas2Image = (function() {
 		},
 
 		saveAsBMP : function(oCanvas, bReturnImg, iWidth, iHeight) {
-
 			if (!(bHasImageData && bHasBase64)) {
 				return false;
 			}

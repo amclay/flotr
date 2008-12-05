@@ -19,7 +19,7 @@ var Flotr = {
 	 * @param {String} type - type of chart, like 'pies', 'bars' etc.
 	 * @param {String} functionName - Name of the draw function, like 'drawSeriesPies', 'drawSeriesBars' etc.
 	 */
-	register: function(type, functionName){		
+	register: function(type, functionName){
 		Flotr._registeredTypes[type] = functionName+'';	
 	},
 	/**
@@ -122,8 +122,10 @@ var Flotr = {
 	 * @return {Color} returns a Color object or false
 	 */
 	parseColor: function(str){
+		if (str instanceof Flotr.Color) return str;
+		
 		var result, Color = Flotr.Color;
-	
+
 		// rgb(num,num,num)
 		if((result = /rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(str)))
 			return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]));
@@ -213,7 +215,7 @@ Flotr.Graph = Class.create({
 		this.insertLegend();
     
     // Graph and Data tabs
-    if (this.options.showDataGrid)
+    if (this.options.spreadsheet.show)
       this.constructTabs();
 	},
 	/**
@@ -239,7 +241,8 @@ Flotr.Graph = Class.create({
       },
       xaxis: {
         ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
-        showLabels: true,
+        showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
+        label: null,           // => axis label @todo: add support of axis labels
         noTicks: 5,            // => number of ticks for automagically generated ticks
         tickFormatter: Flotr.defaultTickFormatter, // => fn: number -> string
         tickDecimals: null,    // => no. of decimals, null means auto
@@ -249,7 +252,8 @@ Flotr.Graph = Class.create({
       },
       yaxis: {
         ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
-        showLabels: true,
+        showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
+        label: null,           // => axis label @todo: add support of axis labels
         noTicks: 5,            // => number of ticks for automagically generated ticks
         tickFormatter: Flotr.defaultTickFormatter, // => fn: number -> string
         tickDecimals: null,    // => no. of decimals, null means auto
@@ -325,11 +329,8 @@ Flotr.Graph = Class.create({
       defaultType: 'lines',    // => default series type
       HtmlText: true,          // => wether to draw the text using HTML or on the canvas
       fontSize: 7,             // => canvas' text font size
-      showDataGrid: false,     // => show the data grid using two tabs
-      tabGraphLabel: 'Graph',
-      tabDataLabel: 'Data',    // @todo: add a new section "spreadsheet" or "datagrid"
       spreadsheet: {
-      	show: false,
+      	show: false,           // => show the data grid using two tabs
       	tabGraphLabel: 'Graph',
       	tabDataLabel: 'Data'
       }
@@ -343,8 +344,8 @@ Flotr.Graph = Class.create({
 		    oc = this.options.colors, 
 		    usedColors = [],
 		    variation = 0,
-		    c, i, j, s;
-          
+		    c, i, j, s, tooClose;
+
 		// Collect user-defined colors from series.
 		for(i = neededColors - 1; i > -1; --i){
 			c = this.series[i].color;
@@ -369,8 +370,21 @@ Flotr.Graph = Class.create({
 			c.scale(factor, factor, factor);
 
 			/**
-			 * @todo if we're getting to close to something else, we should probably skip this one
+			 * @todo if we're getting too close to something else, we should probably skip this one
 			 */
+			/*tooClose = false;
+			for(j = 0; j < (colors.length + oc.length); ++j){
+				var d = c.distance(colors.concat(oc)[j]);
+				console.debug(colors.concat(oc)[j]);
+				if (d <= 100) {
+					tooClose = true;
+					break;
+				}
+			}
+			if (!tooClose) {
+				colors.push(c);
+			}*/
+			
 			colors.push(c);
 			
 			if(++i >= oc.length){
@@ -409,8 +423,20 @@ Flotr.Graph = Class.create({
 		var el = this.el,
 			size, c, oc;
 
+		this.canvas = el.select('.flotr-canvas')[0];
+		this.overlay = el.select('.flotr-overlay')[0];
+		
+		var existingCanvas = !!this.canvas;
+		var existingOverlay = !!this.overlay;
+		
+		// If there isn't already a canvas or an overlay, the container is emptied
+		if (!this.canvas || !this.overlay) {
+			el.update('');
+			existingCanvas = existingOverlay = false;
+		}
+		
 		// For positioning labels and overlay.
-		el.update('').setStyle({position:'relative', cursor:'default'});
+		el.setStyle({position:'relative', cursor:'default'});
 
 		this.canvasWidth = el.getWidth();
 		this.canvasHeight = el.getHeight();
@@ -421,21 +447,27 @@ Flotr.Graph = Class.create({
 		}
 
 		// Insert main canvas.
-		c = this.canvas = new Element('canvas', size);
-		c.className = 'flotr-canvas';
-		el.insert(c.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		if (!existingCanvas) {
+			c = this.canvas = new Element('canvas', size);
+			c.className = 'flotr-canvas';
+			el.insert(c.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		}
+		else c = this.canvas.writeAttribute(size);
 		
-		if(Prototype.Browser.IE){
+		if(Prototype.Browser.IE && !existingCanvas){
 			c = $(window.G_vmlCanvasManager.initElement(c));
 		}
 		this.ctx = c.getContext('2d');
     
-		// Insert overlay canvas for interactive features.	
-		oc = this.overlay = new Element('canvas', size);
-		oc.className = 'flotr-overlay';
-		el.insert(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		// Insert overlay canvas for interactive features.
+		if (!existingOverlay) {
+			oc = this.overlay = new Element('canvas', size);
+			oc.className = 'flotr-overlay';
+			el.insert(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		}
+		else oc = this.overlay.writeAttribute(size);
 		
-		if(Prototype.Browser.IE){
+		if(Prototype.Browser.IE && !existingOverlay){
 			oc = window.G_vmlCanvasManager.initElement(oc);
 		}
 		this.octx = oc.getContext('2d');
@@ -504,10 +536,10 @@ Flotr.Graph = Class.create({
     this.el.insert({bottom: tabsContainer});
     this.tabs = {};
     
-    this.tabs.graph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.tabGraphLabel);
+    this.tabs.graph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.spreadsheet.tabGraphLabel);
     tabsContainer.insert(this.tabs.graph);
 
-    this.tabs.data = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.tabDataLabel);
+    this.tabs.data = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.spreadsheet.tabDataLabel);
     tabsContainer.insert(this.tabs.data);
     
     this.el.setStyle({height: this.canvasHeight+this.tabs.data.getHeight()+2+'px'});
@@ -624,7 +656,9 @@ Flotr.Graph = Class.create({
 	 * Initializes event some handlers.
 	 */
 	initEvents: function () {
-		this.overlay.observe('mousedown', this.mouseDownHandler.bind(this));
+  	//@todo: maybe stopObserving with only flotr functions
+  	this.overlay.stopObserving();
+  	this.overlay.observe('mousedown', this.mouseDownHandler.bind(this));
 		this.overlay.observe('mousemove', this.mouseMoveHandler.bind(this));
 		this.overlay.observe('click', this.clickHandler.bind(this));
 	},
@@ -637,7 +671,7 @@ Flotr.Graph = Class.create({
 		var s = this.series;
 		if(s.length > 0){
 			var found = false,
-				i, j, h, x, y, data;
+			    i, j, h, x, y, data;
 			
 			// Get datamin, datamax start values 
 			for(i = 0; i < s.length; ++i){
@@ -714,7 +748,7 @@ Flotr.Graph = Class.create({
 	extendXRangeIfNeededByBar: function(){
 		if(this.options.xaxis.max == null){
 			var newmax = this.xaxis.max,
-				i, b;
+			    i, b;
 			var stackedSums = [];
 			var lastSerie = null;
 
@@ -788,7 +822,7 @@ Flotr.Graph = Class.create({
 		axis.ticks = [];	
 		if(o.ticks){
 			var ticks = o.ticks,
-				i, t, v, label;
+			    i, t, v, label;
 
 			if(Object.isFunction(ticks)){
 				ticks = ticks({min: axis.min, max: axis.max});
@@ -851,7 +885,7 @@ Flotr.Graph = Class.create({
 	      this.labelMaxHeight = this.options.fontSize+2;
 	    }
 	    else {
-	  		var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;font-size:smaller" class="flotr-grid-label">' + maxLabel + '</div>').down(0).next(1);
+	  		var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;font-size:smaller;" class="flotr-grid-label flotr-dummy-div">' + maxLabel + '</div>').select(".flotr-dummy-div")[0];
 	  		this.labelMaxWidth = dummyDiv.getWidth();
 	  		this.labelMaxHeight = dummyDiv.getHeight();
 	  		dummyDiv.remove();
@@ -919,7 +953,7 @@ Flotr.Graph = Class.create({
 	 */
 	drawGrid: function(){
 		var o = this.options,
-			ctx = this.ctx;
+		    ctx = this.ctx;
 		if(o.grid.verticalLines || o.grid.horizontalLines){			
 			this.el.fire('flotr:beforegrid', [this.xaxis, this.yaxis, o, this]);
 		}
@@ -981,6 +1015,7 @@ Flotr.Graph = Class.create({
 		// Construct fixed width label boxes, which can be styled easily. 
 		var noLabels = 0,
 			xBoxWidth, i, html, tick,
+			options = this.options,
       ctx = this.ctx;
 			
 		for(i = 0; i < this.xaxis.ticks.length; ++i){
@@ -990,14 +1025,14 @@ Flotr.Graph = Class.create({
 		}
 		xBoxWidth = this.plotWidth / noLabels;
     
-		if (!this.options.HtmlText && this.textEnabled) {
+		if (!options.HtmlText && this.textEnabled) {
 		  var style = {
-		    size: this.options.fontSize,
-		    color: this.options.grid.color
+		    size: options.fontSize,
+		    color: options.grid.color
 		  };
 
 		  // Add xlabels.
-		  if (this.options.xaxis.showLabels)
+		  if (options.xaxis.showLabels)
 		  for(i = 0; i < this.xaxis.ticks.length; ++i){
 		    tick = this.xaxis.ticks[i];
 		    if(!tick.label || tick.label.length == 0) continue;
@@ -1005,39 +1040,45 @@ Flotr.Graph = Class.create({
 		    ctx.drawTextCenter(
 		      tick.label,
 		      this.plotOffset.left + this.tHoz(tick.v), 
-		      this.plotOffset.top + this.plotHeight + this.labelMaxHeight + this.options.grid.labelMargin,
+		      this.plotOffset.top + this.plotHeight + this.labelMaxHeight + options.grid.labelMargin,
 		      style
 		    );
 		  }
 		  
 		  // Add ylabels.
-		  if (this.options.yaxis.showLabels)
+		  if (options.yaxis.showLabels)
 		  for(i = 0; i < this.yaxis.ticks.length; ++i){
 		    tick = this.yaxis.ticks[i];
 		    if (!tick.label || tick.label.length == 0) continue;
         
 		    ctx.drawTextRight(
 		      tick.label,
-		      this.labelMaxWidth - this.options.grid.labelMargin, 
+		      this.labelMaxWidth - options.grid.labelMargin, 
 		      this.plotOffset.top + this.tVert(tick.v) + this.labelMaxHeight/2,
 		      style
 		    );
 		  }
 		} 
-		else if (this.options.yaxis.showLabels || this.options.yaxis.showLabels) {
-			html = ['<div style="font-size:smaller;color:' + this.options.grid.color + ';" class="flotr-labels">'];
+		else if (options.yaxis.showLabels || options.yaxis.showLabels) {
+			var labels = this.el.select('.flotr-labels')[0];
+			if (labels) {
+				labels.childElements().invoke('remove');
+				labels.remove();
+			}
+			
+			html = ['<div style="font-size:smaller;color:' + options.grid.color + ';" class="flotr-labels">'];
 			
 			// Add xlabels.
-			if (this.options.xaxis.showLabels){
+			if (options.xaxis.showLabels){
 				for(i = 0; i < this.xaxis.ticks.length; ++i){
 					tick = this.xaxis.ticks[i];
 					if(!tick.label || tick.label.length == 0) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + this.options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;" class="flotr-grid-label">' + tick.label + '</div>');
+					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
 			
 			// Add ylabels.
-			if (this.options.yaxis.showLabels){
+			if (options.yaxis.showLabels){
 				for(i = 0; i < this.yaxis.ticks.length; ++i){
 					tick = this.yaxis.ticks[i];
 					if (!tick.label || tick.label.length == 0) continue;
@@ -1071,13 +1112,15 @@ Flotr.Graph = Class.create({
 	
 	plotLine: function(data, offset){
 		var ctx = this.ctx,
-			xa = this.xaxis,
-			ya = this.yaxis;
+		    xa = this.xaxis,
+		    ya = this.yaxis,
+  			tHoz = this.tHoz.bind(this),
+  			tVert = this.tVert.bind(this);
 			
 		if(data.length < 2) return;
 
-		var prevx = this.tHoz(data[0][0]),
-		    prevy = this.tVert(data[0][1]) + offset;
+		var prevx = tHoz(data[0][0]),
+		    prevy = tVert(data[0][1]) + offset;
 
 		ctx.beginPath();
 		ctx.moveTo(prevx, prevy);
@@ -1148,11 +1191,11 @@ Flotr.Graph = Class.create({
 				x2 = xa.max;
 			}
 
-			if(prevx != this.tHoz(x1) || prevy != this.tVert(y1) + offset)
-				ctx.moveTo(this.tHoz(x1), this.tVert(y1) + offset);
+			if(prevx != tHoz(x1) || prevy != tVert(y1) + offset)
+				ctx.moveTo(tHoz(x1), tVert(y1) + offset);
 			
-			prevx = this.tHoz(x2);
-			prevy = this.tVert(y2) + offset;
+			prevx = tHoz(x2);
+			prevy = tVert(y2) + offset;
 			ctx.lineTo(prevx, prevy);
 		}
 		ctx.stroke();
@@ -1168,6 +1211,8 @@ Flotr.Graph = Class.create({
 			ctx = this.ctx,
 			xa = this.xaxis,
 			ya = this.yaxis,
+			tHoz = this.tHoz.bind(this),
+			tVert = this.tVert.bind(this),
 			bottom = Math.min(Math.max(0, ya.min), ya.max),
 			first = true;
 		
@@ -1198,7 +1243,7 @@ Flotr.Graph = Class.create({
 			}
 
 			if(first){
-				ctx.moveTo(this.tHoz(x1), this.tVert(bottom) + offset);
+				ctx.moveTo(tHoz(x1), tVert(bottom) + offset);
 				first = false;
 			}
 			
@@ -1206,12 +1251,12 @@ Flotr.Graph = Class.create({
 			 * Now check the case where both is outside.
 			 */
 			if(y1 >= ya.max && y2 >= ya.max){
-				ctx.lineTo(this.tHoz(x1), this.tVert(ya.max) + offset);
-				ctx.lineTo(this.tHoz(x2), this.tVert(ya.max) + offset);
+				ctx.lineTo(tHoz(x1), tVert(ya.max) + offset);
+				ctx.lineTo(tHoz(x2), tVert(ya.max) + offset);
 				continue;
 			}else if(y1 <= ya.min && y2 <= ya.min){
-				ctx.lineTo(this.tHoz(x1), this.tVert(ya.min) + offset);
-				ctx.lineTo(this.tHoz(x2), this.tVert(ya.min) + offset);
+				ctx.lineTo(tHoz(x1), tVert(ya.min) + offset);
+				ctx.lineTo(tHoz(x2), tVert(ya.min) + offset);
 				continue;
 			}
 			
@@ -1250,29 +1295,29 @@ Flotr.Graph = Class.create({
 			 */
 			if(x1 != x1old){
 				top = (y1 <= ya.min) ? top = ya.min : ya.max;
-				ctx.lineTo(this.tHoz(x1old), this.tVert(top) + offset);
-				ctx.lineTo(this.tHoz(x1), this.tVert(top) + offset);
+				ctx.lineTo(tHoz(x1old), tVert(top) + offset);
+				ctx.lineTo(tHoz(x1), tVert(top) + offset);
 			}
 		   	
 			/**
 			 * Fill the triangles.
 			 */
-			ctx.lineTo(this.tHoz(x1), this.tVert(y1) + offset);
-			ctx.lineTo(this.tHoz(x2), this.tVert(y2) + offset);
+			ctx.lineTo(tHoz(x1), tVert(y1) + offset);
+			ctx.lineTo(tHoz(x2), tVert(y2) + offset);
 
 			/**
 			 * Fill the other rectangle if it's there.
 			 */
 			if(x2 != x2old){
 				top = (y2 <= ya.min) ? ya.min : ya.max;
-				ctx.lineTo(this.tHoz(x2old), this.tVert(top) + offset);
-				ctx.lineTo(this.tHoz(x2), this.tVert(top) + offset);
+				ctx.lineTo(tHoz(x2old), tVert(top) + offset);
+				ctx.lineTo(tHoz(x2), tVert(top) + offset);
 			}
 
 			lastX = Math.max(x2, x2old);
 		}
 		
-		ctx.lineTo(this.tHoz(lastX), this.tVert(bottom) + offset);
+		ctx.lineTo(tHoz(lastX), tVert(bottom) + offset);
 		ctx.closePath();
 		ctx.fill();
 	},
@@ -1367,10 +1412,10 @@ Flotr.Graph = Class.create({
 	},
 	plotPoints: function (data, radius, fill) {
 		var xaxis = this.xaxis,
-			yaxis = this.yaxis,
-			ctx = this.ctx;
+		    yaxis = this.yaxis,
+		    ctx = this.ctx, i;
 			
-		for(var i = data.length - 1; i > -1; --i){
+		for(i = data.length - 1; i > -1; --i){
 			var x = data[i][0], y = data[i][1];
 			if(x < xaxis.min || x > xaxis.max || y < yaxis.min || y > yaxis.max)
 				continue;
@@ -1383,8 +1428,8 @@ Flotr.Graph = Class.create({
 	},
 	plotPointShadows: function(data, offset, radius){
 		var xaxis = this.xaxis,
-			yaxis = this.yaxis,
-			ctx = this.ctx, i;
+		    yaxis = this.yaxis,
+		    ctx = this.ctx, i;
 			
 		for(i = data.length - 1; i > -1; --i){
 			var x = data[i][0], y = data[i][1];
@@ -1658,7 +1703,7 @@ Flotr.Graph = Class.create({
       var xOffset = center.x + Math.cos(bisection) * slice.explode;
       var yOffset = center.y + Math.sin(bisection) * slice.explode;
       
-		this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
+      this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
       
       if(series.pie.fill){
         ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.pie.fillOpacity).toString();
@@ -1704,9 +1749,9 @@ Flotr.Graph = Class.create({
       if(series.pie.fill){
         ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.pie.fillOpacity).toString();
         ctx.fill();
-      }*/
+      }
       
-      ctx.restore();
+      ctx.restore();*/
       
       var label = options.pie.labelFormatter(slice);
       
@@ -2314,10 +2359,12 @@ Flotr.Graph = Class.create({
 		}
 		
 		if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
-			var el = this.mouseTrack;
-			var elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
-			var pos = '', p = options.mouse.position, m = options.mouse.margin;
-			
+			var mt = this.mouseTrack || this.el.select(".flotr-mouse-value")[0],
+			    pos = '', 
+			    p = options.mouse.position, 
+			    m = options.mouse.margin,
+			    elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
+
 			if (!options.mouse.relative) { // absolute to the canvas
 						 if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
@@ -2333,16 +2380,16 @@ Flotr.Graph = Class.create({
 			
 			elStyle += pos;
 				     
-			if(!el){
+			if(!mt){
 				this.el.insert('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
-				el = this.mouseTrack = this.el.select('.flotr-mouse-value').first();
+				mt = this.mouseTrack = this.el.select('.flotr-mouse-value').first();
 			}
 			else {
-				el.setStyle(elStyle);
+				this.mouseTrack = mt.setStyle(elStyle);
 			}
 			
 			if(n.x !== null && n.y !== null){
-				el.show();
+				mt.show();
 				
 				this.clearHit();
 				if(n.mouse.lineColor != null){
@@ -2362,11 +2409,11 @@ Flotr.Graph = Class.create({
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;
 				
-				el.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
-				this.el.fire('flotr:hit', [n, this]);
+				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
+				this.mt.fire('flotr:hit', [n, this]);
 			}
 			else if(prevHit){
-				el.hide();
+				mt.hide();
 				this.clearHit();
 			}
 		}
@@ -2374,14 +2421,11 @@ Flotr.Graph = Class.create({
 	saveImage: function (type, width, height, replaceCanvas) {
 		var image = null;
 	  switch (type) {
-	    case 'jpg':
-      case 'jpeg':
-        image = Canvas2Image.saveAsJPEG(this.canvas, replaceCanvas, width, height); break;
+	  	case 'jpeg':
+	    case 'jpg': image = Canvas2Image.saveAsJPEG(this.canvas, replaceCanvas, width, height); break;
       default:
-      case 'png':
-        image = Canvas2Image.saveAsPNG(this.canvas, replaceCanvas, width, height); break;
-      case 'bmp':
-        image = Canvas2Image.saveAsBMP(this.canvas, replaceCanvas, width, height); break;
+      case 'png': image = Canvas2Image.saveAsPNG(this.canvas, replaceCanvas, width, height); break;
+      case 'bmp': image = Canvas2Image.saveAsBMP(this.canvas, replaceCanvas, width, height); break;
 	  }
 	  if (Object.isElement(image) && replaceCanvas) {
 	    this.restoreCanvas();
@@ -2433,13 +2477,24 @@ Flotr.Color = Class.create({
 		return this;
 	},
 	
-	scale: function(rf, gf, bf, af) {
+	scale: function(rf, gf, bf, af){
 		var x = 4;
 		while(-1<--x){
 			if(arguments[x] != null)
 				this[this.rgba[x]] *= arguments[x];
 		}
 		return this.normalize();
+	},
+	
+	distance: function(color){
+		if (!color) return;
+		color = new Flotr.parseColor(color);
+	  var dist = 0;
+		var x = 3;
+		while(-1<--x){
+			dist += Math.abs(this[this.rgba[x]] - color[this.rgba[x]]);
+		}
+		return dist;
 	},
 	
 	toString: function(){
@@ -2491,4 +2546,63 @@ Flotr.Color.lookupColors = {
 	silver:[192,192,192],
 	white:[255,255,255],
 	yellow:[255,255,0]
+};
+
+// not used yet
+Flotr.Date = {
+  format: function(d, format) {
+		if (!d) return;
+
+    var leftPad = function(n) {
+      n = n.toString();
+      return n.length == 1 ? "0" + n : n;
+    };
+    
+    var r = [];
+    var escape = false;
+    
+    for (var i = 0; i < format.length; ++i) {
+      var c = format.charAt(i);
+      
+      if (escape) {
+        switch (c) {
+	        case 'h': c = d.getUTCHours().toString(); break;
+	        case 'H': c = leftPad(d.getUTCHours()); break;
+	        case 'M': c = leftPad(d.getUTCMinutes()); break;
+	        case 'S': c = leftPad(d.getUTCSeconds()); break;
+	        case 'd': c = d.getUTCDate().toString(); break;
+	        case 'm': c = (d.getUTCMonth() + 1).toString(); break;
+	        case 'y': c = d.getUTCFullYear().toString(); break;
+	        case 'b': c = Flotr.Date.monthNames[d.getUTCMonth()]; break;
+        }
+        r.push(c);
+        escape = false;
+      }
+      else {
+        if (c == "%")
+          escape = true;
+        else
+          r.push(c);
+      }
+    }
+    return r.join("");
+  },
+  timeUnits: {
+    "second": 1000,
+    "minute": 60 * 1000,
+    "hour": 60 * 60 * 1000,
+    "day": 24 * 60 * 60 * 1000,
+    "month": 30 * 24 * 60 * 60 * 1000,
+    "year": 365.2425 * 24 * 60 * 60 * 1000
+  },
+  // the allowed tick sizes, after 1 year we use an integer algorithm
+  spec: {
+    "second": [1, 2, 5, 10, 30],
+    "minute": [1, 2, 5, 10, 30], 
+    "hour": [1, 2, 4, 8, 12],
+    "day": [1, 2, 3],
+    "month": [0.25, 0.5, 1, 2, 3, 6],
+    "year": [1]
+  },
+  monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };

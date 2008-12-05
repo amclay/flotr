@@ -72,7 +72,7 @@ var CanvasText = CanvasText || {
     '[': { width: 14, points: [[4,25],[4,-7],null,[5,25],[5,-7],null,[4,25],[11,25],null,[4,-7],[11,-7]] },
     '\\':{ width: 14, points: [[0,21],[14,-3]] },
     ']': { width: 14, points: [[9,25],[9,-7],null,[10,25],[10,-7],null,[3,25],[10,25],null,[3,-7],[10,-7]] },
-    '^': { width: 16, points: [[3,12],[8,18],[13,12]] },
+    '^': { width: 14, points: [[3,10],[8,18],[13,10]] },
     '_': { width: 16, points: [[0,-2],[16,-2]] },
     '`': { width: 10, points: [[6,21],[5,20],[4,18],[4,16],[5,15],[6,16],[5,17]] },
     'a': { width: 19, points: [[15,14],[15,0],null,[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
@@ -123,7 +123,7 @@ var CanvasText = CanvasText || {
     'Ô': { diacritic: '^', letter: 'O' }
   },
   
-  /** Diacriticts, used to draw accuentuated letters */
+  /** Diacritics, used to draw accentuated letters */
   diacritics: {
     '¸': { points: [[6,-4],[4,-6],[2,-7],[1,-7]] },
     '´': { points: [[8,19],[13,22]] },
@@ -139,33 +139,33 @@ var CanvasText = CanvasText || {
     font: null, // not yet implemented
     color: '#000000',
     weight: 1, // 1 for 'normal'
-    angle: 0 // degres
+    angle: 0 // degrees
   },
   
-  /** Get the letter data correponding to a char
-   * @param {ch} The char
+  /** Get the letter data corresponding to a char
+   * @param {String} ch - The char
    */
   letter: function(ch) {
     return CanvasText.letters[ch];
   },
   
   /** Get the font ascent for a given style
-   * @param {style} The reference style
+   * @param {Object} style - The reference style
    */
   ascent: function(style) {
     return (style.size || CanvasText.style.size);
   },
   
   /** Get the font descent for a given style 
-   * @param {style} The reference style
+   * @param {Object} style - The reference style
    * */
   descent: function(style) {
     return 7.0*(style.size || CanvasText.style.size)/25.0;
   },
   
   /** Measure the text horizontal size 
-   * @param {str} The text
-   * @param {style} Text style
+   * @param {String} str - The text
+   * @param {Object} style - Text style
    * */
   measure: function(str, style) {
     if (!str) return;
@@ -183,11 +183,11 @@ var CanvasText = CanvasText || {
   },
   
   /** Draws serie of points at given coordinates 
-   * @param {ctx} The canvas context
-   * @param {points} The points to draw
-   * @param {x} The X coordinate
-   * @param {y} The Y coordinate
-   * @param {mag} The scale 
+   * @param {Canvas context} ctx - The canvas context
+   * @param {Array} points - The points to draw
+   * @param {Number} x - The X coordinate
+   * @param {Number} y - The Y coordinate
+   * @param {Number} mag - The scale 
    */
   drawPoints: function (ctx, points, x, y, mag) {
     ctx.beginPath();
@@ -212,11 +212,11 @@ var CanvasText = CanvasText || {
   },
   
   /** Draws a text at given coordinates and with a given style
-   * @param {ctx} The canvas context
-   * @param {str} The text to draw
-   * @param {xOrig} The X coordinate
-   * @param {yOrig} The Y coordinate
-   * @param {style} The font style
+   * @param {Canvas context} ctx - The canvas context
+   * @param {String} str - The text to draw
+   * @param {Number} xOrig - The X coordinate
+   * @param {Number} yOrig - The Y coordinate
+   * @param {Object} style - The font style
    */
   draw: function(ctx, str, xOrig, yOrig, style) {
     if (!str) return;
@@ -260,7 +260,7 @@ var CanvasText = CanvasText || {
   },
   
   /** Enables the text function for a Canvas context
-   * @param {ctx} The canvas context
+   * @param {Canvas context} ctx - The canvas context
    */
   enable: function(ctx) {
     ctx.drawText    = function(text, x, y, style) { return CanvasText.draw(ctx, text, x, y, style); };
