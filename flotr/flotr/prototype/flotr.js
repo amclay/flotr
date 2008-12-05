@@ -626,16 +626,16 @@ Flotr.Graph = Class.create({
     else return false;
   },
   downloadCSV: function() {
-    var i, csv = '"x"';
-    var series = this.series;
-    var dg = this.loadDataGrid();
+    var i, csv = '"x"',
+        series = this.series,
+        dg = this.loadDataGrid();
     
     for (i = 0; i < series.length; ++i) {
       csv += '%09"'+(series[i].label || String.fromCharCode(65+i))+'"'; // \t
     }
     csv += "%0D%0A"; // \r\n
     
-    for (i = 0, label; i < dg.length; ++i) {
+    for (i = 0; i < dg.length; ++i) {
       if (this.options.xaxis.ticks) {
         var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == dg[i][0] });
         if (tick) dg[i][0] = tick[1];
