@@ -1901,10 +1901,7 @@ Flotr.Graph = Class.create({
 	    	  legends.remove();
 	    	}
 	    	var legendsBg = this.el.select('.flotr-legend-bg')[0];
-	    	if (legendsBg) {
-	    	  legendsBg.childElements().invoke('remove');
-	    	  legendsBg.remove();
-	    	}
+	    	if (legendsBg) legendsBg.remove();
 	    	
 	  		for(i = 0; i < series.length; ++i){
 	  			if(!series[i].label || series[i].hide) continue;
