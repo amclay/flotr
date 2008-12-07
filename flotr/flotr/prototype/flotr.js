@@ -2410,7 +2410,7 @@ Flotr.Graph = Class.create({
 				if(decimals == null || decimals < 0) decimals = 0;
 				
 				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
-				this.mt.fire('flotr:hit', [n, this]);
+				mt.fire('flotr:hit', [n, this]);
 			}
 			else if(prevHit){
 				mt.hide();
