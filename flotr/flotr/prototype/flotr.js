@@ -332,7 +332,9 @@ Flotr.Graph = Class.create({
       spreadsheet: {
       	show: false,           // => show the data grid using two tabs
       	tabGraphLabel: 'Graph',
-      	tabDataLabel: 'Data'
+      	tabDataLabel: 'Data',
+      	toolbarDownload: 'Download CSV', // @todo: add language support
+      	toolbarSelectAll: 'Select all'
       }
     });
 				
@@ -372,19 +374,6 @@ Flotr.Graph = Class.create({
 			/**
 			 * @todo if we're getting too close to something else, we should probably skip this one
 			 */
-			/*tooClose = false;
-			for(j = 0; j < (colors.length + oc.length); ++j){
-				var d = c.distance(colors.concat(oc)[j]);
-				console.debug(colors.concat(oc)[j]);
-				if (d <= 100) {
-					tooClose = true;
-					break;
-				}
-			}
-			if (!tooClose) {
-				colors.push(c);
-			}*/
-			
 			colors.push(c);
 			
 			if(++i >= oc.length){
@@ -479,7 +468,7 @@ Flotr.Graph = Class.create({
 		  this.textEnabled = true;
 		}
 	},
-	loadDataGrid: function() {
+	loadDataGrid: function(){
     if (this.seriesData) return this.seriesData;
 
 		var s = this.series;
@@ -510,15 +499,17 @@ Flotr.Graph = Class.create({
 		});
 		return this.seriesData = dg;
 	},
-  showTab: function(tabName, onComplete) {
+	
+	// @todo: make a tab manager (Flotr.Tabs)
+  showTab: function(tabName, onComplete){
     switch(tabName) {
       case 'graph':
         this.datagrid.up().hide();
         this.canvas.show();
         this.overlay.show();
         this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('show');
-        this.tabs.graph.addClassName('selected');
         this.tabs.data.removeClassName('selected');
+        this.tabs.graph.addClassName('selected');
       break;
       case 'data':
         this.constructDataGrid();
@@ -531,23 +522,24 @@ Flotr.Graph = Class.create({
       break;
     }
   },
-  constructTabs: function () {
+  constructTabs: function(){
     var tabsContainer = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
     this.el.insert({bottom: tabsContainer});
-    this.tabs = {};
+    this.tabs = {
+    	graph: new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.spreadsheet.tabGraphLabel),
+    	data: new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.spreadsheet.tabDataLabel)
+    }
     
-    this.tabs.graph = new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.spreadsheet.tabGraphLabel);
-    tabsContainer.insert(this.tabs.graph);
-
-    this.tabs.data = new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.spreadsheet.tabDataLabel);
-    tabsContainer.insert(this.tabs.data);
+    tabsContainer.insert(this.tabs.graph).insert(this.tabs.data);
     
     this.el.setStyle({height: this.canvasHeight+this.tabs.data.getHeight()+2+'px'});
 
     this.tabs.graph.observe('click', (function() {this.showTab('graph')}).bind(this));
     this.tabs.data.observe('click', (function() {this.showTab('data')}).bind(this));
   },
-	constructDataGrid: function () {
+  
+  // @todo: make a spreadsheet manager (Flotr.Spreadsheet)
+	constructDataGrid: function(){
     // If the data grid has already been built, nothing to do here
     if (this.datagrid) return this.datagrid;
     
@@ -591,14 +583,19 @@ Flotr.Graph = Class.create({
 			html.push('</tr>');
 		}
     t.update(html.join(''));
+    
+		var toolbar = new Element('div', {className: 'flotr-datagrid-toolbar'}).
+	    insert(new Element('button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
+	    insert(new Element('button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.selectAllData.bind(this)));
 		
 		var container = new Element('div', {className:'flotr-datagrid-container', style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'});
+		container.insert(toolbar);
 		t.wrap(container.hide());
 		
 		this.el.insert(container);
     return t;
   },
-  selectAllData: function () {
+  selectAllData: function(){
     if (this.tabs) {
       var selection, range, doc, win, node = this.constructDataGrid();
   
@@ -625,7 +622,7 @@ Flotr.Graph = Class.create({
     }
     else return false;
   },
-  downloadCSV: function() {
+  downloadCSV: function(){
     var i, csv = '"x"',
         series = this.series,
         dg = this.loadDataGrid();
@@ -2604,13 +2601,13 @@ Flotr.Date = {
     "year": 365.2425 * 24 * 60 * 60 * 1000
   },
   // the allowed tick sizes, after 1 year we use an integer algorithm
-  spec: {
-    "second": [1, 2, 5, 10, 30],
-    "minute": [1, 2, 5, 10, 30], 
-    "hour": [1, 2, 4, 8, 12],
-    "day": [1, 2, 3],
-    "month": [0.25, 0.5, 1, 2, 3, 6],
-    "year": [1]
-  },
+  spec: [
+    [1, "second"], [2, "second"], [5, "second"], [10, "second"], [30, "second"], 
+    [1, "minute"], [2, "minute"], [5, "minute"], [10, "minute"], [30, "minute"], 
+    [1, "hour"], [2, "hour"], [4, "hour"], [8, "hour"], [12, "hour"],
+    [1, "day"], [2, "day"], [3, "day"],
+    [0.25, "month"], [0.5, "month"], [1, "month"], [2, "month"], [3, "month"], [6, "month"],
+    [1, "year"]
+  ],
   monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };
