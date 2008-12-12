@@ -199,7 +199,7 @@ Flotr.Graph = Class.create({
 		this.selectionInterval = null;
 		this.ignoreClick = false;   
 		this.prevHit = null;
-		
+    
 		// Create and prepare canvas.
 		this.constructCanvas();
 		
@@ -215,7 +215,7 @@ Flotr.Graph = Class.create({
 		this.insertLegend();
     
     // Graph and Data tabs
-    if (this.options.spreadsheet.show)
+    if (this.options.spreadsheet.show) 
       this.constructTabs();
 	},
 	/**
@@ -411,19 +411,9 @@ Flotr.Graph = Class.create({
 	constructCanvas: function(){
 		var el = this.el,
 			size, c, oc;
+      
+		el.childElements().invoke('remove');
 
-		this.canvas = el.select('.flotr-canvas')[0];
-		this.overlay = el.select('.flotr-overlay')[0];
-		
-		var existingCanvas = !!this.canvas;
-		var existingOverlay = !!this.overlay;
-		
-		// If there isn't already a canvas or an overlay, the container is emptied
-		if (!this.canvas || !this.overlay) {
-			el.update('');
-			existingCanvas = existingOverlay = false;
-		}
-		
 		// For positioning labels and overlay.
 		el.setStyle({position:'relative', cursor:'default'});
 
@@ -436,27 +426,21 @@ Flotr.Graph = Class.create({
 		}
 
 		// Insert main canvas.
-		if (!existingCanvas) {
-			c = this.canvas = new Element('canvas', size);
-			c.className = 'flotr-canvas';
-			el.insert(c.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
-		}
-		else c = this.canvas.writeAttribute(size);
+		c = this.canvas = new Element('canvas', size);
+		c.className = 'flotr-canvas';
+		el.insert(c.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
 		
-		if(Prototype.Browser.IE && !existingCanvas){
+		if(Prototype.Browser.IE){
 			c = $(window.G_vmlCanvasManager.initElement(c));
 		}
 		this.ctx = c.getContext('2d');
     
 		// Insert overlay canvas for interactive features.
-		if (!existingOverlay) {
-			oc = this.overlay = new Element('canvas', size);
-			oc.className = 'flotr-overlay';
-			el.insert(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
-		}
-		else oc = this.overlay.writeAttribute(size);
+		oc = this.overlay = new Element('canvas', size);
+		oc.className = 'flotr-overlay';
+		el.insert(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
 		
-		if(Prototype.Browser.IE && !existingOverlay){
+		if(Prototype.Browser.IE){
 			oc = window.G_vmlCanvasManager.initElement(oc);
 		}
 		this.octx = oc.getContext('2d');
@@ -918,8 +902,8 @@ Flotr.Graph = Class.create({
 	 */
 	draw: function() {
 		this.drawGrid();
-		
 		this.drawLabels();
+    
 		if(this.series.length){
 			this.el.fire('flotr:beforedraw', [this.series, this]);
 			for(var i = 0; i < this.series.length; i++){
@@ -1057,12 +1041,6 @@ Flotr.Graph = Class.create({
 		  }
 		} 
 		else if (options.yaxis.showLabels || options.yaxis.showLabels) {
-			var labels = this.el.select('.flotr-labels')[0];
-			if (labels) {
-				labels.childElements().invoke('remove');
-				labels.remove();
-			}
-			
 			html = ['<div style="font-size:smaller;color:' + options.grid.color + ';" class="flotr-labels">'];
 			
 			// Add xlabels.
@@ -1892,14 +1870,6 @@ Flotr.Graph = Class.create({
 	      }
 	    }
 	    else {
-	    	var legends = this.el.select('.flotr-legend')[0];
-	    	if (legends) {
-	    	  legends.childElements().invoke('remove');
-	    	  legends.remove();
-	    	}
-	    	var legendsBg = this.el.select('.flotr-legend-bg')[0];
-	    	if (legendsBg) legendsBg.remove();
-	    	
 	  		for(i = 0; i < series.length; ++i){
 	  			if(!series[i].label || series[i].hide) continue;
 	  			
