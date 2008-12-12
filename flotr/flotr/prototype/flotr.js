@@ -585,8 +585,8 @@ Flotr.Graph = Class.create({
     t.update(html.join(''));
     
 		var toolbar = new Element('div', {className: 'flotr-datagrid-toolbar'}).
-	    insert(new Element('button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
-	    insert(new Element('button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.selectAllData.bind(this)));
+	    insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
+	    insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.selectAllData.bind(this)));
 		
 		var container = new Element('div', {className:'flotr-datagrid-container', style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'});
 		container.insert(toolbar);
