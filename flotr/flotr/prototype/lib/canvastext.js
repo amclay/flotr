@@ -4,7 +4,7 @@
  * It as been modified by Fabien Ménager to handle font style like size, weight, color and rotation. 
  * A partial support for accentuated letters as been added too.
  */
-var CanvasText = CanvasText || {
+var CanvasText = {
 	/** The letters definition. It is a list of letters, 
 	 * with their width, and the coordinates of points compositing them.
 	 * The syntax for the points is : [x, y], null value means "pen up"
@@ -125,7 +125,7 @@ var CanvasText = CanvasText || {
   },
   
   specialchars: {
-  	'pi': { width: 19, points: [[6,14],[6,0],null,[14,14],[14,0],null,[2,13],[6,16],[13,13],[17,16]] },
+  	'pi': { width: 19, points: [[6,14],[6,0],null,[14,14],[14,0],null,[2,13],[6,16],[13,13],[17,16]] }
   },
   
   /** Diacritics, used to draw accentuated letters */
@@ -183,6 +183,7 @@ var CanvasText = CanvasText || {
    * @param {Object} style - The reference style
    */
   ascent: function(style) {
+  	style = style || {};
     return (style.size || CanvasText.style.size);
   },
   
@@ -190,6 +191,7 @@ var CanvasText = CanvasText || {
    * @param {Object} style - The reference style
    * */
   descent: function(style) {
+  	style = style || {};
     return 7.0*(style.size || CanvasText.style.size)/25.0;
   },
   
@@ -199,6 +201,8 @@ var CanvasText = CanvasText || {
    * */
   measure: function(str, style) {
     if (!str) return;
+    style = style || {};
+    
     var i, width, lexemes = CanvasText.parseLexemes(str),
         total = 0;
 
@@ -247,6 +251,8 @@ var CanvasText = CanvasText || {
    */
   draw: function(ctx, str, xOrig, yOrig, style) {
     if (!str) return;
+    style = style || {};
+    
     var i, c, total = 0,
         mag = (style.size || CanvasText.style.size) / 25.0,
         x = 0, y = 0,
