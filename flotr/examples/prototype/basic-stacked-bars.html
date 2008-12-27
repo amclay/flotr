@@ -70,21 +70,23 @@ var f = Flotr.draw(
 				/**
 				 * Fill series.
 				 */
-				var d1 = [[0,6.05],[1,2.2],[2,8],[3,2.8],[4,8]];
-				var d2 = [[0,1.7],[1,7.1],[2,4],[3,3.05],[4,4.08]];
-				var d3 = [[0,4.3],[1,6],[2,1],[3,7.5],[4,1]];
+				var d1 = [], d2 = [], d3 = [];
+				for (i = 0; i < 10; i++) {
+				  d1[i] = [i, Math.random()];
+				  d2[i] = [i, Math.random()];
+				  d3[i] = [i, Math.random()];
+				}
 			
 				/**
 				 * Draw the graph.
 				 */
 			    var f = Flotr.draw(
 					$('container'), [
-						{data:d1, label:'Canvas'},
-						{data:d2, label:'Flash'},
-						{data:d3, label:'SVG'}
+						{data:d1, label:'Serie 1'},
+						{data:d2, label:'Serie 2'},
+						{data:d3, label:'Serie 3'}
 					],{
 						legend:{
-							position: 'se', // => position the legend 'south-east'.
 							backgroundColor: '#D2E8FF' // => a light blue background color.
 						},
 						bars: {
@@ -95,7 +97,8 @@ var f = Flotr.draw(
 						},
 						grid: {
 						  verticalLines: false
-						}
+						},
+						spreadsheet:{show: true}
 					}
 				);
 			});			

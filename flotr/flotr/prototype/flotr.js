@@ -10,6 +10,7 @@ var Flotr = {
 		'lines': 'drawSeriesLines',
 		'points': 'drawSeriesPoints',
 		'bars': 'drawSeriesBars',
+		'candles': 'drawSeriesCandles',
 		'pie': 'drawSeriesPie'
 	},
 	/**
@@ -114,7 +115,7 @@ var Flotr = {
 		return Math.pow(10, Math.floor(Math.log(x) / Math.LN10));
 	},
 	toPixel: function(val){
-		return Math.round(val)-0.5;//((val-Math.round(val) < 0.4) ? (Math.floor(val)-0.5) : val);
+		return Math.floor(val)+0.5;//((val-Math.round(val) < 0.4) ? (Math.floor(val)-0.5) : val);
 	},
 	/**
 	 * Parses a color string and returns a corresponding Color.
@@ -286,6 +287,16 @@ Flotr.Graph = Class.create({
         horizontal: false,
         stacked: false
       },
+      candles: {
+        show: false,           // => setting to true will show candle sticks, false will hide
+        lineWidth: 1,          // => in pixels
+        wickLineWidth: 1,      // => in pixels
+        candleWidth: 0.6,      // => in units of the x axis
+        fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
+        upFillColor: '#00A8F0',// => up sticks fill color
+        downFillColor: '#CB4B4B',// => down sticks fill color
+        fillOpacity: 0.5       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+      },
       pie: {
         show: false,           // => setting to true will show bars, false will hide
         lineWidth: 1,          // => in pixels
@@ -397,6 +408,7 @@ Flotr.Graph = Class.create({
 			s.lines  = Object.extend(Object.clone(this.options.lines), s.lines);
 			s.points = Object.extend(Object.clone(this.options.points), s.points);
 			s.bars   = Object.extend(Object.clone(this.options.bars), s.bars);
+			s.candles= Object.extend(Object.clone(this.options.candles), s.candles);
 			s.pie    = Object.extend(Object.clone(this.options.pie), s.pie);
 			s.mouse  = Object.extend(Object.clone(this.options.mouse), s.mouse);
 			
@@ -411,7 +423,10 @@ Flotr.Graph = Class.create({
 	constructCanvas: function(){
 		var el = this.el,
 			size, c, oc;
-      
+		
+  	this.canvas = el.select('.flotr-canvas')[0];
+		this.overlay = el.select('.flotr-overlay')[0];
+		
 		el.childElements().invoke('remove');
 
 		// For positioning labels and overlay.
@@ -426,9 +441,14 @@ Flotr.Graph = Class.create({
 		}
 
 		// Insert main canvas.
-		c = this.canvas = new Element('canvas', size);
-		c.className = 'flotr-canvas';
-		el.insert(c.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		if (!this.canvas) {
+			c = this.canvas = new Element('canvas', size);
+			c.className = 'flotr-canvas';
+			c = c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+		} else {
+			c = this.canvas.writeAttribute(size);
+		}
+		el.insert(c);
 		
 		if(Prototype.Browser.IE){
 			c = $(window.G_vmlCanvasManager.initElement(c));
@@ -436,9 +456,14 @@ Flotr.Graph = Class.create({
 		this.ctx = c.getContext('2d');
     
 		// Insert overlay canvas for interactive features.
-		oc = this.overlay = new Element('canvas', size);
-		oc.className = 'flotr-overlay';
-		el.insert(oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;'));
+		if (!this.overlay) {
+			oc = this.overlay = new Element('canvas', size);
+			oc.className = 'flotr-overlay';
+			oc = oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+		} else {
+			oc = this.overlay.writeAttribute(size);
+		}
+		el.insert(oc);
 		
 		if(Prototype.Browser.IE){
 			oc = window.G_vmlCanvasManager.initElement(oc);
@@ -652,7 +677,7 @@ Flotr.Graph = Class.create({
 		var s = this.series;
 		if(s.length > 0){
 			var found = false,
-			    i, j, h, x, y, data;
+			    i, j, k, h, x, y, data;
 			
 			// Get datamin, datamax start values 
 			for(i = 0; i < s.length; ++i){
@@ -672,11 +697,14 @@ Flotr.Graph = Class.create({
 				data = s[j].data;
 				for(h = data.length - 1; h > -1; --h){
 					x = data[h][0];
-					y = data[h][1];
-					     if(x < this.xaxis.datamin) this.xaxis.datamin = x;
-					else if(x > this.xaxis.datamax) this.xaxis.datamax = x;
-					     if(y < this.yaxis.datamin) this.yaxis.datamin = y;
-					else if(y > this.yaxis.datamax) this.yaxis.datamax = y;
+			         if(x < this.xaxis.datamin) this.xaxis.datamin = x;
+ 					else if(x > this.xaxis.datamax) this.xaxis.datamax = x;
+			         
+					for(k = 1; k < data[h].length; k++){
+						y = data[h][k];
+				         if(y < this.yaxis.datamin) this.yaxis.datamin = y;
+	  				else if(y > this.yaxis.datamax) this.yaxis.datamax = y;
+					}
 				}
 			}
 		}
@@ -729,14 +757,15 @@ Flotr.Graph = Class.create({
 	extendXRangeIfNeededByBar: function(){
 		if(this.options.xaxis.max == null){
 			var newmax = this.xaxis.max,
-			    i, b;
+			    i, b, c;
 			var stackedSums = [];
 			var lastSerie = null;
 
 			for(i = 0; i < this.series.length; ++i){
 				b = this.series[i].bars;
-				if(b.show) {
-					if (!b.horizontal && b.barWidth + this.xaxis.datamax > newmax){
+				c = this.series[i].candles;
+				if(b.show || c.show) {
+					if (!b.horizontal && (b.barWidth + this.xaxis.datamax > newmax) || (c.candleWidth + this.xaxis.datamax > newmax)){
 						newmax = this.xaxis.max + this.series[i].bars.barWidth;
 					}
 					if(b.stacked && b.horizontal){
@@ -764,15 +793,16 @@ Flotr.Graph = Class.create({
 	extendYRangeIfNeededByBar: function(){
 		if(this.options.yaxis.max == null){
 			var newmax = this.yaxis.max,
-				i, b;
+				i, b, c;
         
 			var stackedSums = [];
 			var lastSerie = null;
 									
 			for(i = 0; i < this.series.length; ++i){
 				b = this.series[i].bars;
+				c = this.series[i].candles;
 				if (b.show && !this.series[i].hide) {
-					if (b.horizontal && b.barWidth + this.yaxis.datamax > newmax){
+					if (b.horizontal && (b.barWidth + this.yaxis.datamax > newmax) || (c.candleWidth + this.yaxis.datamax > newmax)){
 						newmax = this.yaxis.max + b.barWidth;
 					}
 					if(b.stacked && !b.horizontal){
@@ -1581,6 +1611,125 @@ Flotr.Graph = Class.create({
 
       ctx.fillStyle = 'rgba(0,0,0,0.05)';
       ctx.fillRect(Math.min(tHoz(left)+sw, this.plotWidth), Math.min(tVert(top)+sw, this.plotWidth), width, height);
+    }
+  },
+	/**
+	 * Function: drawSeriesCandles
+	 * 
+	 * Function draws candles series in the canvas element.
+	 * 
+	 * Parameters:
+	 * 		series - Series with options.candles.show = true.
+	 * 
+	 * Returns:
+	 * 		void
+	 */
+	drawSeriesCandles: function(series) {
+		var ctx = this.ctx,
+			  bw = series.candles.candleWidth;
+		
+		ctx.save();
+		ctx.translate(this.plotOffset.left, this.plotOffset.top);
+		ctx.lineJoin = 'miter';
+
+		/**
+		 * @todo linewidth not interpreted the right way.
+		 */
+		ctx.lineWidth = series.candles.lineWidth;
+		this.plotCandlesShadows(series.data, series, bw/2, series.candles.fill);
+		this.plotCandles(series.data, series, bw/2, series.candles.fill);
+		
+		ctx.restore();
+	},
+	plotCandles: function(data, series, offset, fill){
+		if(data.length < 1) return;
+		
+		var xaxis = this.xaxis,
+  			yaxis = this.yaxis,
+  			ctx = this.ctx,
+  			tHoz = this.tHoz.bind(this),
+  			tVert = this.tVert.bind(this);
+
+		for(var i = 0; i < data.length; i++){
+      var d     = data[i],
+  		    x     = d[0],
+  		    open  = d[1],
+  		    high  = d[2],
+  		    low   = d[3],
+  		    close = d[4];
+
+			var left = x,
+			    right = x + series.candles.candleWidth,
+          bottom = Math.max(yaxis.min, low),
+	        top = Math.min(yaxis.max, high),
+          bottom2 = Math.max(yaxis.min, Math.min(open, close)),
+	        top2 = Math.min(yaxis.max, Math.max(open, close));
+
+			if(right < xaxis.min || left > xaxis.max || top < yaxis.min || bottom > yaxis.max)
+				continue;
+
+			var color = series.candles[open>close?'downFillColor':'upFillColor'];
+			/**
+			 * Fill the candle.
+			 */
+			if(fill){
+				ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.candles.fillOpacity).toString();
+				ctx.fillRect(tHoz(left), tVert(top2) + offset, tHoz(right) - tHoz(left), tVert(bottom2) - tVert(top2));
+			}
+
+			/**
+			 * Draw candle outline/border, high, low.
+			 */
+			if(series.candles.lineWidth || series.candles.wickLineWidth){
+			  ctx.strokeStyle = color;
+				ctx.strokeRect(tHoz(left), tVert(top2) + offset, tHoz(right) - tHoz(left), tVert(bottom2) - tVert(top2));
+			  
+				var pixelOffset = (series.candles.wickLineWidth % 2) / 2;
+			  ctx.save();
+			  ctx.strokeStyle = color;
+			  ctx.lineWidth = series.candles.wickLineWidth;
+			  ctx.lineCap = 'butt';
+			  
+				ctx.beginPath();
+				ctx.moveTo(Math.floor(tHoz((left + right) / 2))+pixelOffset, Math.floor(tVert(top2) + offset));
+				ctx.lineTo(Math.floor(tHoz((left + right) / 2))+pixelOffset, Math.floor(tVert(top) + offset));
+				ctx.moveTo(Math.floor(tHoz((left + right) / 2))+pixelOffset, Math.floor(tVert(bottom2) + offset));
+				ctx.lineTo(Math.floor(tHoz((left + right) / 2))+pixelOffset, Math.floor(tVert(bottom) + offset));
+				ctx.stroke();
+				ctx.restore();
+			}
+		}
+	},
+  plotCandlesShadows: function(data, series, offset){
+    if(data.length < 1) return;
+    
+    var xaxis = this.xaxis,
+        yaxis = this.yaxis,
+        tHoz = this.tHoz.bind(this),
+        tVert = this.tVert.bind(this),
+        sw = this.options.shadowSize;
+
+    for(var i = 0; i < data.length; i++){
+      var d     = data[i],
+      		x     = d[0],
+	        open  = d[1],
+	        high  = d[2],
+	        low   = d[3],
+	        close = d[4];
+      
+			var left = x,
+	        right = x + series.candles.candleWidth,
+          bottom = Math.max(yaxis.min, Math.min(open, close)),
+	        top = Math.min(yaxis.max, Math.max(open, close));
+
+      if(right < xaxis.min || left > xaxis.max || top < yaxis.min || bottom > yaxis.max)
+        continue;
+
+      var width =  tHoz(right)-tHoz(left)-((tHoz(right)+sw <= this.plotWidth) ? 0 : sw);
+      var height = Math.max(0, tVert(bottom)-tVert(top)-((tVert(bottom)+sw <= this.plotHeight) ? 0 : sw));
+
+      this.ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      this.ctx.fillRect(Math.min(tHoz(left)+sw, this.plotWidth), Math.min(tVert(top)+sw, this.plotWidth), width, height);
     }
   },
   /**

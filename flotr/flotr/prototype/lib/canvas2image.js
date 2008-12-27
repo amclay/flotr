@@ -9,7 +9,7 @@ var Canvas2Image = (function() {
 	var oCanvas = document.createElement("canvas");
   
 	// no canvas, bail out.
-	if (!oCanvas.getContext("2d")) {
+	if (!oCanvas.getContext) {
 		return {
 			saveAsBMP : function(){},
 			saveAsPNG : function(){},
