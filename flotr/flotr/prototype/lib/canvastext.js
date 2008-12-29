@@ -289,7 +289,7 @@ var CanvasText = {
       
       if (style.boundingBoxColor || CanvasText.style.boundingBoxColor) {
       	ctx.save();
-        ctx.lineCap = "round";
+        ctx.lineJoin = "miter";
         ctx.lineWidth = 0.5;
         ctx.strokeStyle = (style.boundingBoxColor || CanvasText.style.boundingBoxColor);
       	ctx.strokeRect(x, y, width*mag, -(style.size || CanvasText.style.size));

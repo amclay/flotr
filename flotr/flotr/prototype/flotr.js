@@ -226,6 +226,8 @@ Flotr.Graph = Class.create({
   setOptions: function(opts){
     this.options = Flotr.merge((opts || {}), {
       colors: ['#00A8F0', '#C0D800', '#CB4B4B', '#4DA74D', '#9440ED'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
+      title: null,
+      subtitle: null,
       legend: {
         show: true,            // => setting to true will show the legend, hide otherwise
         noColumns: 1,          // => number of colums in legend table // @todo: doesn't work for HtmlText = false
@@ -339,7 +341,7 @@ Flotr.Graph = Class.create({
       shadowSize: 4,           // => size of the 'fake' shadow
       defaultType: 'lines',    // => default series type
       HtmlText: true,          // => wether to draw the text using HTML or on the canvas
-      fontSize: 7,             // => canvas' text font size
+      fontSize: 7.5,             // => canvas' text font size
       spreadsheet: {
       	show: false,           // => show the data grid using two tabs
       	tabGraphLabel: 'Graph',
@@ -477,6 +479,22 @@ Flotr.Graph = Class.create({
 		  this.textEnabled = true;
 		}
 	},
+  getTextDimensions: function(text, canvasStyle, HtmlStyle, className) {
+    if (!text) return {width:0, height:0};
+    
+    if (!this.options.HtmlText && this.textEnabled) {
+      return {
+        width: this.ctx.measureText(text, canvasStyle)+2, 
+        height: this.options.fontSize+6
+      };
+    }
+    else {
+      var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>').select(".flotr-dummy-div")[0];
+      dim = dummyDiv.getDimensions();
+      dummyDiv.remove();
+      return dim;
+    }
+  },
 	loadDataGrid: function(){
     if (this.seriesData) return this.seriesData;
 
@@ -511,21 +529,18 @@ Flotr.Graph = Class.create({
 	
 	// @todo: make a tab manager (Flotr.Tabs)
   showTab: function(tabName, onComplete){
+    var elementsClassNames = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
     switch(tabName) {
       case 'graph':
         this.datagrid.up().hide();
-        this.canvas.show();
-        this.overlay.show();
-        this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('show');
+        this.el.select(elementsClassNames).invoke('show');
         this.tabs.data.removeClassName('selected');
         this.tabs.graph.addClassName('selected');
       break;
       case 'data':
         this.constructDataGrid();
         this.datagrid.up().show();
-        this.canvas.hide();
-        this.overlay.hide();
-        this.el.select('.flotr-labels, .flotr-legend, .flotr-legend-bg').invoke('hide');
+        this.el.select(elementsClassNames).invoke('hide');
         this.tabs.data.addClassName('selected');
         this.tabs.graph.removeClassName('selected');
       break;
@@ -881,8 +896,9 @@ Flotr.Graph = Class.create({
 			y = this.yaxis,
 			x = this.xaxis,
 			maxOutset = 2,
-			i, j, l;
+			i, j, l, dim;
 			
+    // Labels width and height
 	  if (options.xaxis.showLabels || options.yaxis.showLabels) {
 			for(i = 0; i < y.ticks.length; ++i){
 				l = y.ticks[i].label.length;
@@ -890,22 +906,18 @@ Flotr.Graph = Class.create({
 					maxLabel = y.ticks[i].label;
 				}
 			}
-
-	    if (!options.HtmlText && this.textEnabled) {
-	      this.labelMaxWidth = this.ctx.measureText(maxLabel, {size: this.options.fontSize})+3;
-	      this.labelMaxHeight = this.options.fontSize+2;
-	    }
-	    else {
-	  		var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;font-size:smaller;" class="flotr-grid-label flotr-dummy-div">' + maxLabel + '</div>').select(".flotr-dummy-div")[0];
-	  		this.labelMaxWidth = dummyDiv.getWidth();
-	  		this.labelMaxHeight = dummyDiv.getHeight();
-	  		dummyDiv.remove();
-	    }
-	  } 
-	  else {
-	    this.labelMaxWidth = 0;
-	    this.labelMaxHeight = 0;
-	  }
+    }
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize}, 'font-size:smaller;', 'flotr-grid-label');
+    this.labelMaxWidth = dim.width;
+    this.labelMaxHeight = dim.height;
+    
+    // Title height
+    dim = this.getTextDimensions(options.title, {size: options.fontSize*1.5}, 'font-size:1em;font-weight:bold;', 'flotr-title');
+    this.titleHeight = dim.height;
+    
+    // Subtitle height
+    dim = this.getTextDimensions(options.subtitle, {size: options.fontSize}, 'font-size:smaller;', 'flotr-subtitle');
+    this.subtitleHeight = dim.height;
 
 		// Grid outline line width.
 		if(options.show){
@@ -920,8 +932,11 @@ Flotr.Graph = Class.create({
 		this.plotOffset = p = {left: 0, right: 0, top: 0, bottom: 0};
 		var p = this.plotOffset;
 		p.left = p.right = p.top = p.bottom = maxOutset;
+    p.top    += this.subtitleHeight + this.titleHeight;
 		p.left   += (options.yaxis.showLabels ? (this.labelMaxWidth + options.grid.labelMargin) : 0);
 		p.bottom += (options.xaxis.showLabels ? (this.labelMaxHeight + options.grid.labelMargin) : 0);
+    
+    p.top = Math.floor(p.top); // In order the outline not to be blured
 		this.plotWidth  = this.canvasWidth - p.left - p.right;
 		this.plotHeight = this.canvasHeight - p.bottom - p.top;
 		this.hozScale  = this.plotWidth / (x.max - x.min);
@@ -933,6 +948,7 @@ Flotr.Graph = Class.create({
 	draw: function() {
 		this.drawGrid();
 		this.drawLabels();
+    this.drawTitles();
     
 		if(this.series.length){
 			this.el.fire('flotr:beforedraw', [this.series, this]);
@@ -1051,7 +1067,7 @@ Flotr.Graph = Class.create({
 		    ctx.drawTextCenter(
 		      tick.label,
 		      this.plotOffset.left + this.tHoz(tick.v), 
-		      this.plotOffset.top + this.plotHeight + this.labelMaxHeight + options.grid.labelMargin,
+		      this.plotOffset.top + this.plotHeight + style.size + options.grid.labelMargin,
 		      style
 		    );
 		  }
@@ -1064,8 +1080,8 @@ Flotr.Graph = Class.create({
         
 		    ctx.drawTextRight(
 		      tick.label,
-		      this.labelMaxWidth - options.grid.labelMargin, 
-		      this.plotOffset.top + this.tVert(tick.v) + this.labelMaxHeight/2,
+		      this.plotOffset.left - options.grid.labelMargin, 
+		      this.plotOffset.top + this.tVert(tick.v) + style.size/2,
 		      style
 		    );
 		  }
@@ -1095,6 +1111,58 @@ Flotr.Graph = Class.create({
 			this.el.insert(html.join(''));
 		}
 	},
+  /**
+   * Draws the title and the subtitle
+   */   
+  drawTitles: function(){
+    var html,
+        options = this.options,
+        ctx = this.ctx;
+      
+    if (!options.HtmlText && this.textEnabled) {
+      var style = {
+        size: options.fontSize,
+        color: options.grid.color
+      };
+
+      // Add subtitle
+      if (options.subtitle){
+        ctx.drawTextCenter(
+          options.subtitle,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.titleHeight + this.subtitleHeight - 2,
+          style
+        );
+      }
+      
+      style.size *= 1.5;
+      style.weight = 1.5;
+      // Add title
+      if (options.title){
+        ctx.drawTextCenter(
+          options.title,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.titleHeight - 2,
+          style
+        );
+      }
+    } 
+    else if (options.title || options.subtitle) {
+      html = [];
+      
+      // Add title
+      if (options.title){
+        html.push('<div style="position:absolute;top:0;left:'+this.plotOffset.left+'px;font-size:1em;font-weight:bold;color:'+options.grid.color+';text-align:center;width:'+this.plotWidth+'px;" class="flotr-title">'+options.title+'</div>');
+      }
+      
+      // Add subtitle
+      if (options.subtitle){
+        html.push('<div style="position:absolute;top:'+this.titleHeight+'px;left:'+this.plotOffset.left+'px;font-size:smaller;color:'+options.grid.color+';text-align:center;width:'+this.plotWidth+'px;" class="flotr-subtitle">'+options.subtitle+'</div>');
+      }
+      
+      this.el.insert(html.join(''));
+    }
+  },
 	/**
 	 * Actually draws the graph.
 	 * @param {Object} series - series to draw
@@ -1956,7 +2024,7 @@ Flotr.Graph = Class.create({
     if (noLegendItems) {
 	    if (!options.HtmlText && this.textEnabled) {
 	      var style = {
-	        size: options.fontSize*1.2,
+	        size: options.fontSize*1.1,
 	        color: options.grid.color
 	      };
 	      
@@ -2005,7 +2073,7 @@ Flotr.Graph = Class.create({
 	        
 	        ctx.strokeStyle = options.legend.labelBoxBorderColor;
 	        ctx.lineWidth = 1;
-	        ctx.strokeRect(Flotr.toPixel(x)-1, Flotr.toPixel(y)-1, lbw+2, lbh+2);
+	        ctx.strokeRect(Math.ceil(x)-1.5, Math.ceil(y)-1.5, lbw+2, lbh+2);
 	        
 	        // Legend text
 	        ctx.drawText(
