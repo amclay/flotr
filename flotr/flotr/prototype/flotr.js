@@ -245,6 +245,7 @@ Flotr.Graph = Class.create({
       xaxis: {
         ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
         showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
+        labelsAngle: 0,        // => Labels' angle, in degrees
         label: null,           // => axis label @todo: add support of axis labels
         noTicks: 5,            // => number of ticks for automagically generated ticks
         tickFormatter: Flotr.defaultTickFormatter, // => fn: number -> string
@@ -256,6 +257,7 @@ Flotr.Graph = Class.create({
       yaxis: {
         ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
         showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
+        labelsAngle: 0,        // => Labels' angle, in degrees
         label: null,           // => axis label @todo: add support of axis labels
         noTicks: 5,            // => number of ticks for automagically generated ticks
         tickFormatter: Flotr.defaultTickFormatter, // => fn: number -> string
@@ -483,9 +485,10 @@ Flotr.Graph = Class.create({
     if (!text) return {width:0, height:0};
     
     if (!this.options.HtmlText && this.textEnabled) {
+      var bounds = this.ctx.getTextBounds(text, canvasStyle);
       return {
-        width: this.ctx.measureText(text, canvasStyle)+2, 
-        height: this.options.fontSize+6
+        width: bounds.width+2, 
+        height: bounds.height+6
       };
     }
     else {
@@ -907,9 +910,11 @@ Flotr.Graph = Class.create({
 				}
 			}
     }
-    dim = this.getTextDimensions(maxLabel, {size: options.fontSize}, 'font-size:smaller;', 'flotr-grid-label');
-    this.labelMaxWidth = dim.width;
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: options.xaxis.labelsAngle}, 'font-size:smaller;', 'flotr-grid-label');
     this.labelMaxHeight = dim.height;
+    
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: options.yaxis.labelsAngle}, 'font-size:smaller;', 'flotr-grid-label');
+    this.labelMaxWidth = dim.width;
     
     // Title height
     dim = this.getTextDimensions(options.title, {size: options.fontSize*1.5}, 'font-size:1em;font-weight:bold;', 'flotr-title');
@@ -1041,7 +1046,7 @@ Flotr.Graph = Class.create({
 	drawLabels: function(){		
 		// Construct fixed width label boxes, which can be styled easily. 
 		var noLabels = 0,
-			xBoxWidth, i, html, tick,
+			xBoxWidth, i, html, tick, drawFunction,
 			options = this.options,
       ctx = this.ctx;
 			
@@ -1064,10 +1069,16 @@ Flotr.Graph = Class.create({
 		    tick = this.xaxis.ticks[i];
 		    if(!tick.label || tick.label.length == 0) continue;
         
-		    ctx.drawTextCenter(
+        style.angle = options.xaxis.labelsAngle;
+        
+        var align = CanvasText.getBestAlign(180+style.angle);
+        style.halign = align.h;
+        style.valign = align.v;
+
+		    ctx.drawText(
 		      tick.label,
 		      this.plotOffset.left + this.tHoz(tick.v), 
-		      this.plotOffset.top + this.plotHeight + style.size + options.grid.labelMargin,
+		      this.plotOffset.top + this.plotHeight + options.grid.labelMargin,
 		      style
 		    );
 		  }
@@ -1078,10 +1089,14 @@ Flotr.Graph = Class.create({
 		    tick = this.yaxis.ticks[i];
 		    if (!tick.label || tick.label.length == 0) continue;
         
-		    ctx.drawTextRight(
+        style.angle = options.yaxis.labelsAngle;
+        style.halign = 'r';
+        style.valign = 'm';
+        
+		    ctx.drawText(
 		      tick.label,
 		      this.plotOffset.left - options.grid.labelMargin, 
-		      this.plotOffset.top + this.tVert(tick.v) + style.size/2,
+		      this.plotOffset.top + this.tVert(tick.v),
 		      style
 		    );
 		  }
@@ -1122,12 +1137,13 @@ Flotr.Graph = Class.create({
     if (!options.HtmlText && this.textEnabled) {
       var style = {
         size: options.fontSize,
-        color: options.grid.color
+        color: options.grid.color,
+        halign: 'c'
       };
 
       // Add subtitle
       if (options.subtitle){
-        ctx.drawTextCenter(
+        ctx.drawText(
           options.subtitle,
           this.plotOffset.left + this.plotWidth/2, 
           this.titleHeight + this.subtitleHeight - 2,
@@ -1139,7 +1155,7 @@ Flotr.Graph = Class.create({
       style.weight = 1.5;
       // Add title
       if (options.title){
-        ctx.drawTextCenter(
+        ctx.drawText(
           options.title,
           this.plotOffset.left + this.plotWidth/2, 
           this.titleHeight - 2,
@@ -1963,7 +1979,8 @@ Flotr.Graph = Class.create({
           html.push('<div style="' + divStyle + '" class="flotr-grid-label">' + label + '</div>');
         }
         else {
-          ctx[textAlignRight?'drawTextRight':'drawText'](
+          style.halign = textAlignRight ? 'r' : 'l';
+          ctx.drawText(
             label, 
             distX, 
             distY + style.size / 2, 

@@ -144,10 +144,16 @@ var CanvasText = {
     font: null,       // not yet implemented
     color: '#000000', // 
     weight: 1,        // float, 1 for 'normal'
+    halign: 'l',      // l: left, r: right, c: center
+    valign: 'b',      // t: top, m: middle, b: bottom 
     angle: 0,         // in degrees, clockwise
     tracking: 1,      // space between the letters, float, 1 for 'normal'
-    boundingBoxColor: null // color of the bounding box (null to hide), can be used for debug and font drawing
+    boundingBoxColor: '#ff0000', //null // color of the bounding box (null to hide), can be used for debug and font drawing
+    originPointColor: '#000000' //null // color of the bounding box (null to hide), can be used for debug and font drawing
   },
+  
+  debug: false,
+  _bufferLexemes: {},
   
   /** Get the letter data corresponding to a char
    * @param {String} ch - The char
@@ -157,6 +163,9 @@ var CanvasText = {
   },
   
   parseLexemes: function(str) {
+    if (CanvasText._bufferLexemes[str]) 
+      return CanvasText._bufferLexemes[str];
+    
   	var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g);
   	var result = [], chars = [];
   	for (i = 0; i < matches.length; i++) {
@@ -176,7 +185,7 @@ var CanvasText = {
   		if (c = CanvasText.letters[c] || CanvasText.specialchars[c])
   		  result.push(c);
   	}
-  	return result.compact();
+  	return CanvasText._bufferLexemes[str] = result.compact();
   },
 
   /** Get the font ascent for a given style
@@ -214,6 +223,38 @@ var CanvasText = {
     return total;
   },
   
+  getDimensions: function(str, style) {
+    var width = CanvasText.measure(str, style),
+        height = (style.size || CanvasText.style.size),
+        angle = (style.angle || CanvasText.style.angle) * (Math.PI / 180);
+
+    return {
+      width: Math.abs(Math.cos(angle) * width + Math.sin(angle) * height),
+      height: Math.abs(Math.sin(angle) * width + Math.cos(angle) * height)
+    }
+  },
+  
+  getBestAlign: function(angle) {
+    var a = {h:'c', v:'m'};
+    angle = (angle + 360) % 360;
+    //console.debug('angle', angle)
+    if (angle < 180) {
+      a.v = 'b';
+      if (angle < 90)
+        a.h = 'r';
+      else if (angle > 90)
+        a.h = 'l';
+    }
+    else if (angle > 180) {
+      a.v = 't';
+      if (angle > 270)
+        a.h = 'r';
+      else if (angle < 270)
+        a.h = 'l';
+    }
+    return a;
+  },
+  
   /** Draws serie of points at given coordinates 
    * @param {Canvas context} ctx - The canvas context
    * @param {Array} points - The points to draw
@@ -221,8 +262,9 @@ var CanvasText = {
    * @param {Number} y - The Y coordinate
    * @param {Number} mag - The scale 
    */
-  drawPoints: function (ctx, points, x, y, mag) {
+  drawPoints: function (ctx, points, x, y, mag, offset) {
     var i, a, penUp = true, needStroke = 0;
+    offset = offset || {x:0, y:0};
     
     ctx.beginPath();
     for (i = 0; i < points.length; i++) {
@@ -232,11 +274,11 @@ var CanvasText = {
         continue;
       }
       if (penUp) {
-        ctx.moveTo(x + a[0]*mag, y - a[1]*mag);
+        ctx.moveTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
         penUp = false;
       }
       else {
-        ctx.lineTo(x + a[0]*mag, y - a[1]*mag);
+        ctx.lineTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
       }
     }
     ctx.stroke();
@@ -251,16 +293,35 @@ var CanvasText = {
    */
   draw: function(ctx, str, xOrig, yOrig, style) {
     if (!str) return;
-    style = style || {};
+    style = style || CanvasText.style;
+    style.halign = style.halign || CanvasText.style.halign;
+    style.valign = style.valign || CanvasText.style.valign;
+    style.angle = style.angle || CanvasText.style.angle;
+    style.size = style.size || CanvasText.style.size;
     
     var i, c, total = 0,
-        mag = (style.size || CanvasText.style.size) / 25.0,
+        mag = style.size / 25.0,
         x = 0, y = 0,
         lexemes = CanvasText.parseLexemes(str);
-
+    
+    var offset = {x:0, y:0}, 
+        measure = CanvasText.measure(str, style);
+        
+    switch (style.halign) {
+      case 'l': break;
+      case 'c': offset.x = -measure / 2; break;
+      case 'r': offset.x = -measure; break;
+    }
+    
+    switch (style.valign) {
+      case 'b': break;
+      case 'm': offset.y = style.size / 2; break;
+      case 't': offset.y = style.size; break;
+    }
+    
     ctx.save();
     ctx.translate(xOrig, yOrig);
-    ctx.rotate(Math.PI * (style.angle || CanvasText.style.angle) / 180);
+    ctx.rotate(Math.PI * style.angle / 180);
     ctx.lineCap = "round";
     ctx.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
     ctx.strokeStyle = style.color || CanvasText.style.color;
@@ -269,7 +330,7 @@ var CanvasText = {
     	c = lexemes[i];
       if (c.width == -1) {
         x = 0;
-        y = (style.size || CanvasText.style.size) * 1.4;
+        y = style.size * 1.4;
         continue;
       }
     
@@ -280,19 +341,25 @@ var CanvasText = {
         var dia = CanvasText.diacritics[c.diacritic];
         var char = CanvasText.letter(c.letter);
 
-        CanvasText.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag);
+        CanvasText.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag, offset);
         points = char.points;
         width = char.width;
       }
 
-      CanvasText.drawPoints(ctx, points, x, y, mag);
+      CanvasText.drawPoints(ctx, points, x, y, mag, offset);
       
-      if (style.boundingBoxColor || CanvasText.style.boundingBoxColor) {
+      if (CanvasText.debug) {
       	ctx.save();
         ctx.lineJoin = "miter";
         ctx.lineWidth = 0.5;
         ctx.strokeStyle = (style.boundingBoxColor || CanvasText.style.boundingBoxColor);
-      	ctx.strokeRect(x, y, width*mag, -(style.size || CanvasText.style.size));
+      	ctx.strokeRect(x+offset.x, y+offset.y, width*mag, -style.size);
+        
+        ctx.fillStyle = (style.originPointColor || CanvasText.style.originPointColor);
+        ctx.beginPath();
+        ctx.arc(0, 0, 1.5, 0, Math.PI*2, true);
+        ctx.fill();
+        
       	ctx.restore();
       }
       
@@ -308,16 +375,8 @@ var CanvasText = {
   enable: function(ctx) {
     ctx.drawText    = function(text, x, y, style) { return CanvasText.draw(ctx, text, x, y, style); };
     ctx.measureText = function(text, style) { return CanvasText.measure(text, style); };
+    ctx.getTextBounds = function(text, style) { return CanvasText.getDimensions(text, style); };
     ctx.fontAscent  = function(style) { return CanvasText.ascent(style); };
     ctx.fontDescent = function(style) { return CanvasText.descent(style); };
-
-    ctx.drawTextRight = function(text, x, y, style) {
-      var w = CanvasText.measure(text, style);
-      return CanvasText.draw(ctx, text, x-w, y, style); 
-    };
-    ctx.drawTextCenter = function(text, x, y, style) {
-      var w = CanvasText.measure(text, style);
-      return CanvasText.draw(ctx, text, x-w/2, y, style);
-    };
   }
 };
