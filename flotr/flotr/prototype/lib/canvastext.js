@@ -146,7 +146,8 @@ var CanvasText = {
     weight: 1,        // float, 1 for 'normal'
     halign: 'l',      // l: left, r: right, c: center
     valign: 'b',      // t: top, m: middle, b: bottom 
-    angle: 0,         // in degrees, clockwise
+    adjustAlign: false, // modifies the alignments if the angle is different from 0 to make the spin point always at the good position
+    angle: 0,         // in radians, anticlockwise
     tracking: 1,      // space between the letters, float, 1 for 'normal'
     boundingBoxColor: '#ff0000', //null // color of the bounding box (null to hide), can be used for debug and font drawing
     originPointColor: '#000000' //null // color of the bounding box (null to hide), can be used for debug and font drawing
@@ -225,34 +226,40 @@ var CanvasText = {
   
   getDimensions: function(str, style) {
     var width = CanvasText.measure(str, style),
-        height = (style.size || CanvasText.style.size),
-        angle = (style.angle || CanvasText.style.angle) * (Math.PI / 180);
+        height = style.size || CanvasText.style.size,
+        angle = style.angle || CanvasText.style.angle;
 
+    if (style.angle == 0) return {width: width, height: height};
     return {
-      width: Math.abs(Math.cos(angle) * width + Math.sin(angle) * height),
-      height: Math.abs(Math.sin(angle) * width + Math.cos(angle) * height)
+      width:  Math.abs(Math.cos(angle) * width) + Math.abs(Math.sin(angle) * height),
+      height: Math.abs(Math.sin(angle) * width) + Math.abs(Math.cos(angle) * height)
     }
   },
   
-  getBestAlign: function(angle) {
+  getBestAlign: function(angle, style) {
+    angle += CanvasText.getAngleFromAlign(style.halign, style.valign);
     var a = {h:'c', v:'m'};
-    angle = (angle + 360) % 360;
-    //console.debug('angle', angle)
-    if (angle < 180) {
-      a.v = 'b';
-      if (angle < 90)
-        a.h = 'r';
-      else if (angle > 90)
-        a.h = 'l';
-    }
-    else if (angle > 180) {
-      a.v = 't';
-      if (angle > 270)
-        a.h = 'r';
-      else if (angle < 270)
-        a.h = 'l';
-    }
+    if (Math.round(Math.cos(angle)*1000)/1000 != 0) 
+      a.h = (Math.cos(angle) > 0 ? 'r' : 'l');
+    
+    if (Math.round(Math.sin(angle)*1000)/1000 != 0) 
+      a.v = (Math.sin(angle) > 0 ? 't' : 'b');
     return a;
+  },
+  
+  getAngleFromAlign: function(halign, valign) {
+    var pi = Math.PI, table = {
+      'rm': 0,
+      'rt': pi/4,
+      'ct': pi/2,
+      'lt': 3*(pi/4),
+      'lm': pi,
+      'lb': -3*(pi/4),
+      'cb': -pi/2,
+      'rb': -pi/4,
+      'cm': 0
+    }
+    return table[halign+valign];
   },
   
   /** Draws serie of points at given coordinates 
@@ -298,6 +305,7 @@ var CanvasText = {
     style.valign = style.valign || CanvasText.style.valign;
     style.angle = style.angle || CanvasText.style.angle;
     style.size = style.size || CanvasText.style.size;
+    style.adjustAlign = style.adjustAlign || CanvasText.style.adjustAlign;
     
     var i, c, total = 0,
         mag = style.size / 25.0,
@@ -305,7 +313,14 @@ var CanvasText = {
         lexemes = CanvasText.parseLexemes(str);
     
     var offset = {x:0, y:0}, 
-        measure = CanvasText.measure(str, style);
+        measure = CanvasText.measure(str, style),
+        align;
+        
+    if (style.adjustAlign) {
+      align = CanvasText.getBestAlign(style.angle, style);
+      style.halign = align.h;
+      style.valign = align.v;
+    }
         
     switch (style.halign) {
       case 'l': break;
@@ -321,7 +336,7 @@ var CanvasText = {
     
     ctx.save();
     ctx.translate(xOrig, yOrig);
-    ctx.rotate(Math.PI * style.angle / 180);
+    ctx.rotate(style.angle);
     ctx.lineCap = "round";
     ctx.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
     ctx.strokeStyle = style.color || CanvasText.style.color;

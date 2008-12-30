@@ -910,10 +910,10 @@ Flotr.Graph = Class.create({
 				}
 			}
     }
-    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: options.xaxis.labelsAngle}, 'font-size:smaller;', 'flotr-grid-label');
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -options.xaxis.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
     this.labelMaxHeight = dim.height;
     
-    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: options.yaxis.labelsAngle}, 'font-size:smaller;', 'flotr-grid-label');
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -options.yaxis.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
     this.labelMaxWidth = dim.width;
     
     // Title height
@@ -1060,7 +1060,8 @@ Flotr.Graph = Class.create({
 		if (!options.HtmlText && this.textEnabled) {
 		  var style = {
 		    size: options.fontSize,
-		    color: options.grid.color
+		    color: options.grid.color,
+        adjustAlign: true
 		  };
 
 		  // Add xlabels.
@@ -1069,12 +1070,10 @@ Flotr.Graph = Class.create({
 		    tick = this.xaxis.ticks[i];
 		    if(!tick.label || tick.label.length == 0) continue;
         
-        style.angle = options.xaxis.labelsAngle;
+        style.angle = -options.xaxis.labelsAngle * (Math.PI/180);
+        style.halign = 'c';
+        style.valign = 't';
         
-        var align = CanvasText.getBestAlign(180+style.angle);
-        style.halign = align.h;
-        style.valign = align.v;
-
 		    ctx.drawText(
 		      tick.label,
 		      this.plotOffset.left + this.tHoz(tick.v), 
@@ -1089,7 +1088,7 @@ Flotr.Graph = Class.create({
 		    tick = this.yaxis.ticks[i];
 		    if (!tick.label || tick.label.length == 0) continue;
         
-        style.angle = options.yaxis.labelsAngle;
+        style.angle = -options.yaxis.labelsAngle * (Math.PI/180);
         style.halign = 'r';
         style.valign = 'm';
         
