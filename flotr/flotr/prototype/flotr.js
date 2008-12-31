@@ -208,8 +208,10 @@ Flotr.Graph = Class.create({
 		this.initEvents();
 		
 		this.findDataRanges();
-		this.calculateTicks(this.xaxis, this.options.xaxis);
-		this.calculateTicks(this.yaxis, this.options.yaxis);
+		this.calculateTicks(this.axes.x);
+		this.calculateTicks(this.axes.x2);
+		this.calculateTicks(this.axes.y);
+		this.calculateTicks(this.axes.y2);
 		
 		this.calculateSpacing();
 		this.draw();
@@ -254,6 +256,7 @@ Flotr.Graph = Class.create({
         max: null,             // => max. value to show, null means set automatically
         autoscaleMargin: 0     // => margin in % to add if auto-setting min/max
       },
+      x2axis: {},
       yaxis: {
         ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
         showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
@@ -266,6 +269,7 @@ Flotr.Graph = Class.create({
         max: null,             // => max. value to show, null means set automatically
         autoscaleMargin: 0     // => margin in % to add if auto-setting min/max
       },
+      y2axis: {},
       points: {
         show: false,           // => setting to true will show points, false will hide
         radius: 3,             // => point radius (pixels)
@@ -352,6 +356,15 @@ Flotr.Graph = Class.create({
       	toolbarSelectAll: 'Select all'
       }
     });
+    
+    this.options.x2axis = Object.extend(Object.clone(this.options.xaxis), this.options.x2axis);
+    this.options.y2axis = Object.extend(Object.clone(this.options.yaxis), this.options.y2axis);
+    this.axes = {
+      x:  {options: this.options.xaxis,  n: 1}, 
+      x2: {options: this.options.x2axis, n: 2}, 
+      y:  {options: this.options.yaxis,  n: 1}, 
+      y2: {options: this.options.y2axis, n: 2}
+    };
 				
 		// Initialize some variables used throughout this function.
 		var assignedColors = [],
@@ -407,6 +420,14 @@ Flotr.Graph = Class.create({
 			}else if(Object.isNumber(s.color)){
 				s.color = colors[s.color].toString();
 			}
+			
+      if (!s.xaxis) s.xaxis = this.axes.x;
+           if (s.xaxis == 1) s.xaxis = this.axes.x;
+      else if (s.xaxis == 2) s.xaxis = this.axes.x2;
+  
+      if (!s.yaxis) s.yaxis = this.axes.y;
+           if (s.yaxis == 1) s.yaxis = this.axes.y;
+      else if (s.yaxis == 2) s.yaxis = this.axes.y2;
 			
 			// Apply missing options to the series.
 			s.lines  = Object.extend(Object.clone(this.options.lines), s.lines);
@@ -690,62 +711,79 @@ Flotr.Graph = Class.create({
 	 * Function determines the min and max values for the xaxis and yaxis.
 	 */
 	findDataRanges: function(){
-		this.yaxis = {datamin: 0, datamax: 1};	
-		this.xaxis = {datamin: 0, datamax: 1};	
-		var s = this.series;
+		var s = this.series, a = this.axes;
+		
+		a.x.datamin = 0;  a.x.datamax  = 1;
+		a.x2.datamin = 0; a.x2.datamax = 1;
+		a.y.datamin = 0;  a.y.datamax  = 1;
+		a.y2.datamin = 0; a.y2.datamax = 1;
+		
 		if(s.length > 0){
-			var found = false,
-			    i, j, k, h, x, y, data;
+			var i, j, h, x, y, data, xaxis, yaxis;
+		
+		// Return because series are empty.
+		//if(!a.x.used && !a.y.used) return;
+
+		// ...then find real datamin, datamax.
 			
 			// Get datamin, datamax start values 
-			for(i = 0; i < s.length; ++i){
-				if (s[i].data.length > 0 && !s[i].hide) {
-					this.xaxis.datamin = this.xaxis.datamax = s[i].data[0][0];
-					this.yaxis.datamin = this.yaxis.datamax = s[i].data[0][1];
-					found = true;
-					break;
-				}
-			}
-			
-			// Return because series are empty.
-			if(!found) return;
-	
-			// ...then find real datamin, datamax.
-			for(j = s.length - 1; j > -1; --j){
-				data = s[j].data;
-				for(h = data.length - 1; h > -1; --h){
-					x = data[h][0];
-			         if(x < this.xaxis.datamin) this.xaxis.datamin = x;
- 					else if(x > this.xaxis.datamax) this.xaxis.datamax = x;
-			         
-					for(k = 1; k < data[h].length; k++){
-						y = data[h][k];
-				         if(y < this.yaxis.datamin) this.yaxis.datamin = y;
-	  				else if(y > this.yaxis.datamax) this.yaxis.datamax = y;
+			for(i = 0; i < s.length; ++i) {
+				data = s[i].data, 
+				xaxis = s[i].xaxis, 
+				yaxis = s[i].yaxis;
+				
+				if (data.length > 0 && !s[i].hide) {
+					if (!xaxis.used) xaxis.datamin = xaxis.datamax = data[0][0];
+					if (!yaxis.used) yaxis.datamin = yaxis.datamax = data[0][1];
+					xaxis.used = true;
+					yaxis.used = true;
+
+					for(h = data.length - 1; h > -1; --h){
+  					x = data[h][0];
+  			         if(x < xaxis.datamin) xaxis.datamin = x;
+   					else if(x > xaxis.datamax) xaxis.datamax = x;
+  			    
+  					for(j = 1; j < data[h].length; j++){
+  						y = data[h][j];
+  				         if(y < yaxis.datamin) yaxis.datamin = y;
+  	  				else if(y > yaxis.datamax) yaxis.datamax = y;
+  					}
 					}
 				}
 			}
 		}
-		this.calculateRange(this.xaxis, this.options.xaxis);
+		this.calculateRange(a.x);
 		this.extendXRangeIfNeededByBar();
-		this.calculateRange(this.yaxis, this.options.yaxis);
+		
+		if (a.x2.used) {
+			this.calculateRange(a.x2);
+		  this.extendX2RangeIfNeededByBar();
+		}
+		
+		this.calculateRange(a.y);
 		this.extendYRangeIfNeededByBar();
+		
+		if (a.y2.used) {
+  		this.calculateRange(a.y2);
+  		this.extendY2RangeIfNeededByBar();
+		}
 	},
 	/**
 	 * Calculates the range of an axis to apply autoscaling.
 	 */
-	calculateRange: function(axis, o){
-		var min = o.min != null ? o.min : axis.datamin,
+	calculateRange: function(axis){
+		var o = axis.options,
+		  min = o.min != null ? o.min : axis.datamin,
 			max = o.max != null ? o.max : axis.datamax,
 			margin;
-			     
+
 		if(max - min == 0.0){
 			var widen = (max == 0.0) ? 1.0 : 0.01;
 			min -= widen;
 			max += widen;
 		}			
 		axis.tickSize = Flotr.getTickSize(o.noTicks, min, max, o.tickDecimals);
-			
+
 		// Autoscaling.
 		if(o.min == null){
 			// Add a margin.
@@ -772,9 +810,10 @@ Flotr.Graph = Class.create({
 	/**
 	 * Bar series autoscaling in x direction.
 	 */
-	extendXRangeIfNeededByBar: function(){
-		if(this.options.xaxis.max == null){
-			var newmax = this.xaxis.max,
+	extendXRangeIfNeededByBar: function(axis){
+		axis = axis || this.axes.x;
+		if(axis.options.max == null){
+			var newmax = axis.max,
 			    i, b, c;
 			var stackedSums = [];
 			var lastSerie = null;
@@ -783,8 +822,8 @@ Flotr.Graph = Class.create({
 				b = this.series[i].bars;
 				c = this.series[i].candles;
 				if(b.show || c.show) {
-					if (!b.horizontal && (b.barWidth + this.xaxis.datamax > newmax) || (c.candleWidth + this.xaxis.datamax > newmax)){
-						newmax = this.xaxis.max + this.series[i].bars.barWidth;
+					if (!b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
+						newmax = axis.max + this.series[i].bars.barWidth;
 					}
 					if(b.stacked && b.horizontal){
 						for (j = 0; j < this.series[i].data.length; j++) {
@@ -801,16 +840,17 @@ Flotr.Graph = Class.create({
 					}
 				}
 			}
-			this.xaxis.lastSerie = lastSerie;
-			this.xaxis.max = newmax;
+			axis.lastSerie = lastSerie;
+			axis.max = newmax;
 		}
 	},
 	/**
 	 * Bar series autoscaling in y direction.
 	 */
-	extendYRangeIfNeededByBar: function(){
-		if(this.options.yaxis.max == null){
-			var newmax = this.yaxis.max,
+	extendYRangeIfNeededByBar: function(axis){
+		axis = axis || this.axes.y;
+		if(axis.options.max == null){
+			var newmax = axis.max,
 				i, b, c;
         
 			var stackedSums = [];
@@ -820,8 +860,8 @@ Flotr.Graph = Class.create({
 				b = this.series[i].bars;
 				c = this.series[i].candles;
 				if (b.show && !this.series[i].hide) {
-					if (b.horizontal && (b.barWidth + this.yaxis.datamax > newmax) || (c.candleWidth + this.yaxis.datamax > newmax)){
-						newmax = this.yaxis.max + b.barWidth;
+					if (b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
+						newmax = axis.max + b.barWidth;
 					}
 					if(b.stacked && !b.horizontal){
 						for (j = 0; j < this.series[i].data.length; j++) {
@@ -838,8 +878,8 @@ Flotr.Graph = Class.create({
 					}
 				}
 			}
-			this.yaxis.lastSerie = lastSerie;
-			this.yaxis.max = newmax;
+			axis.lastSerie = lastSerie;
+			axis.max = newmax;
 		}
 	},
 	/**
@@ -847,7 +887,9 @@ Flotr.Graph = Class.create({
 	 * @param {Object} axis - axis object
 	 * @param {Object} o - axis options
 	 */
-	calculateTicks: function(axis, o){
+	calculateTicks: function(axis){
+		var o = axis.options;
+		
 		axis.ticks = [];	
 		if(o.ticks){
 			var ticks = o.ticks,
@@ -894,15 +936,18 @@ Flotr.Graph = Class.create({
 	 */
 	calculateSpacing: function(){
 		var maxLabel = '',
+			a = this.axes,
 			options = this.options,
 			series = this.series,
-			y = this.yaxis,
-			x = this.xaxis,
+			x = a.x,
+			x2 = a.x2,
+			y = a.y,
+			y2 = a.y2,
 			maxOutset = 2,
 			i, j, l, dim;
 			
     // Labels width and height
-	  if (options.xaxis.showLabels || options.yaxis.showLabels) {
+	  if (x.options.showLabels || y.options.showLabels) {
 			for(i = 0; i < y.ticks.length; ++i){
 				l = y.ticks[i].label.length;
 				if(l > maxLabel.length){
@@ -910,10 +955,10 @@ Flotr.Graph = Class.create({
 				}
 			}
     }
-    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -options.xaxis.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -x.options.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
     this.labelMaxHeight = dim.height;
     
-    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -options.yaxis.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
+    dim = this.getTextDimensions(maxLabel, {size: options.fontSize, angle: -y.options.labelsAngle * (Math.PI/180)}, 'font-size:smaller;', 'flotr-grid-label');
     this.labelMaxWidth = dim.width;
     
     // Title height
@@ -938,14 +983,17 @@ Flotr.Graph = Class.create({
 		var p = this.plotOffset;
 		p.left = p.right = p.top = p.bottom = maxOutset;
     p.top    += this.subtitleHeight + this.titleHeight;
-		p.left   += (options.yaxis.showLabels ? (this.labelMaxWidth + options.grid.labelMargin) : 0);
-		p.bottom += (options.xaxis.showLabels ? (this.labelMaxHeight + options.grid.labelMargin) : 0);
+		p.left   += (options.yaxis.showLabels ?  (this.labelMaxWidth + options.grid.labelMargin) : 0);
+		p.right  += (options.y2axis.showLabels ? (this.labelMaxWidth + options.grid.labelMargin) : 0);
+		p.bottom += (options.xaxis.showLabels ?  (this.labelMaxHeight + options.grid.labelMargin) : 0);
     
     p.top = Math.floor(p.top); // In order the outline not to be blured
 		this.plotWidth  = this.canvasWidth - p.left - p.right;
 		this.plotHeight = this.canvasHeight - p.bottom - p.top;
-		this.hozScale  = this.plotWidth / (x.max - x.min);
-		this.vertScale = this.plotHeight / (y.max - y.min);
+		x.scale  = this.plotWidth / (x.max - x.min);
+		x2.scale = this.plotWidth / (x2.max - x2.min);
+		y.scale  = this.plotHeight / (y.max - y.min);
+		y2.scale = this.plotHeight / (y2.max - y2.min);
 	},
 	/**
 	 * Draws grid, labels and series.
@@ -969,16 +1017,18 @@ Flotr.Graph = Class.create({
 	 * @param {Integer} x - absolute integer x coordinate
 	 * @return {Integer} translated relative x coordinate
 	 */
-	tHoz: function(x){
-		return (x - this.xaxis.min) * this.hozScale;
+	tHoz: function(x, axis){
+		axis = axis || this.axes.x;
+		return (x - axis.min) * axis.scale;
 	},
 	/**
 	 * Translates absolute vertical x coordinates to relative coordinates.
 	 * @param {Integer} y - absolute integer y coordinate
 	 * @return {Integer} translated relative y coordinate
 	 */
-	tVert: function(y){
-		return this.plotHeight - (y - this.yaxis.min) * this.vertScale;
+	tVert: function(y, axis){
+		axis = axis || this.axes.y;
+		return this.plotHeight - (y - axis.min) * axis.scale;
 	},
 	/**
 	 * Draws a grid for the graph.
@@ -986,8 +1036,8 @@ Flotr.Graph = Class.create({
 	drawGrid: function(){
 		var o = this.options,
 		    ctx = this.ctx;
-		if(o.grid.verticalLines || o.grid.horizontalLines){			
-			this.el.fire('flotr:beforegrid', [this.xaxis, this.yaxis, o, this]);
+		if(o.grid.verticalLines || o.grid.horizontalLines){
+			this.el.fire('flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
 		}
 		ctx.save();
 		ctx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -1003,10 +1053,10 @@ Flotr.Graph = Class.create({
 		ctx.strokeStyle = o.grid.tickColor;
 		ctx.beginPath();
 		if(o.grid.verticalLines){
-			for(var i = 0, v = null; i < this.xaxis.ticks.length; ++i){
-				v = this.xaxis.ticks[i].v;
+			for(var i = 0, v = null; i < this.axes.x.ticks.length; ++i){
+				v = this.axes.x.ticks[i].v;
 				// Don't show lines on upper and lower bounds.
-				if ((v == this.xaxis.min || v == this.xaxis.max) && o.grid.outlineWidth != 0)
+				if ((v == this.axes.x.min || v == this.axes.x.max) && o.grid.outlineWidth != 0)
 					continue;
 	
 				ctx.moveTo(Math.floor(this.tHoz(v)) + ctx.lineWidth/2, 0);
@@ -1016,10 +1066,10 @@ Flotr.Graph = Class.create({
 		
 		// Draw grid lines in horizontal direction.
 		if(o.grid.horizontalLines){
-			for(var j = 0, v = null; j < this.yaxis.ticks.length; ++j){
-				v = this.yaxis.ticks[j].v;
+			for(var j = 0, v = null; j < this.axes.y.ticks.length; ++j){
+				v = this.axes.y.ticks[j].v;
 				// Don't show lines on upper and lower bounds.
-				if ((v == this.yaxis.min || v == this.yaxis.max) && o.grid.outlineWidth != 0)
+				if ((v == this.axes.y.min || v == this.axes.y.max) && o.grid.outlineWidth != 0)
 					continue;
 	
 				ctx.moveTo(0, Math.floor(this.tVert(v)) + ctx.lineWidth/2);
@@ -1036,8 +1086,8 @@ Flotr.Graph = Class.create({
 			ctx.strokeRect(0, 0, this.plotWidth, this.plotHeight);
 		}
 		ctx.restore();
-		if(o.grid.verticalLines || o.grid.horizontalLines){			
-			this.el.fire('flotr:aftergrid', [this.xaxis, this.yaxis, o, this]);
+		if(o.grid.verticalLines || o.grid.horizontalLines){
+			this.el.fire('flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
 		}
 	},
 	/**
@@ -1045,13 +1095,13 @@ Flotr.Graph = Class.create({
 	 */   
 	drawLabels: function(){		
 		// Construct fixed width label boxes, which can be styled easily. 
-		var noLabels = 0,
+		var noLabels = 0, axis,
 			xBoxWidth, i, html, tick, drawFunction,
 			options = this.options,
       ctx = this.ctx;
 			
-		for(i = 0; i < this.xaxis.ticks.length; ++i){
-			if (this.xaxis.ticks[i].label) {
+		for(i = 0; i < this.axes.x.ticks.length; ++i){
+			if (this.axes.x.ticks[i].label) {
 				++noLabels;
 			}
 		}
@@ -1065,59 +1115,66 @@ Flotr.Graph = Class.create({
 		  };
 
 		  // Add xlabels.
-		  if (options.xaxis.showLabels)
-		  for(i = 0; i < this.xaxis.ticks.length; ++i){
-		    tick = this.xaxis.ticks[i];
+		  axis = this.axes.x;
+		  if (axis.options.showLabels)
+		  for(i = 0; i < axis.ticks.length; ++i){
+		    tick = axis.ticks[i];
 		    if(!tick.label || tick.label.length == 0) continue;
         
-        style.angle = -options.xaxis.labelsAngle * (Math.PI/180);
+        style.angle = -axis.options.labelsAngle * (Math.PI/180);
         style.halign = 'c';
         style.valign = 't';
         
 		    ctx.drawText(
 		      tick.label,
-		      this.plotOffset.left + this.tHoz(tick.v), 
+		      this.plotOffset.left + this.tHoz(tick.v, axis), 
 		      this.plotOffset.top + this.plotHeight + options.grid.labelMargin,
 		      style
 		    );
 		  }
 		  
 		  // Add ylabels.
-		  if (options.yaxis.showLabels)
-		  for(i = 0; i < this.yaxis.ticks.length; ++i){
-		    tick = this.yaxis.ticks[i];
+		  axis = this.axes.y;
+		  if (axis.options.showLabels)
+		  for(i = 0; i < axis.ticks.length; ++i){
+		    tick = axis.ticks[i];
 		    if (!tick.label || tick.label.length == 0) continue;
         
-        style.angle = -options.yaxis.labelsAngle * (Math.PI/180);
+        style.angle = -axis.options.labelsAngle * (Math.PI/180);
         style.halign = 'r';
         style.valign = 'm';
         
 		    ctx.drawText(
 		      tick.label,
 		      this.plotOffset.left - options.grid.labelMargin, 
-		      this.plotOffset.top + this.tVert(tick.v),
+		      this.plotOffset.top + this.tVert(tick.v, axis),
 		      style
 		    );
 		  }
 		} 
-		else if (options.yaxis.showLabels || options.yaxis.showLabels) {
+		else if (this.axes.x.options.showLabels || 
+				     this.axes.x2.options.showLabels || 
+				     this.axes.y.options.showLabels || 
+				     this.axes.y2.options.showLabels) {
 			html = ['<div style="font-size:smaller;color:' + options.grid.color + ';" class="flotr-labels">'];
 			
 			// Add xlabels.
-			if (options.xaxis.showLabels){
-				for(i = 0; i < this.xaxis.ticks.length; ++i){
-					tick = this.xaxis.ticks[i];
+			axis = this.axes.x;
+			if (axis.options.showLabels){
+				for(i = 0; i < axis.ticks.length; ++i){
+					tick = axis.ticks[i];
 					if(!tick.label || tick.label.length == 0) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;" class="flotr-grid-label">' + tick.label + '</div>');
+					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v, axis) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
 			
 			// Add ylabels.
-			if (options.yaxis.showLabels){
-				for(i = 0; i < this.yaxis.ticks.length; ++i){
-					tick = this.yaxis.ticks[i];
+			axis = this.axes.y;
+			if (axis.options.showLabels){
+				for(i = 0; i <axis.ticks.length; ++i){
+					tick = axis.ticks[i];
 					if (!tick.label || tick.label.length == 0) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v) - this.labelMaxHeight/2) + 'px;left:0;width:' + this.labelMaxWidth + 'px;text-align:right;" class="flotr-grid-label">' + tick.label + '</div>');
+					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v, axis) - this.labelMaxHeight/2) + 'px;left:0;width:' + this.labelMaxWidth + 'px;text-align:right;" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
 			
@@ -1200,8 +1257,8 @@ Flotr.Graph = Class.create({
 	
 	plotLine: function(data, offset){
 		var ctx = this.ctx,
-		    xa = this.xaxis,
-		    ya = this.yaxis,
+		    xa = this.axes.x,
+		    ya = this.axes.y,
   			tHoz = this.tHoz.bind(this),
   			tVert = this.tVert.bind(this);
 			
@@ -1297,8 +1354,8 @@ Flotr.Graph = Class.create({
 
 		var top, lastX = 0,
 			ctx = this.ctx,
-			xa = this.xaxis,
-			ya = this.yaxis,
+	    xa = this.axes.x,
+	    ya = this.axes.y,
 			tHoz = this.tHoz.bind(this),
 			tVert = this.tVert.bind(this),
 			bottom = Math.min(Math.max(0, ya.min), ya.max),
@@ -1470,8 +1527,8 @@ Flotr.Graph = Class.create({
 	 */
 	drawSeriesPoints: function(series) {
 		var ctx = this.ctx,
-			xaxis = this.xaxis,
-			yaxis = this.yaxis,
+       xaxis = this.axes.x,
+       yaxis = this.axes.y,
 			tHoz = this.tHoz.bind(this),
 			tVert = this.tVert.bind(this);
 			
@@ -1499,8 +1556,8 @@ Flotr.Graph = Class.create({
 		ctx.restore();
 	},
 	plotPoints: function (data, radius, fill) {
-		var xaxis = this.xaxis,
-		    yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
 		    ctx = this.ctx, i;
 			
 		for(i = data.length - 1; i > -1; --i){
@@ -1515,8 +1572,8 @@ Flotr.Graph = Class.create({
 		}
 	},
 	plotPointShadows: function(data, offset, radius){
-		var xaxis = this.xaxis,
-		    yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
 		    ctx = this.ctx, i;
 			
 		for(i = data.length - 1; i > -1; --i){
@@ -1565,8 +1622,8 @@ Flotr.Graph = Class.create({
 	plotBars: function(data, series, barWidth, offset, fill){
 		if(data.length < 1) return;
 		
-		var xaxis = this.xaxis,
-  			yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
   			ctx = this.ctx,
   			tHoz = this.tHoz.bind(this),
   			tVert = this.tVert.bind(this);
@@ -1650,8 +1707,8 @@ Flotr.Graph = Class.create({
   plotBarsShadows: function(data, series, barWidth, offset){
     if(data.length < 1) return;
     
-    var xaxis = this.xaxis,
-        yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
         ctx = this.ctx,
         tHoz = this.tHoz.bind(this),
         tVert = this.tVert.bind(this),
@@ -1727,8 +1784,8 @@ Flotr.Graph = Class.create({
 	plotCandles: function(data, series, offset, fill){
 		if(data.length < 1) return;
 		
-		var xaxis = this.xaxis,
-  			yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
   			ctx = this.ctx,
   			tHoz = this.tHoz.bind(this),
   			tVert = this.tVert.bind(this);
@@ -1786,8 +1843,8 @@ Flotr.Graph = Class.create({
   plotCandlesShadows: function(data, series, offset){
     if(data.length < 1) return;
     
-    var xaxis = this.xaxis,
-        yaxis = this.yaxis,
+    var xaxis = this.axes.x,
+        yaxis = this.axes.y,
         tHoz = this.tHoz.bind(this),
         tVert = this.tVert.bind(this),
         sw = this.options.shadowSize;
@@ -1829,14 +1886,14 @@ Flotr.Graph = Class.create({
   drawSeriesPie: function(series) {
     if (!this.options.pie.drawn) {
     var ctx = this.ctx,
-      xaxis = this.xaxis,
-      yaxis = this.yaxis;
-    var options = this.options;
-    var lw = series.pie.lineWidth;
-    var sw = series.shadowSize;
-    var data = series.data;
-    var radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2;
-    var html = [];
+        xaxis = this.axes.x,
+        yaxis = this.axes.y,
+        options = this.options,
+        lw = series.pie.lineWidth,
+        sw = series.shadowSize,
+        data = series.data,
+        radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2,
+        html = [];
     
     var vScale = 1;//Math.cos(series.pie.viewAngle);
     var plotTickness = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
@@ -1865,9 +1922,10 @@ Flotr.Graph = Class.create({
     // Sum of the portions' angles
     var sum = portions.pluck('value').pluck(1).inject(0, function(acc, n) { return acc + n; });
     
-    var fraction = 0.0;
-    var angle = series.pie.startAngle;
-    var value = 0.0;
+    var fraction = 0.0,
+        angle = series.pie.startAngle,
+        value = 0.0;
+    
     var slices = portions.collect(function(slice){
       angle += fraction;
       value = parseFloat(slice.value[1]); // @warning : won't support null values !!
@@ -2179,8 +2237,10 @@ Flotr.Graph = Class.create({
 		}
 		
 		return {
-			x: this.xaxis.min + rx / this.hozScale,
-			y: this.yaxis.max - ry / this.vertScale,
+			x:  this.axes.x.min  + rx / this.axes.x.scale,
+			x2: this.axes.x2.min + rx / this.axes.x2.scale,
+			y:  this.axes.y.max  - ry / this.axes.y.scale,
+			y2: this.axes.y2.max - ry / this.axes.y2.scale,
 			relX: rx,
 			relY: ry,
 			absX: ax,
@@ -2277,16 +2337,16 @@ Flotr.Graph = Class.create({
 	 * 		void
 	 */
 	fireSelectEvent: function(){
-		var selection = this.selection,
+		var a = this.axes, selection = this.selection,
 			x1 = (selection.first.x <= selection.second.x) ? selection.first.x : selection.second.x,
 			x2 = (selection.first.x <= selection.second.x) ? selection.second.x : selection.first.x,
 			y1 = (selection.first.y >= selection.second.y) ? selection.first.y : selection.second.y,
 			y2 = (selection.first.y >= selection.second.y) ? selection.second.y : selection.first.y;
 		
-		x1 = this.xaxis.min + x1 / this.hozScale;
-		x2 = this.xaxis.min + x2 / this.hozScale;
-		y1 = this.yaxis.max - y1 / this.vertScale;
-		y2 = this.yaxis.max - y2 / this.vertScale;
+		x1 = a.x.min + x1 / a.x.scale;
+		x2 = a.x.min + x2 / a.x.scale;
+		y1 = a.y.max - y1 / a.y.scale;
+		y2 = a.y.max - y2 / a.y.scale;
 
 		this.el.fire('flotr:select', [{x1:x1, y1:y1, x2:x2, y2:y2}, this]);
 	},
@@ -2410,10 +2470,10 @@ Flotr.Graph = Class.create({
 	 */
 	setSelection: function(area){
 		var options = this.options,
-			xaxis = this.xaxis,
-			yaxis = this.yaxis,
-			vertScale = this.vertScale,
-			hozScale = this.hozScale,
+			xaxis = this.axes.x,
+			yaxis = this.axes.y,
+			vertScale = xaxis.scale,
+			hozScale = yaxis.scale,
 			selX = options.selection.mode.indexOf('x') != -1,
 			selY = options.selection.mode.indexOf('y') != -1;
 		
@@ -2550,13 +2610,13 @@ Flotr.Graph = Class.create({
 			s = series[i];
 			if(!s.mouse.track) continue;
 			data = s.data;
-			xsens = (this.hozScale*s.mouse.sensibility);
-			ysens = (this.vertScale*s.mouse.sensibility);
+			xsens = (s.xaxis.scale*s.mouse.sensibility);
+			ysens = (s.yaxis.scale*s.mouse.sensibility);
 
 			for(var j = 0, xpow, ypow; j < data.length; j++){
 				if (data[j][1] === null) continue;
-				xpow = Math.pow(this.hozScale*(data[j][0] - mouse.x), 2);
-				ypow = Math.pow(this.vertScale*(data[j][1] - mouse.y), 2);
+				xpow = Math.pow(s.xaxis.scale*(data[j][0] - mouse.x), 2);
+				ypow = Math.pow(s.yaxis.scale*(data[j][1] - mouse.y), 2);
 				if(xpow < xsens && ypow < ysens && Math.sqrt(xpow+ypow) < n.dist){
 					n.dist = Math.sqrt(xpow+ypow);
 					n.x = data[j][0];
