@@ -765,6 +765,9 @@ Flotr.Graph = Class.create({
 				}
 			}
 		}
+		
+		this.findXAxesValues();
+		
 		this.calculateRange(a.x);
 		this.extendXRangeIfNeededByBar(a.x);
 		
@@ -826,23 +829,24 @@ Flotr.Graph = Class.create({
 	extendXRangeIfNeededByBar: function(axis){
 		if(axis.options.max == null){
 			var newmax = axis.max,
-			    i, b, c,
+			    i, s, b, c,
 			    stackedSums = [], 
 			    lastSerie = null;
 
 			for(i = 0; i < this.series.length; ++i){
-				b = this.series[i].bars;
-				c = this.series[i].candles;
+				s = this.series[i];
+				b = s.bars;
+				c = s.candles;
 				if(b.show || c.show) {
 					if (!b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
-						newmax = axis.max + this.series[i].bars.barWidth;
+						newmax = axis.max + s.bars.barWidth;
 					}
 					if(b.stacked && b.horizontal){
-						for (j = 0; j < this.series[i].data.length; j++) {
-							if (this.series[i].bars.show && this.series[i].bars.stacked) {
-								var x = this.series[i].data[j][0];
-								stackedSums[x] = (stackedSums[x] || 0) + this.series[i].data[j][1];
-								lastSerie = this.series[i];
+						for (j = 0; j < s.data.length; j++) {
+							if (s.bars.show && s.bars.stacked) {
+								var x = s.data[j][0];
+								stackedSums[x] = (stackedSums[x] || 0) + s.data[j][1];
+								lastSerie = s;
 							}
 						}
 				    
@@ -862,23 +866,24 @@ Flotr.Graph = Class.create({
 	extendYRangeIfNeededByBar: function(axis){
 		if(axis.options.max == null){
 			var newmax = axis.max,
-				  i, b, c,
+				  i, s, b, c,
 				  stackedSums = [],
 				  lastSerie = null;
 									
 			for(i = 0; i < this.series.length; ++i){
-				b = this.series[i].bars;
-				c = this.series[i].candles;
-				if (b.show && !this.series[i].hide) {
+				s = this.series[i];
+				b = s.bars;
+				c = s.candles;
+				if (b.show && !s.hide) {
 					if (b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
 						newmax = axis.max + b.barWidth;
 					}
 					if(b.stacked && !b.horizontal){
-						for (j = 0; j < this.series[i].data.length; j++) {
-							if (this.series[i].bars.show && this.series[i].bars.stacked) {
-								var x = this.series[i].data[j][0];
-								stackedSums[x] = (stackedSums[x] || 0) + this.series[i].data[j][1];
-								lastSerie = this.series[i];
+						for (j = 0; j < s.data.length; j++) {
+							if (s.bars.show && s.bars.stacked) {
+								var x = s.data[j][0];
+								stackedSums[x] = (stackedSums[x] || 0) + s.data[j][1];
+								lastSerie = s;
 							}
 						}
 						
@@ -890,6 +895,18 @@ Flotr.Graph = Class.create({
 			}
 			axis.lastSerie = lastSerie;
 			axis.max = newmax;
+		}
+	},
+	/** 
+	 * Find every values of the x axes
+	 */
+	findXAxesValues: function(){
+		for(i = this.series.length-1; i > -1 ; --i){
+			s = this.series[i];
+			s.xaxis.values = s.xaxis.values || [];
+			for (j = s.data.length-1; j > -1 ; --j){
+				s.xaxis.values[s.data[j][0]] = {};
+			}
 		}
 	},
 	/**
@@ -1810,15 +1827,12 @@ Flotr.Graph = Class.create({
 			// Stacked bars
 			var stackOffset = 0;
 			if(series.bars.stacked) {
-			  for(j = 0; j < xa.ticks.length; j++) {
-			    var t = xa.ticks[j];
-			     
-			    if (t.v == x) {
-			      stackOffset = t.stack || 0;
-			      t.stack = stackOffset + y;
-			      break;
+			  xa.values.each(function(o, v) {
+			    if (v == x) {
+			      stackOffset = o.stack || 0;
+			      o.stack = stackOffset + y;
 			    }
-			  }
+			  });
 			}
 
 			// @todo: fix horizontal bars support
@@ -1895,17 +1909,14 @@ Flotr.Graph = Class.create({
       
       // Stacked bars
       var stackOffset = 0;
-      if(series.bars.stacked) {
-        for(j = 0; j < xa.ticks.length; j++) {
-          var t = xa.ticks[j];
-          
-          if (t.v == x) {
-            stackOffset = t.stackShadow || 0;
-            t.stackShadow = stackOffset + y;
-            break;
-          }
-        }
-      }
+			if(series.bars.stacked) {
+			  xa.values.each(function(o, v) {
+			    if (v == x) {
+			      stackOffset = o.stackShadow || 0;
+			      o.stackShadow = stackOffset + y;
+			    }
+			  });
+			}
       
       // Horizontal bars
       if(series.bars.horizontal) 
