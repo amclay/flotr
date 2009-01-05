@@ -312,7 +312,8 @@ Flotr.Graph = Class.create({
         fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
         upFillColor: '#00A8F0',// => up sticks fill color
         downFillColor: '#CB4B4B',// => down sticks fill color
-        fillOpacity: 0.5       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+        fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+        barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
       },
       pie: {
         show: false,           // => setting to true will show bars, false will hide
@@ -1950,12 +1951,12 @@ Flotr.Graph = Class.create({
 		 * @todo linewidth not interpreted the right way.
 		 */
 		ctx.lineWidth = series.candles.lineWidth;
-		this.plotCandlesShadows(series, bw/2, series.candles.fill);
-		this.plotCandles(series, bw/2, series.candles.fill);
+		this.plotCandlesShadows(series, bw/2);
+		this.plotCandles(series, bw/2);
 		
 		ctx.restore();
 	},
-	plotCandles: function(series, offset, fill){
+	plotCandles: function(series, offset){
 		var data = series.data;
 		if(data.length < 1) return;
 		
@@ -1987,7 +1988,7 @@ Flotr.Graph = Class.create({
 			/**
 			 * Fill the candle.
 			 */
-			if(fill){
+			if(series.candles.fill && !series.candles.barcharts){
 				ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.candles.fillOpacity).toString();
 				ctx.fillRect(tHoz(left, xa), tVert(top2, ya) + offset, tHoz(right, xa) - tHoz(left, xa), tVert(bottom2, ya) - tVert(top2, ya));
 			}
@@ -1996,20 +1997,39 @@ Flotr.Graph = Class.create({
 			 * Draw candle outline/border, high, low.
 			 */
 			if(series.candles.lineWidth || series.candles.wickLineWidth){
-			  ctx.strokeStyle = color;
-				ctx.strokeRect(tHoz(left, xa), tVert(top2, ya) + offset, tHoz(right, xa) - tHoz(left, xa), tVert(bottom2, ya) - tVert(top2, ya));
-			  
-				var pixelOffset = (series.candles.wickLineWidth % 2) / 2;
+				var x, y, pixelOffset = (series.candles.wickLineWidth % 2) / 2;
+
+				x = Math.floor(tHoz((left + right) / 2), xa) + pixelOffset;
+				
 			  ctx.save();
 			  ctx.strokeStyle = color;
 			  ctx.lineWidth = series.candles.wickLineWidth;
 			  ctx.lineCap = 'butt';
 			  
-				ctx.beginPath();
-				ctx.moveTo(Math.floor(tHoz((left + right) / 2), xa)+pixelOffset, Math.floor(tVert(top2, ya) + offset));
-				ctx.lineTo(Math.floor(tHoz((left + right) / 2), xa)+pixelOffset, Math.floor(tVert(top, ya) + offset));
-				ctx.moveTo(Math.floor(tHoz((left + right) / 2), xa)+pixelOffset, Math.floor(tVert(bottom2, ya) + offset));
-				ctx.lineTo(Math.floor(tHoz((left + right) / 2), xa)+pixelOffset, Math.floor(tVert(bottom, ya) + offset));
+				if (series.candles.barcharts) {
+					ctx.beginPath();
+					
+					ctx.moveTo(x, Math.floor(tVert(top, ya) + offset));
+					ctx.lineTo(x, Math.floor(tVert(bottom, ya) + offset));
+					
+					y = Math.floor(tVert(open, ya) + offset)+0.5;
+					ctx.moveTo(Math.floor(tHoz(left, xa))+pixelOffset, y);
+					ctx.lineTo(x, y);
+					
+					y = Math.floor(tVert(close, ya) + offset)+0.5;
+					ctx.moveTo(Math.floor(tHoz(right, xa))+pixelOffset, y);
+					ctx.lineTo(x, y);
+				} 
+				else {
+  				ctx.strokeRect(tHoz(left, xa), tVert(top2, ya) + offset, tHoz(right, xa) - tHoz(left, xa), tVert(bottom2, ya) - tVert(top2, ya));
+
+  				ctx.beginPath();
+  				ctx.moveTo(x, Math.floor(tVert(top2,    ya) + offset));
+  				ctx.lineTo(x, Math.floor(tVert(top,     ya) + offset));
+  				ctx.moveTo(x, Math.floor(tVert(bottom2, ya) + offset));
+  				ctx.lineTo(x, Math.floor(tVert(bottom,  ya) + offset));
+				}
+				
 				ctx.stroke();
 				ctx.restore();
 			}
@@ -2017,7 +2037,7 @@ Flotr.Graph = Class.create({
 	},
   plotCandlesShadows: function(series, offset){
 		var data = series.data;
-    if(data.length < 1) return;
+    if(data.length < 1 || series.candles.barcharts) return;
     
     var xa = series.xaxis,
         ya = series.yaxis,
