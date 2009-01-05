@@ -608,12 +608,14 @@ Flotr.Graph = Class.create({
         datagrid = this.loadDataGrid();
 
 		var t = this.datagrid = new Element('table', {className:'flotr-datagrid', style:'height:100px;'});
+		var colgroup = ['<colgroup><col />'];
 		
 		// First row : series' labels
 		var html = ['<tr class="first-row">'];
 		html.push('<th>&nbsp;</th>');
 		for (i = 0; i < s.length; ++i) {
-			html.push('<th>'+(s[i].label || String.fromCharCode(65+i))+'</th>');
+			html.push('<th scope="col">'+(s[i].label || String.fromCharCode(65+i))+'</th>');
+			colgroup.push('<col />');
 		}
 		html.push('</tr>');
 		
@@ -638,11 +640,23 @@ Flotr.Graph = Class.create({
           if (label) content = label;
         }
 
-				html.push('<'+tag+'>'+content+'</'+tag+'>');
+				html.push('<'+tag+(tag=='th'?' scope="row"':'')+'>'+content+'</'+tag+'>');
 			}
 			html.push('</tr>');
 		}
-    t.update(html.join(''));
+		colgroup.push('</colgroup>');
+    t.update(colgroup.join('')+html.join(''));
+    
+    t.select('td').each(function(td) {
+    	td.observe('mouseover', function(e){
+    		td = e.element();
+    		var siblings = td.previousSiblings();
+    		
+    		t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
+    		t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
+    		t.select('colgroup col')[siblings.length].addClassName('hover');
+    	});
+    });
     
 		var toolbar = new Element('div', {className: 'flotr-datagrid-toolbar'}).
 	    insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).

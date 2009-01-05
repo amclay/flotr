@@ -92,10 +92,10 @@ iframe {
   padding: 1px 3px;
   min-width: 2em;
 }
-.flotr-datagrid tr:hover {
+.flotr-datagrid tr:hover, .flotr-datagrid col.hover {
   background: #f3f3f3;
 }
-.flotr-datagrid tr:hover th {
+.flotr-datagrid tr:hover th, .flotr-datagrid th.hover {
   background: #999;
   color: #fff;
 }
