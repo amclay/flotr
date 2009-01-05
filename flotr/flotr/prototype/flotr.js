@@ -647,16 +647,18 @@ Flotr.Graph = Class.create({
 		colgroup.push('</colgroup>');
     t.update(colgroup.join('')+html.join(''));
     
-    t.select('td').each(function(td) {
-    	td.observe('mouseover', function(e){
-    		td = e.element();
-    		var siblings = td.previousSiblings();
-    		
-    		t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
-    		t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
-    		t.select('colgroup col')[siblings.length].addClassName('hover');
-    	});
-    });
+    if (!Prototype.Browser.IE) {
+      t.select('td').each(function(td) {
+      	td.observe('mouseover', function(e){
+      		td = e.element();
+      		var siblings = td.previousSiblings();
+      		
+      		t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
+      		t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
+      		t.select('colgroup col')[siblings.length].addClassName('hover');
+      	});
+      });
+    }
     
 		var toolbar = new Element('div', {className: 'flotr-datagrid-toolbar'}).
 	    insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
