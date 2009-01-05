@@ -138,6 +138,11 @@ if (!document.createElement('canvas').getContext) {
 
         el.getContext = getContext;
 
+        // Remove fallback content. There is no way to hide text nodes so we
+        // just remove all childNodes. We could hide all elements and remove
+        // text nodes but who really cares about the fallback content.
+        el.innerHTML = '';
+
         // do not use inline function because that will leak memory
         el.attachEvent('onpropertychange', onPropertyChange);
         el.attachEvent('onresize', onResize);
@@ -314,7 +319,6 @@ if (!document.createElement('canvas').getContext) {
   var contextPrototype = CanvasRenderingContext2D_.prototype;
   contextPrototype.clearRect = function() {
     this.element_.innerHTML = '';
-    this.currentPath_ = [];
   };
 
   contextPrototype.beginPath = function() {
@@ -422,27 +426,31 @@ if (!document.createElement('canvas').getContext) {
   };
 
   contextPrototype.strokeRect = function(aX, aY, aWidth, aHeight) {
-    // Will destroy any existing path (same as FF behaviour)
+    var oldPath = this.currentPath_;
     this.beginPath();
+
     this.moveTo(aX, aY);
     this.lineTo(aX + aWidth, aY);
     this.lineTo(aX + aWidth, aY + aHeight);
     this.lineTo(aX, aY + aHeight);
     this.closePath();
     this.stroke();
-    this.currentPath_ = [];
+
+    this.currentPath_ = oldPath;
   };
 
   contextPrototype.fillRect = function(aX, aY, aWidth, aHeight) {
-    // Will destroy any existing path (same as FF behaviour)
+    var oldPath = this.currentPath_;
     this.beginPath();
+
     this.moveTo(aX, aY);
     this.lineTo(aX + aWidth, aY);
     this.lineTo(aX + aWidth, aY + aHeight);
     this.lineTo(aX, aY + aHeight);
     this.closePath();
     this.fill();
-    this.currentPath_ = [];
+
+    this.currentPath_ = oldPath;
   };
 
   contextPrototype.createLinearGradient = function(aX0, aY0, aX1, aY1) {

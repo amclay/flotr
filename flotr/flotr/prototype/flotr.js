@@ -653,9 +653,12 @@ Flotr.Graph = Class.create({
       		td = e.element();
       		var siblings = td.previousSiblings();
       		
-      		t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
       		t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
       		t.select('colgroup col')[siblings.length].addClassName('hover');
+      	});
+      	
+      	td.observe('mouseout', function(){
+      		t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
       	});
       });
     }
