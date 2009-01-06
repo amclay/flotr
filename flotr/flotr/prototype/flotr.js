@@ -745,19 +745,14 @@ Flotr.Graph = Class.create({
 		var s = this.series, 
 		    a = this.axes;
 		
-		a.x.datamin = 0;  a.x.datamax  = 1;
-		a.x2.datamin = 0; a.x2.datamax = 1;
-		a.y.datamin = 0;  a.y.datamax  = 1;
-		a.y2.datamin = 0; a.y2.datamax = 1;
+		a.x.datamin = 0;  a.x.datamax  = 0;
+		a.x2.datamin = 0; a.x2.datamax = 0;
+		a.y.datamin = 0;  a.y.datamax  = 0;
+		a.y2.datamin = 0; a.y2.datamax = 0;
 		
 		if(s.length > 0){
 			var i, j, h, x, y, data, xaxis, yaxis;
 		
-		// Return because series are empty.
-		//if(!a.x.used && !a.y.used) return;
-
-		// ...then find real datamin, datamax.
-			
 			// Get datamin, datamax start values 
 			for(i = 0; i < s.length; ++i) {
 				data = s[i].data, 
@@ -816,7 +811,7 @@ Flotr.Graph = Class.create({
 			var widen = (max == 0.0) ? 1.0 : 0.01;
 			min -= widen;
 			max += widen;
-		}			
+		}
 		axis.tickSize = Flotr.getTickSize(o.noTicks, min, max, o.tickDecimals);
 
 		// Autoscaling.
@@ -856,7 +851,7 @@ Flotr.Graph = Class.create({
 				s = this.series[i];
 				b = s.bars;
 				c = s.candles;
-				if(b.show || c.show) {
+				if(s.axis == axis && (b.show || c.show)) {
 					if (!b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
 						newmax = axis.max + s.bars.barWidth;
 					}
@@ -893,7 +888,7 @@ Flotr.Graph = Class.create({
 				s = this.series[i];
 				b = s.bars;
 				c = s.candles;
-				if (b.show && !s.hide) {
+				if (b.show && !s.hide && s.axis == axis) {
 					if (b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
 						newmax = axis.max + b.barWidth;
 					}
@@ -2696,8 +2691,8 @@ Flotr.Graph = Class.create({
 		var options = this.options,
 			xa = this.axes.x,
 			ya = this.axes.y,
-			vertScale = xaxis.scale,
-			hozScale = yaxis.scale,
+			vertScale = yaxis.scale,
+			hozScale = xaxis.scale,
 			selX = options.selection.mode.indexOf('x') != -1,
 			selY = options.selection.mode.indexOf('y') != -1;
 		
