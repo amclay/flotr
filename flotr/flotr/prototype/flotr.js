@@ -1,3 +1,5 @@
+/** $Id$ */
+
 var Flotr = {
 	version: '%version%',
 	author: 'Bas Wenneker',
@@ -191,7 +193,10 @@ Flotr.Graph = Class.create({
  	 * @param {Object} options - an object containing options
 	 */
 	initialize: function(el, data, options){
-		this.el = el;
+		this.el = $(el);
+		
+		if (!this.el) throw 'The target container doesn\'t exist';
+		
 		this.data = data;
 		this.series = Flotr.getSeries(data);
 		this.setOptions(options);
