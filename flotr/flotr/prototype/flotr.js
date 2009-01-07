@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 
 var Flotr = {
 	version: '%version%',
