@@ -1004,7 +1004,7 @@ Flotr.Graph = Class.create({
 				}
 	    }
 		  axis.maxLabel  = this.getTextDimensions(maxLabel, {size:options.fontSize, angle: Flotr.toRad(axis.options.labelsAngle)}, 'font-size:smaller;', 'flotr-grid-label');
-		  axis.titleSize = this.getTextDimensions(axis.options.title, {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)}, '', 'flotr-axis-title');
+		  axis.titleSize = this.getTextDimensions(axis.options.title, {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)}, 'font-weight:bold;', 'flotr-axis-title');
 		}, this);
 
     // Title height
@@ -1151,7 +1151,7 @@ Flotr.Graph = Class.create({
 	drawLabels: function(){		
 		// Construct fixed width label boxes, which can be styled easily. 
 		var noLabels = 0, axis,
-			xBoxWidth, i, html, tick, drawFunction,
+			xBoxWidth, i, html, tick,
 			options = this.options,
       ctx = this.ctx,
       a = this.axes;
@@ -1409,18 +1409,21 @@ Flotr.Graph = Class.create({
       }
     } 
     else {
-      html = [];
+      html = ['<div style="color:'+options.grid.color+';" class="flotr-titles">'];
       
       // Add title
       if (options.title){
-        html.push('<div style="position:absolute;top:0;left:'+this.plotOffset.left+'px;font-size:1em;font-weight:bold;color:'+options.grid.color+';text-align:center;width:'+this.plotWidth+'px;" class="flotr-title">'+options.title+'</div>');
+        html.push('<div style="position:absolute;top:0;left:'+this.plotOffset.left+'px;font-size:1em;font-weight:bold;text-align:center;width:'+this.plotWidth+'px;" class="flotr-title">'+options.title+'</div>');
       }
       
       // Add subtitle
       if (options.subtitle){
-        html.push('<div style="position:absolute;top:'+this.titleHeight+'px;left:'+this.plotOffset.left+'px;font-size:smaller;color:'+options.grid.color+';text-align:center;width:'+this.plotWidth+'px;" class="flotr-subtitle">'+options.subtitle+'</div>');
+        html.push('<div style="position:absolute;top:'+this.titleHeight+'px;left:'+this.plotOffset.left+'px;font-size:smaller;text-align:center;width:'+this.plotWidth+'px;" class="flotr-subtitle">'+options.subtitle+'</div>');
       }
+      html.push('</div>');
       
+      
+      html.push('<div class="flotr-axis-title" style="font-weight:bold;">');
 			// Add x axis title
 			if (a.x.options.title && a.x.used){
 				html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height) + 'px;left:' + this.plotOffset.left + 'px;width:' + this.plotWidth + 'px;text-align:center;" class="flotr-axis-title">' + a.x.options.title + '</div>');
@@ -1440,6 +1443,7 @@ Flotr.Graph = Class.create({
 			if (a.y2.options.title && a.y2.used){
 				html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2) + 'px;right:0;text-align:right;" class="flotr-axis-title">' + a.y2.options.title + '</div>');
 			}
+			html.push('</div>');
       
       this.el.insert(html.join(''));
     }
@@ -2850,7 +2854,7 @@ Flotr.Graph = Class.create({
 			}
 		}
 		
-		if(n.mouse && n.mouse.track && !prevHit || (prevHit && n.x != prevHit.x && n.y != prevHit.y)){
+		if(n.mouse && n.mouse.track && !prevHit || (prevHit && (n.x != prevHit.x || n.y != prevHit.y))){
 			var mt = this.mouseTrack || this.el.select(".flotr-mouse-value")[0],
 			    pos = '', 
 			    p = options.mouse.position, 
