@@ -2,19 +2,19 @@
 <project name="Flotr" default="build.release">
 
 	<property name="framework" value="prototype"/>
-	<property name="version" value="0.1.1test"/>
-	<property name="date" value="Feb 27, 2008"/>
+	<property name="version" value="0.2.0test"/>
+	<property name="date" value="Jan 12, 2009"/>
 	<property name="example_dir" value="examples/${framework}"/>
 	<property name="release_dir" value="release"/>
 	<property name="flotr_dir" value="flotr/${framework}"/>
 	<property name="build_dir" value="${release_dir}/${framework}/flotr-${version}"/>
 	<property name="jar_dir" location="${basedir}/yuicompressor-2.3.5/build" />
-	<property name="header" value="Flotr ${version} Copyright (c) 2008 Bas Wenneker, &lt;http://solutoire.com&gt;, MIT License." />
+	<property name="header" value="Flotr ${version} Copyright (c) 2009 Bas Wenneker, &lt;http://solutoire.com&gt;, MIT License." />
 	<property name="replace_dir" value="../../flotr/${framework}/"/>
 	<property name="online_dir" value="${release_dir}/${framework}/online-${version}"/>
 	
 	<property 	name="firefox_exe"
-				value="D:\Program Files\Mozilla Firefox\firefox.exe"
+				value="C:\Program Files\Mozilla Firefox\firefox.exe"
 				description="Location of firefox.exe, used for testing"/>
 	
 	<property 	name="ie7_exe"
@@ -22,15 +22,15 @@
 				description="Location of iexplore.exe, used for testing"/>
 				
 	<property 	name="opera_exe"
-				value="D:\Program Files\Opera\opera.exe"
+				value="C:\Program Files\Opera\opera.exe"
 				description="Location of opera.exe, used for testing"/>
 				
 	<property 	name="safari_exe"
-				value="D:\Program Files\Safari\Safari.exe"
+				value="C:\Program Files\Safari\Safari.exe"
 				description="Location of Safari.exe, used for testing"/>
 	
 	<property	name="prototype_testsuite"
-				value="http://127.0.0.1:8000/FlotrTrunk/flotr/tests/testRunner.html?testpage=127.0.0.1:8000/FlotrTrunk/flotr/tests/prototype/prototypeTestSuite.html&amp;autorun=true"
+				value="http://127.0.0.1/Flotr/tests/testRunner.html?testpage=127.0.0.1/Flotr/tests/prototype/prototypeTestSuite.html&amp;autorun=true"
 				description="URL of the prototype test suite"/>
 	
 	<target name="build.clean" description="Deletes release and online directories.">
@@ -146,7 +146,7 @@ src=&quot;http://pagead2.googlesyndication.com/pagead/show_ads.js&quot;&gt;
 	</target>
 	
 	<target name="test.prototype" 
-		description="Opens mulitple browsers and starts unit testing.">
+		description="Opens multiple browsers and starts unit testing.">
 			
 		<exec executable="${safari_exe}" spawn="true">		
 			<arg value="-url"/>

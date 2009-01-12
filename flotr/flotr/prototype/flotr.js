@@ -893,7 +893,7 @@ Flotr.Graph = Class.create({
 				s = this.series[i];
 				b = s.bars;
 				c = s.candles;
-				if (b.show && !s.hide && s.axis == axis) {
+				if (s.yaxis == axis && b.show && !s.hide) {
 					if (b.horizontal && (b.barWidth + axis.datamax > newmax) || (c.candleWidth + axis.datamax > newmax)){
 						newmax = axis.max + b.barWidth;
 					}

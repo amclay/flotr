@@ -4,21 +4,24 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<title>Flotr: Mouse Track Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
-    <script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
-    <!--[if IE]>
-    <script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-    <![endif]-->
-    <script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+
+		<script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
+		<!--[if IE]>
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
 	</head>
 	<body>
 		
 		<!-- ad -->
 		
 		<div id="wrapper">
-			<h1>Flotr: Mouse Track Example</h1>
+			<h1></h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
 			<p>This example show three series, there's nothing special about them. The thing that is special,
@@ -31,21 +34,7 @@
 			</p>
 			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a> or the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
 			<h2>The Code</h2>
-			<pre><code class="javascript">/**
- * The following configuration disables mouse tracking for series d1,
- * and configures mousetracking for series d2 and d3.
- */
-var f = Flotr.draw(
-	$('container'), 
-	[{data:d1,mouse:{track:false}}, d2, d3 ],
-	{mouse:{
-		track: true,
-		lineColor: 'purple',
-		sensibility: 1, // => The smaller this value, the more precise you've to point
-		trackDecimals: 2,
-		trackFormatter: function(obj){ return 'x = ' + obj.x +', y = ' + obj.y; }
-	}}
-);</code></pre>
+			<pre id="code-view"><code class="javascript"></code></pre>
 			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
 		</div>
 		

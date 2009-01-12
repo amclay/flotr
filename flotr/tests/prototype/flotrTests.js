@@ -19,6 +19,8 @@ function testFlotrRegister(){
 	assertEquals('Flotr._registeredTypes[\'lines\'] != drawSeriesLines', Flotr._registeredTypes['lines'], 'drawSeriesLines');
 	assertEquals('Flotr._registeredTypes[\'bars\'] != drawSeriesBars', Flotr._registeredTypes['bars'], 'drawSeriesBars');
 	assertEquals('Flotr._registeredTypes[\'points\'] != drawSeriesPoints', Flotr._registeredTypes['points'], 'drawSeriesPoints');
+	assertEquals('Flotr._registeredTypes[\'pie\'] != drawSeriesPie', Flotr._registeredTypes['pie'], 'drawSeriesPie');
+	assertEquals('Flotr._registeredTypes[\'candles\'] != drawSeriesCandles', Flotr._registeredTypes['candles'], 'drawSeriesCandles');
 	Flotr.register('test_type', 'drawSeriesTest');
 	assertEquals('Flotr._registeredTypes[\'test_type\'] != drawSeriesTest', Flotr._registeredTypes['test_type'], 'drawSeriesTest');
 }

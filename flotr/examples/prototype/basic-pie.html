@@ -2,14 +2,16 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>Flotr: Basic Example</title>
+		<title>Flotr: Basic Pie Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
 
 		<script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
 		<!--[if IE]>
-    <script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-    <![endif]-->
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
 		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
 		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
 		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
@@ -19,7 +21,7 @@
 		<!-- ad -->
 		
 		<div id="wrapper">
-			<h1>Flotr: Basic Pie Example</h1>
+			<h1></h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
 			<p>This example shows the ease of using Flotr. With just one line of javascript you can
@@ -32,7 +34,7 @@
 		
     <!-- ad -->
 		
-		<script type="text/javascript" id="code">
+		<script type="text/javascript">
 document.observe('dom:loaded', function(){
 	// Fill series.
 	var d1 = [[0, 4]];
@@ -63,17 +65,6 @@ document.observe('dom:loaded', function(){
 });
 		</script>
 
-		<script type="text/javascript">
-			document.observe('dom:loaded', function(){
-				var view = $('code-view');
-				var code = $('code').innerHTML.strip();
-				if (view.outerHTML)
-					view.outerHTML = '<pre id="code-view"><code class="javascript">'+code+'</code></pre>';
-				else
-					view.innerHTML = code;
-			});
-		</script>
-		
 		<!-- analytics -->
 	</body>
 </html>
