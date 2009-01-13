@@ -1,5 +1,11 @@
 /* $Id$ */
 
+/** 
+ * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
+ * @author Bas Wenneker
+ * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
+ * @version 0.2.0
+ */
 var Flotr = {
 	version: '%version%',
 	author: 'Bas Wenneker',
@@ -32,7 +38,7 @@ var Flotr = {
 	 * @param {Object} data - an array or object of dataseries
 	 * @param {Object} options - an object containing options
 	 * @param {Class} _GraphKlass_ - (optional) Class to pass the arguments to, defaults to Flotr.Graph
-	 * @return {Class} returns a new graph object and of course draws the graph.
+	 * @return {Object} returns a new graph object and of course draws the graph.
 	 */
 	draw: function(el, data, options, _GraphKlass_){	
 		_GraphKlass_ = _GraphKlass_ || Flotr.Graph;
@@ -41,7 +47,7 @@ var Flotr = {
 	/**
 	 * Collects dataseries from input and parses the series into the right format. It returns an Array 
 	 * of Objects each having at least the 'data' key set.
-	 * @param {Array/Object} data - Object or array of dataseries
+	 * @param {Array, Object} data - Object or array of dataseries
 	 * @return {Array} Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
 	 */
 	getSeries: function(data){
@@ -91,7 +97,7 @@ var Flotr = {
 	},
 	/**
 	 * Default tick formatter.
-	 * @param {String/Integer} val - tick value integer
+	 * @param {String, Integer} val - tick value integer
 	 * @return {String} formatted tick string
 	 */
 	defaultTickFormatter: function(val){
@@ -105,13 +111,18 @@ var Flotr = {
 	defaultTrackFormatter: function(obj){
 		return '('+obj.x+', '+obj.y+')';
 	}, 
+	/**
+	 * Formats the pies labels.
+	 * @param {Object} slice - Slice object
+	 * @return {String} Formatted pie label string
+	 */
 	defaultPieLabelFormatter: function(slice) {
-	  return (slice.fraction*100).toFixed(2)+'%';
+		return (slice.fraction*100).toFixed(2)+'%';
 	},
 	/**
 	 * Returns the magnitude of the input value.
-	 * @param {Integer/Float} x - integer or float value
-	 * @return {Integer/Float} returns the magnitude of the input value
+	 * @param {Integer, Float} x - integer or float value
+	 * @return {Integer, Float} returns the magnitude of the input value
 	 */
 	getMagnitude: function(x){
 		return Math.pow(10, Math.floor(Math.log(x) / Math.LN10));
@@ -124,7 +135,7 @@ var Flotr = {
 	},
 	/**
 	 * Parses a color string and returns a corresponding Color.
-	 * @param {String} str - string thats representing a color
+	 * @param {String, Color} str - string thats representing a color
 	 * @return {Color} returns a Color object or false
 	 */
 	parseColor: function(str){
@@ -165,7 +176,7 @@ var Flotr = {
 	},
 	/**
 	 * Extracts the background-color of the passed element.
-	 * @param {Element} element
+	 * @param {Element} element - The element from what the background color is extracted
 	 * @return {String} color string
 	 */
 	extractColor: function(element){
@@ -183,7 +194,6 @@ var Flotr = {
 };
 /**
  * Flotr Graph class that plots a graph on creation.
-
  */
 Flotr.Graph = Class.create({
 	/**
@@ -225,9 +235,8 @@ Flotr.Graph = Class.create({
 		this.draw();
 		this.insertLegend();
     
-    // Graph and Data tabs
-    if (this.options.spreadsheet.show) 
-      this.constructTabs();
+		// Graph and Data tabs
+		if (this.options.spreadsheet.show) this.constructTabs();
 	},
 	/**
 	 * Sets options and initializes some variables and color specific values, used by the constructor. 
@@ -466,7 +475,7 @@ Flotr.Graph = Class.create({
 		var el = this.el,
 			size, c, oc;
 		
-  	this.canvas = el.select('.flotr-canvas')[0];
+		this.canvas = el.select('.flotr-canvas')[0];
 		this.overlay = el.select('.flotr-overlay')[0];
 		
 		el.childElements().invoke('remove');
@@ -519,6 +528,13 @@ Flotr.Graph = Class.create({
 		  this.textEnabled = true;
 		}
 	},
+	/**
+	 * Calculates a text box dimensions, wether it is drawn on the canvas or inserted into the DOM
+	 * @param {String} text - The text in the box
+	 * @param {Object} canvasStyle - An object containing the style for the text if drawn on the canvas
+	 * @param {String} HtmlStyle - A CSS style for the text if inserted into the DOM
+	 * @param {Object} className - A CSS className for the text if inserted into the DOM
+	 */
   getTextDimensions: function(text, canvasStyle, HtmlStyle, className) {
     if (!text) return {width:0, height:0};
     
@@ -792,19 +808,20 @@ Flotr.Graph = Class.create({
 		
 		if (a.x2.used) {
 			this.calculateRange(a.x2);
-		  this.extendXRangeIfNeededByBar(a.x2);
+			this.extendXRangeIfNeededByBar(a.x2);
 		}
 		
 		this.calculateRange(a.y);
 		this.extendYRangeIfNeededByBar(a.y);
 		
 		if (a.y2.used) {
-  		this.calculateRange(a.y2);
-  		this.extendYRangeIfNeededByBar(a.y2);
+			this.calculateRange(a.y2);
+			this.extendYRangeIfNeededByBar(a.y2);
 		}
 	},
 	/**
 	 * Calculates the range of an axis to apply autoscaling.
+	 * @param {Object} axis - The axis for what the range will be calculated
 	 */
 	calculateRange: function(axis){
 		var o = axis.options,
@@ -844,6 +861,7 @@ Flotr.Graph = Class.create({
 	},
 	/**
 	 * Bar series autoscaling in x direction.
+	 * @param {Object} axis - The axis to extend if needed
 	 */
 	extendXRangeIfNeededByBar: function(axis){
 		if(axis.options.max == null){
@@ -881,6 +899,7 @@ Flotr.Graph = Class.create({
 	},
 	/**
 	 * Bar series autoscaling in y direction.
+	 * @param {Object} axis - The axis to extend if needed
 	 */
 	extendYRangeIfNeededByBar: function(axis){
 		if(axis.options.max == null){
@@ -930,8 +949,7 @@ Flotr.Graph = Class.create({
 	},
 	/**
 	 * Calculate axis ticks.
-	 * @param {Object} axis - axis object
-	 * @param {Object} o - axis options
+	 * @param {Object} axis - The axis for what the ticks will be calculated
 	 */
 	calculateTicks: function(axis){
 		var o = axis.options, i, v;
@@ -1007,13 +1025,13 @@ Flotr.Graph = Class.create({
 		  axis.titleSize = this.getTextDimensions(axis.options.title, {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)}, 'font-weight:bold;', 'flotr-axis-title');
 		}, this);
 
-    // Title height
-    dim = this.getTextDimensions(options.title, {size: options.fontSize*1.5}, 'font-size:1em;font-weight:bold;', 'flotr-title');
-    this.titleHeight = dim.height;
-    
-    // Subtitle height
-    dim = this.getTextDimensions(options.subtitle, {size: options.fontSize}, 'font-size:smaller;', 'flotr-subtitle');
-    this.subtitleHeight = dim.height;
+		// Title height
+		dim = this.getTextDimensions(options.title, {size: options.fontSize*1.5}, 'font-size:1em;font-weight:bold;', 'flotr-title');
+		this.titleHeight = dim.height;
+
+		// Subtitle height
+		dim = this.getTextDimensions(options.subtitle, {size: options.fontSize}, 'font-size:smaller;', 'flotr-subtitle');
+		this.subtitleHeight = dim.height;
 
 		// Grid outline line width.
 		if(options.show){
@@ -1031,16 +1049,16 @@ Flotr.Graph = Class.create({
 		p.bottom += (x.options.showLabels ?  (x.maxLabel.height  + margin) : 0) + 
 		            (x.options.title ?       (x.titleSize.height + margin) : 0);
 		
-    p.top    += (x2.options.showLabels ? (x2.maxLabel.height  + margin) : 0) + 
-                (x2.options.title ?      (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight;
+		p.top    += (x2.options.showLabels ? (x2.maxLabel.height  + margin) : 0) + 
+		            (x2.options.title ?      (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight;
     
 		p.left   += (y.options.showLabels ?  (y.maxLabel.width  + margin) : 0) + 
-                (y.options.title ?       (y.titleSize.width + margin) : 0);
+		            (y.options.title ?       (y.titleSize.width + margin) : 0);
 		
 		p.right  += (y2.options.showLabels ? (y2.maxLabel.width  + margin) : 0) + 
-                (y2.options.title ?      (y2.titleSize.width + margin) : 0);
+		            (y2.options.title ?      (y2.titleSize.width + margin) : 0);
     
-    p.top = Math.floor(p.top); // In order the outline not to be blured
+		p.top = Math.floor(p.top); // In order the outline not to be blured
     
 		this.plotWidth  = this.canvasWidth - p.left - p.right;
 		this.plotHeight = this.canvasHeight - p.bottom - p.top;
@@ -1070,6 +1088,7 @@ Flotr.Graph = Class.create({
 	/**
 	 * Translates absolute horizontal x coordinates to relative coordinates.
 	 * @param {Integer} x - absolute integer x coordinate
+	 * @param {Object} axis - the reference axis
 	 * @return {Integer} translated relative x coordinate
 	 */
 	tHoz: function(x, axis){
@@ -1079,6 +1098,7 @@ Flotr.Graph = Class.create({
 	/**
 	 * Translates absolute vertical x coordinates to relative coordinates.
 	 * @param {Integer} y - absolute integer y coordinate
+	 * @param {Object} axis - the reference axis
 	 * @return {Integer} translated relative y coordinate
 	 */
 	tVert: function(y, axis){
@@ -1561,7 +1581,8 @@ Flotr.Graph = Class.create({
 	},
 	/**
 	 * Function used to fill
-	 * @param {Object} data
+	 * @param {Object} series - The series to draw
+	 * @param {Object} offset
 	 */
 	plotLineArea: function(series, offset){
 		var data = series.data;
@@ -1682,15 +1703,8 @@ Flotr.Graph = Class.create({
 		ctx.fill();
 	},
 	/**
-	 * Function: (private) drawSeriesLines
-	 * 
-	 * Function draws lines series in the canvas element.
-	 * 
-	 * Parameters:
-	 * 		series - Series with options.lines.show = true.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Draws lines series in the canvas element.
+	 * @param {Object} series - Series with options.lines.show = true.
 	 */
 	drawSeriesLines: function(series){
 		series = series || this.series;
@@ -1730,15 +1744,8 @@ Flotr.Graph = Class.create({
 		ctx.restore();
 	},
 	/**
-	 * Function: drawSeriesPoints
-	 * 
-	 * Function draws point series in the canvas element.
-	 * 
-	 * Parameters:
-	 * 		series - Series with options.points.show = true.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Draws point series in the canvas element.
+	 * @param {Object} series - Series with options.points.show = true.
 	 */
 	drawSeriesPoints: function(series) {
 		var ctx = this.ctx;
@@ -1798,15 +1805,8 @@ Flotr.Graph = Class.create({
 		}
 	},
 	/**
-	 * Function: drawSeriesBars
-	 * 
-	 * Function draws bar series in the canvas element.
-	 * 
-	 * Parameters:
-	 * 		series - Series with options.bars.show = true.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Draws bar series in the canvas element.
+	 * @param {Object} series - Series with options.bars.show = true.
 	 */
 	drawSeriesBars: function(series) {
 		var ctx = this.ctx,
@@ -1963,15 +1963,8 @@ Flotr.Graph = Class.create({
     }
   },
 	/**
-	 * Function: drawSeriesCandles
-	 * 
-	 * Function draws candles series in the canvas element.
-	 * 
-	 * Parameters:
-	 * 		series - Series with options.candles.show = true.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Draws candles series in the canvas element.
+	 * @param {Object} series - Series with options.candles.show = true.
 	 */
 	drawSeriesCandles: function(series) {
 		var ctx = this.ctx,
@@ -2103,15 +2096,8 @@ Flotr.Graph = Class.create({
     }
   },
   /**
-   * Function: drawSeriesPie
-   * 
-   * Function draws a pie in the canvas element.
-   * 
-   * Parameters:
-   *    series - Series with options.pie.show = true.
-   * 
-   * Returns:
-   *    void
+   * Draws a pie in the canvas element.
+   * @param {Object} series - Series with options.pie.show = true.
    */
   drawSeriesPie: function(series) {
     if (!this.options.pie.drawn) {
@@ -2297,17 +2283,8 @@ Flotr.Graph = Class.create({
     ctx.closePath();
     ctx.restore();
   },
-  plotPie: function() {}, 
 	/**
-	 * Function: insertLegend
-	 * 
-	 * Function adds a legend div to the canvas container or draws it on the canvas.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
+	 * Adds a legend div to the canvas container or draws it on the canvas.
 	 */
 	insertLegend: function(){
 		if(!this.options.legend.show)
@@ -2439,15 +2416,9 @@ Flotr.Graph = Class.create({
     }
 	},
 	/**
-	 * Function: getEventPosition
-	 * 
 	 * Calculates the coordinates from a mouse event object.
-	 * 
-	 * Parameters:
-	 * 		event - Mouse Event object.
-	 * 
-	 * Returns:
-	 * 		Object with x and y coordinates of the mouse.
+	 * @param {Event} event - Mouse Event object.
+	 * @return {Object} Object with coordinates of the mouse.
 	 */
 	getEventPosition: function (event){
 		var offset = this.overlay.cumulativeOffset(),
@@ -2476,15 +2447,8 @@ Flotr.Graph = Class.create({
 		};
 	},
 	/**
-	 * Function: clickHandler
-	 * 
-	 * Handler observes the 'click' event and fires the 'flotr:click' event.
-	 * 
-	 * Parameters:
-	 * 		event - 'click' Event object.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Observes the 'click' event and fires the 'flotr:click' event.
+	 * @param {Event} event - 'click' Event object.
 	 */
 	clickHandler: function(event){
 		if(this.ignoreClick){
@@ -2494,16 +2458,8 @@ Flotr.Graph = Class.create({
 		this.el.fire('flotr:click', [this.getEventPosition(event), this]);
 	},
 	/**
-	 * Function: mouseMoveHandler
-	 * 
-	 * Handler observes mouse movement over the graph area. Fires the 
-	 * 'flotr:mousemove' event.
-	 * 
-	 * Parameters:
-	 * 		event - 'mousemove' Event object.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Observes mouse movement over the graph area. Fires the 'flotr:mousemove' event.
+	 * @param {Event} event - 'mousemove' Event object.
 	 */
 	mouseMoveHandler: function(event){
  		var pos = this.getEventPosition(event);
@@ -2517,15 +2473,8 @@ Flotr.Graph = Class.create({
 		this.el.fire('flotr:mousemove', [event, pos, this]);
 	},
 	/**
-	 * Function: mouseDownHandler
-	 * 
-	 * Handler observes the 'mousedown' event.
-	 * 
-	 * Parameters:
-	 * 		event - 'mousedown' Event object.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Observes the 'mousedown' event.
+	 * @param {Event} event - 'mousedown' Event object.
 	 */
 	mouseDownHandler: function (event){
     if(event.isRightClick()) {
@@ -2554,15 +2503,7 @@ Flotr.Graph = Class.create({
 		$(document).observe('mouseup', this.mouseUpHandler);
 	},
 	/**
-	 * Function: (private) fireSelectEvent
-	 * 
 	 * Fires the 'flotr:select' event when the user made a selection.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
 	 */
 	fireSelectEvent: function(){
 		var a = this.axes, selection = this.selection,
@@ -2579,15 +2520,8 @@ Flotr.Graph = Class.create({
 		this.el.fire('flotr:select', [{x1:x1, y1:y1, x2:x2, y2:y2}, this]);
 	},
 	/**
-	 * Function: (private) mouseUpHandler
-	 * 
-	 * Handler observes the mouseup event for the document. 
-	 * 
-	 * Parameters:
-	 * 		event - 'mouseup' Event object.
-	 * 
-	 * Returns:
-	 * 		void
+	 * Observes the mouseup event for the document. 
+	 * @param {Event} event - 'mouseup' Event object.
 	 */
 	mouseUpHandler: function(event){
     $(document).stopObserving('mouseup', this.mouseUpHandler);
@@ -2608,16 +2542,9 @@ Flotr.Graph = Class.create({
 		}
 	},
 	/**
-	 * Function: setSelectionPos
-	 * 
 	 * Calculates the position of the selection.
-	 * 
-	 * Parameters:
-	 * 		pos - Position object.
-	 * 		event - Event object.
-	 * 
-	 * Returns:
-	 * 		void
+	 * @param {Object} pos - Position object.
+	 * @param {Event} event - Event object.
 	 */
 	setSelectionPos: function(pos, event) {
 		var options = this.options,
@@ -2638,15 +2565,7 @@ Flotr.Graph = Class.create({
 		}
 	},
 	/**
-	 * Function: updateSelection
-	 * 
 	 * Updates (draws) the selection box.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
 	 */
 	updateSelection: function(){
 		if(this.lastMousePos.pageX == null) return;
@@ -2657,15 +2576,7 @@ Flotr.Graph = Class.create({
 		if(this.selectionIsSane()) this.drawSelection();
 	},
 	/**
-	 * Function: clearSelection
-	 * 
 	 * Removes the selection box from the overlay canvas.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
 	 */
 	clearSelection: function() {
 		if(this.prevSelection == null) return;
@@ -2686,15 +2597,8 @@ Flotr.Graph = Class.create({
 		this.prevSelection = null;
 	},
 	/**
-	 * Function: setSelection
-	 * 
 	 * Allows the user the manually select an area.
-	 * 
-	 * Parameters:
-	 * 		area - Object with coordinates to select.
-	 * 
-	 * Returns:
-	 * 		void
+	 * @param {Object} area - Object with coordinates to select.
 	 */
 	setSelection: function(area){
 		var options = this.options,
@@ -2716,15 +2620,7 @@ Flotr.Graph = Class.create({
 		this.fireSelectEvent();
 	},
 	/**
-	 * Function: (private) drawSelection
-	 * 
 	 * Draws the selection box.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
 	 */
 	drawSelection: function() {
 		var prevSelection = this.prevSelection,
@@ -2759,15 +2655,8 @@ Flotr.Graph = Class.create({
 		octx.strokeRect(x + plotOffset.left, y + plotOffset.top, w, h);
 	},
 	/**
-	 * Function: (private) selectionIsSane
-	 * 
 	 * Determines whether or not the selection is sane and should be drawn.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		boolean - True when sane, false otherwise.
+	 * @return {Boolean} - True when sane, false otherwise.
 	 */
 	selectionIsSane: function(){
 		var selection = this.selection;
@@ -2775,15 +2664,7 @@ Flotr.Graph = Class.create({
 		       Math.abs(selection.second.y - selection.first.y) >= 5;
 	},
 	/**
-	 * Function: clearHit
-	 * 
 	 * Removes the mouse tracking point from the overlay.
-	 * 
-	 * Parameters:
-	 * 		none
-	 * 
-	 * Returns:
-	 * 		void
 	 */
 	clearHit: function(){
 		if(this.prevHit){
@@ -2801,17 +2682,10 @@ Flotr.Graph = Class.create({
 		}		
 	},
 	/**
-	 * Function: hit
-	 * 
 	 * Retrieves the nearest data point from the mouse cursor. If it's within
 	 * a certain range, draw a point on the overlay canvas and display the x and y
 	 * value of the data.
-	 * 
-	 * Parameters:
-	 * 		mouse - Object that holds the relative x and y coordinates of the cursor.
-	 * 
-	 * Returns:
-	 * 		void
+	 * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
 	 */
 	hit: function(mouse){
 		var series = this.series,
@@ -2842,7 +2716,10 @@ Flotr.Graph = Class.create({
 			ysens = (s.yaxis.scale*s.mouse.sensibility);
 
 			for(var j = 0, xpow, ypow; j < data.length; j++){
-				if (data[j][1] === null) continue;
+				if (data[j][1] === null || 
+				    s.xaxis.min > data[j][0] || s.xaxis.max < data[j][0] || 
+					s.yaxis.min > data[j][1] || s.yaxis.max < data[j][1]) continue;
+					
 				xpow = Math.pow(s.xaxis.scale*(data[j][0] - mouse.x), 2);
 				ypow = Math.pow(s.yaxis.scale*(data[j][1] - mouse.y), 2);
 				if(xpow < xsens && ypow < ysens && Math.sqrt(xpow+ypow) < n.dist){

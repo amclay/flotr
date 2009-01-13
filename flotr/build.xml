@@ -2,7 +2,7 @@
 <project name="Flotr" default="build.release">
 
 	<property name="framework" value="prototype"/>
-	<property name="version" value="0.2.0test"/>
+	<property name="version" value="0.2.0-test"/>
 	<property name="date" value="Jan 12, 2009"/>
 	<property name="example_dir" value="examples/${framework}"/>
 	<property name="release_dir" value="release"/>

@@ -184,7 +184,7 @@ var CanvasText = {
   	for (i = 0; i < chars.length; i++) {
   		c = chars[i];
   		if (c = CanvasText.letters[c] || CanvasText.specialchars[c])
-  		  result.push(c);
+			result.push(c);
   	}
   	return CanvasText._bufferLexemes[str] = result.compact();
   },
@@ -354,11 +354,11 @@ var CanvasText = {
           
       if (c.diacritic) {
         var dia = CanvasText.diacritics[c.diacritic];
-        var char = CanvasText.letter(c.letter);
+        var character = CanvasText.letter(c.letter);
 
         CanvasText.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag, offset);
-        points = char.points;
-        width = char.width;
+        points = character.points;
+        width = character.width;
       }
 
       CanvasText.drawPoints(ctx, points, x, y, mag, offset);
