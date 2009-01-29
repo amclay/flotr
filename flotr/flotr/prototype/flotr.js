@@ -2597,8 +2597,8 @@ Flotr.Graph = Class.create({
 		var options = this.options,
 			xa = this.axes.x,
 			ya = this.axes.y,
-			vertScale = yaxis.scale,
-			hozScale = xaxis.scale,
+			vertScale = ya.scale,
+			hozScale = xa.scale,
 			selX = options.selection.mode.indexOf('x') != -1,
 			selY = options.selection.mode.indexOf('y') != -1;
 		
