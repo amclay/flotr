@@ -24,7 +24,8 @@
 			<h1></h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
-			<p>This graph show a 5 series. The axis are configured and the vertical grid lines are not rendered.</p>
+			<p>This graph show a 5 series. The axis are configured and the vertical grid lines are not rendered. <br />
+			There are null values on the sinus series.</p>
 			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a> or the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
 			<h2>The Code</h2>
 			<pre id="code-view"><code class="javascript"></code></pre>
@@ -56,6 +57,9 @@
 						d5.push([i, 2*i]);
 					}
 				}
+				
+				d3[30][1] = null;
+				d3[31][1] = null;
 						    
 				/**
 				 * Draw the graph.

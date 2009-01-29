@@ -6,8 +6,10 @@
 
 var Canvas2Image = (function() {
 	// check if we have canvas support
-	var oCanvas = document.createElement("canvas");
-  
+	var oCanvas = document.createElement("canvas"),
+		sc = String.fromCharCode
+	
+	
 	// no canvas, bail out.
 	if (!oCanvas.getContext) {
 		return {
@@ -17,129 +19,101 @@ var Canvas2Image = (function() {
 		}
 	}
 
-	var bHasImageData = !!(oCanvas.getContext("2d").getImageData);
-	var bHasDataURL = !!(oCanvas.toDataURL);
-	var bHasBase64 = !!(window.btoa);
-
-	var strDownloadMime = "image/octet-stream";
+	var bHasImageData = !!(oCanvas.getContext("2d").getImageData),
+	    bHasDataURL = !!(oCanvas.toDataURL),
+		bHasBase64 = !!(window.btoa),
+		strDownloadMime = "image/octet-stream";
 
 	// ok, we're good
 	var readCanvasData = function(oCanvas) {
-		var iWidth = parseInt(oCanvas.width);
-		var iHeight = parseInt(oCanvas.height);
+		var iWidth = parseInt(oCanvas.width),
+		    iHeight = parseInt(oCanvas.height);
 		return oCanvas.getContext("2d").getImageData(0,0,iWidth,iHeight);
 	}
 
 	// base64 encodes either a string or an array of charcodes
 	var encodeData = function(data) {
-		var strData = "";
+		var i, aData, strData = "";
+		
 		if (typeof data == "string") {
 			strData = data;
 		} else {
-			var aData = data;
-			for (var i = 0; i < aData.length; i++) {
-				strData += String.fromCharCode(aData[i]);
+			aData = data;
+			for (i = 0; i < aData.length; i++) {
+				strData += sc(aData[i]);
 			}
 		}
 		return btoa(strData);
 	}
 
-	// creates a base64 encoded string containing BMP data
-	// takes an imagedata object as argument
+	// creates a base64 encoded string containing BMP data takes an imagedata object as argument
 	var createBMP = function(oData) {
-		var aHeader = [];
+		var strHeader = '',
+		    iWidth = oData.width,
+			iHeight = oData.height;
+
+		strHeader += 'BM';
 	
-		var iWidth = oData.width;
-		var iHeight = oData.height;
+		var iFileSize = iWidth*iHeight*4 + 54; // total header size = 54 bytes
+		strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
+		strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
+		strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
+		strHeader += sc(iFileSize % 256);
 
-		aHeader.push(0x42); // magic 1
-		aHeader.push(0x4D); 
-	
-		var iFileSize = iWidth*iHeight*3 + 54; // total header size = 54 bytes
-		aHeader.push(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-		aHeader.push(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-		aHeader.push(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-		aHeader.push(iFileSize % 256);
-
-		aHeader.push(0); // reserved
-		aHeader.push(0);
-		aHeader.push(0); // reserved
-		aHeader.push(0);
-
-		aHeader.push(54); // data offset
-		aHeader.push(0);
-		aHeader.push(0);
-		aHeader.push(0);
-
-		var aInfoHeader = [];
-		aInfoHeader.push(40); // info header size
-		aInfoHeader.push(0);
-		aInfoHeader.push(0);
-		aInfoHeader.push(0);
+		strHeader += sc(0, 0, 0, 0, 54, 0, 0, 0); // data offset
+		strHeader += sc(40, 0, 0, 0); // info header size
 
 		var iImageWidth = iWidth;
-		aInfoHeader.push(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-		aInfoHeader.push(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-		aInfoHeader.push(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-		aInfoHeader.push(iImageWidth % 256);
+		strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
+		strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
+		strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
+		strHeader += sc(iImageWidth % 256);
 	
 		var iImageHeight = iHeight;
-		aInfoHeader.push(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-		aInfoHeader.push(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-		aInfoHeader.push(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-		aInfoHeader.push(iImageHeight % 256);
+		strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
+		strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
+		strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
+		strHeader += sc(iImageHeight % 256);
 	
-		aInfoHeader.push(1); // num of planes
-		aInfoHeader.push(0);
+		strHeader += sc(1, 0, 32, 0); // num of planes & num of bits per pixel
+		strHeader += sc(0, 0, 0, 0); // compression = none
 	
-		aInfoHeader.push(24); // num of bits per pixel
-		aInfoHeader.push(0);
+		var iDataSize = iWidth*iHeight*4; 
+		strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
+		strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
+		strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
+		strHeader += sc(iDataSize % 256); 
 	
-		aInfoHeader.push(0); // compression = none
-		aInfoHeader.push(0);
-		aInfoHeader.push(0);
-		aInfoHeader.push(0);
+		strHeader += sc(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // these bytes are not used
 	
-		var iDataSize = iWidth*iHeight*3; 
-		aInfoHeader.push(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-		aInfoHeader.push(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-		aInfoHeader.push(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-		aInfoHeader.push(iDataSize % 256); 
-	
-		for (var i = 0; i < 16; i++) {
-			aInfoHeader.push(0);	// these bytes not used
-		}
-	
-		var iPadding = (4 - ((iWidth * 3) % 4)) % 4;
-
-		var aImgData = oData.data;
-
-		var strPixelData = "";
-		var y = iHeight;
+		var aImgData = oData.data,
+			strPixelData = "",
+			c, x, y = iHeight,
+			iOffsetX, iOffsetY, strPixelRow;
+			
 		do {
-			var iOffsetY = iWidth*(y-1)*4;
-			var strPixelRow = "";
-			for (var x=0;x<iWidth;x++) {
-				var iOffsetX = 4*x;
-
-				strPixelRow += String.fromCharCode(aImgData[iOffsetY+iOffsetX+2]);
-				strPixelRow += String.fromCharCode(aImgData[iOffsetY+iOffsetX+1]);
-				strPixelRow += String.fromCharCode(aImgData[iOffsetY+iOffsetX]);
-			}
-			for (var c=0;c<iPadding;c++) {
-				strPixelRow += String.fromCharCode(0);
+			iOffsetY = iWidth*(y-1)*4;
+			strPixelRow = "";
+			for (x = 0; x < iWidth; x++) {
+				iOffsetX = 4*x;
+				strPixelRow += sc(
+					aImgData[iOffsetY + iOffsetX + 2], // B
+					aImgData[iOffsetY + iOffsetX + 1], // G
+					aImgData[iOffsetY + iOffsetX],     // R
+					aImgData[iOffsetY + iOffsetX + 3]  // A
+				);
 			}
 			strPixelData += strPixelRow;
 		} while (--y);
 
-		return encodeData(aHeader.concat(aInfoHeader)) + encodeData(strPixelData);
+		return encodeData(strHeader + strPixelData);
 	}
 
 	// sends the generated file to the client
 	var saveFile = function(strData) {
-    if (!window.open(strData)) {
-      document.location.href = strData;
-    }
+		if (!window.open(strData)) {
+			document.location.href = strData;
+		}
 	}
 
 	var makeDataURI = function(strData, strMime) {
@@ -173,11 +147,11 @@ var Canvas2Image = (function() {
 
 	return {
 		saveAsPNG : function(oCanvas, bReturnImg, iWidth, iHeight) {
-			if (!bHasDataURL) {
-				return false;
-			}
-			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight);
-			var strData = oScaledCanvas.toDataURL("image/png");
+			if (!bHasDataURL) return false;
+			
+			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
+			    strData = oScaledCanvas.toDataURL("image/png");
+				
 			if (bReturnImg) {
 				return makeImageObject(strData);
 			} else {
@@ -187,19 +161,14 @@ var Canvas2Image = (function() {
 		},
 
 		saveAsJPEG : function(oCanvas, bReturnImg, iWidth, iHeight) {
-			if (!bHasDataURL) {
-				return false;
-			}
+			if (!bHasDataURL) return false;
 
-			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight);
-			var strMime = "image/jpeg";
-			var strData = oScaledCanvas.toDataURL(strMime);
+			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
+			    strMime = "image/jpeg",
+				strData = oScaledCanvas.toDataURL(strMime);
 	
-			// check if browser actually supports jpeg by looking for the mime type in the data uri.
-			// if not, return false
-			if (strData.indexOf(strMime) != 5) {
-				return false;
-			}
+			// check if browser actually supports jpeg by looking for the mime type in the data uri. if not, return false
+			if (strData.indexOf(strMime) != 5) return false;
 
 			if (bReturnImg) {
 				return makeImageObject(strData);
@@ -210,14 +179,12 @@ var Canvas2Image = (function() {
 		},
 
 		saveAsBMP : function(oCanvas, bReturnImg, iWidth, iHeight) {
-			if (!(bHasImageData && bHasBase64)) {
-				return false;
-			}
+			if (!(bHasImageData && bHasBase64)) return false;
 
-			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight);
-
-			var oData = readCanvasData(oScaledCanvas);
-			var strImgData = createBMP(oData);
+			var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
+			    oData = readCanvasData(oScaledCanvas),
+				strImgData = createBMP(oData);
+				
 			if (bReturnImg) {
 				return makeImageObject(makeDataURI(strImgData, "image/bmp"));
 			} else {
@@ -226,5 +193,4 @@ var Canvas2Image = (function() {
 			return true;
 		}
 	};
-
 })();

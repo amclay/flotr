@@ -516,11 +516,6 @@ Flotr.Graph = Class.create({
 			c = this.canvas.writeAttribute(size);
 		}
 		el.insert(c);
-		
-		if(Prototype.Browser.IE){
-			c = window.G_vmlCanvasManager.initElement(c);
-		}
-		this.ctx = c.getContext('2d');
     
 		// Insert overlay canvas for interactive features.
 		if (!this.overlay) {
@@ -533,16 +528,14 @@ Flotr.Graph = Class.create({
 		el.insert(oc);
 		
 		if(Prototype.Browser.IE){
+			c  = window.G_vmlCanvasManager.initElement(c);
 			oc = window.G_vmlCanvasManager.initElement(oc);
 		}
+		this.ctx = c.getContext('2d');
 		this.octx = oc.getContext('2d');
 
 		// Enable text functions
-		if (window.CanvasText) {
-		  CanvasText.enable(this.ctx);
-		  CanvasText.enable(this.octx);
-		  this.textEnabled = true;
-		}
+		this.textEnabled = !!this.ctx.drawText;
 	},
 	/**
 	 * Calculates a text box dimensions, wether it is drawn on the canvas or inserted into the DOM
@@ -1532,8 +1525,8 @@ Flotr.Graph = Class.create({
 			var x1 = data[i][0],   y1 = data[i][1],
 			    x2 = data[i+1][0], y2 = data[i+1][1];
 
-		// To allow empty values
-		if (y1 === null || y2 === null) continue;
+			// To allow empty values
+			if (y1 === null || y2 === null) continue;
       
 			/**
 			 * Clip with ymin.
@@ -1549,7 +1542,8 @@ Flotr.Graph = Class.create({
 				 */
 				x1 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y1 = ya.min;
-			}else if(y2 <= y1 && y2 < ya.min){
+			}
+			else if(y2 <= y1 && y2 < ya.min){
 				if(y1 < ya.min) continue;
 				x2 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y2 = ya.min;
@@ -1576,7 +1570,8 @@ Flotr.Graph = Class.create({
 				if(x2 < xa.min) continue;
 				y1 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x1 = xa.min;
-			}else if(x2 <= x1 && x2 < xa.min){
+			}
+			else if(x2 <= x1 && x2 < xa.min){
 				if(x1 < xa.min) continue;
 				y2 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x2 = xa.min;
@@ -1589,7 +1584,8 @@ Flotr.Graph = Class.create({
 				if (x2 > xa.max) continue;
 				y1 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x1 = xa.max;
-			}else if(x2 >= x1 && x2 > xa.max){
+			}
+			else if(x2 >= x1 && x2 > xa.max){
 				if(x1 > xa.max) continue;
 				y2 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x2 = xa.max;
@@ -1615,8 +1611,8 @@ Flotr.Graph = Class.create({
 
 		var top, lastX = 0,
 			ctx = this.ctx,
-	    xa = series.xaxis,
-	    ya = series.yaxis,
+			xa = series.xaxis,
+			ya = series.yaxis,
 			tHoz = this.tHoz.bind(this),
 			tVert = this.tVert.bind(this),
 			bottom = Math.min(Math.max(0, ya.min), ya.max),
@@ -1632,7 +1628,8 @@ Flotr.Graph = Class.create({
 				if(x2 < xa.min) continue;
 				y1 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x1 = xa.min;
-			}else if(x2 <= x1 && x2 < xa.min){
+			}
+			else if(x2 <= x1 && x2 < xa.min){
 				if(x1 < xa.min) continue;
 				y2 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x2 = xa.min;
@@ -1642,7 +1639,8 @@ Flotr.Graph = Class.create({
 				if(x2 > xa.max) continue;
 				y1 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x1 = xa.max;
-			}else if(x2 >= x1 && x2 > xa.max){
+			}
+			else if(x2 >= x1 && x2 > xa.max){
 				if (x1 > xa.max) continue;
 				y2 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
 				x2 = xa.max;
@@ -1660,7 +1658,8 @@ Flotr.Graph = Class.create({
 				ctx.lineTo(tHoz(x1, xa), tVert(ya.max, ya) + offset);
 				ctx.lineTo(tHoz(x2, xa), tVert(ya.max, ya) + offset);
 				continue;
-			}else if(y1 <= ya.min && y2 <= ya.min){
+			}
+			else if(y1 <= ya.min && y2 <= ya.min){
 				ctx.lineTo(tHoz(x1, xa), tVert(ya.min, ya) + offset);
 				ctx.lineTo(tHoz(x2, xa), tVert(ya.min, ya) + offset);
 				continue;
@@ -1680,7 +1679,8 @@ Flotr.Graph = Class.create({
 			if(y1 <= y2 && y1 < ya.min && y2 >= ya.min){
 				x1 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y1 = ya.min;
-			}else if(y2 <= y1 && y2 < ya.min && y1 >= ya.min){
+			}
+			else if(y2 <= y1 && y2 < ya.min && y1 >= ya.min){
 				x2 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y2 = ya.min;
 			}
@@ -1691,7 +1691,8 @@ Flotr.Graph = Class.create({
 			if(y1 >= y2 && y1 > ya.max && y2 <= ya.max){
 				x1 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y1 = ya.max;
-			}else if(y2 >= y1 && y2 > ya.max && y1 <= ya.max){
+			}
+			else if(y2 >= y1 && y2 > ya.max && y1 <= ya.max){
 				x2 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
 				y2 = ya.max;
 			}
@@ -1805,7 +1806,8 @@ Flotr.Graph = Class.create({
 			
 		for(i = data.length - 1; i > -1; --i){
 			var x = data[i][0], y = data[i][1];
-			if(x < xa.min || x > xa.max || y < ya.min || y > ya.max)
+			// To allow empty values
+			if(y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
 				continue;
 			
 			ctx.beginPath();
@@ -1822,7 +1824,7 @@ Flotr.Graph = Class.create({
 			
 		for(i = data.length - 1; i > -1; --i){
 			var x = data[i][0], y = data[i][1];
-			if (x < xa.min || x > xa.max || y < ya.min || y > ya.max)
+			if (y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
 				continue;
 			ctx.beginPath();
 			ctx.arc(this.tHoz(x, xa), this.tVert(y, ya) + offset, radius, 0, Math.PI, false);
@@ -1871,6 +1873,8 @@ Flotr.Graph = Class.create({
 			var x = data[i][0],
 			    y = data[i][1],
 				drawLeft = true, drawTop = true, drawRight = true;
+			
+			if (y === null) continue;
 			
 			// Stacked bars
 			var stackOffset = 0;
@@ -1954,6 +1958,8 @@ Flotr.Graph = Class.create({
 		for(var i = 0; i < data.length; i++){
 			var x = data[i][0],
 			    y = data[i][1];
+				
+			if (y === null) continue;
 			
 			// Stacked bars
 			var stackOffset = 0;
@@ -2150,12 +2156,12 @@ Flotr.Graph = Class.create({
 		
 		// Pie portions
 		portions = this.series.collect(function(hash, index){
-			if (hash.pie.show)
-			return {
-			name: (hash.label || hash.data[0][1]),
-			value: [index, hash.data[0][1]],
-			explode: hash.pie.explode
-			};
+			if (hash.pie.show && hash.data[0][1] !== null)
+				return {
+					name: (hash.label || hash.data[0][1]),
+					value: [index, hash.data[0][1]],
+					explode: hash.pie.explode
+				};
 		}),
 		
 		// Sum of the portions' angles
@@ -2189,8 +2195,10 @@ Flotr.Graph = Class.create({
 				
 				this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
 				
-				ctx.fillStyle = 'rgba(0,0,0,0.1)';
-				ctx.fill();
+				if (series.pie.fill) {
+					ctx.fillStyle = 'rgba(0,0,0,0.1)';
+					ctx.fill();
+				}
 			}, this);
 		}
 		
