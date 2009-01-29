@@ -920,7 +920,7 @@ Flotr.Graph = Class.create({
 			}
 			axis.lastSerie = lastSerie;
 			axis.max = newmax;
-			//axis.min = newmin;
+			axis.min = newmin;
 		}
 	},
 	/**
