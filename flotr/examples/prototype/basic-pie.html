@@ -46,7 +46,7 @@ document.observe('dom:loaded', function(){
 	var f = Flotr.draw($('container'), [
 		{data:d1, label: 'Comedy'}, 
 		{data:d2, label: 'Action'}, 
-		{data:d3, label: 'Romance', pie: {explode: 20}}, 
+		{data:d3, label: 'Romance', pie:{explode: 50} }, 
 		{data:d4, label: 'Drama'}
  ], {
 			HtmlText: false, 
@@ -56,7 +56,10 @@ document.observe('dom:loaded', function(){
 			},
 			xaxis: {showLabels: false},
 			yaxis: {showLabels: false}, 
-			pie: {show: true},
+			pie: {
+        show: true, 
+        explode: 6
+      },
 			legend:{
 				position: 'se',
 				backgroundColor: '#D2E8FF'

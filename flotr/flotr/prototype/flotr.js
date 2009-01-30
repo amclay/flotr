@@ -52,7 +52,8 @@ var Flotr = {
 	 */
 	getSeries: function(data){
 		return data.collect(function(serie){
-			var i, serie = (serie.data) ? Object.clone(serie) : {'data': serie};
+			var i;
+			serie = (serie.data) ? Object.clone(serie) : {'data': serie};
 			for (i = serie.data.length-1; i > -1; --i) {
 				serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
 			}
@@ -401,6 +402,7 @@ Flotr.Graph = Class.create({
 		options.y2axis = Object.extend(Object.clone(options.yaxis), options.y2axis);
 		this.options = Flotr.merge((opts || {}), options);
 		
+		// The 4 axes of the plot
 		this.axes = {
 			x:  {options: this.options.xaxis,  n: 1}, 
 			x2: {options: this.options.x2axis, n: 2}, 
@@ -463,6 +465,7 @@ Flotr.Graph = Class.create({
 				s.color = colors[s.color].toString();
 			}
 			
+			// Every series needs an axis
 			if (!s.xaxis) s.xaxis = this.axes.x;
 			     if (s.xaxis == 1) s.xaxis = this.axes.x;
 			else if (s.xaxis == 2) s.xaxis = this.axes.x2;
@@ -491,9 +494,11 @@ Flotr.Graph = Class.create({
 		var el = this.el,
 			size, c, oc;
 		
+		// The old canvases are retrieved to avoid memory leaks ...
 		this.canvas = el.select('.flotr-canvas')[0];
 		this.overlay = el.select('.flotr-overlay')[0];
 		
+		// ... and all the child elements are removed
 		el.childElements().invoke('remove');
 
 		// For positioning labels and overlay.
@@ -561,6 +566,11 @@ Flotr.Graph = Class.create({
 			return dim;
 		}
 	},
+	/**
+	 * Builds a matrix of the data to make the correspondance between the x values and the y values :
+	 * X value => Y values from the axes
+	 * @return {Array} The data grid
+	 */
 	loadDataGrid: function(){
 		if (this.seriesData) return this.seriesData;
 
@@ -592,8 +602,12 @@ Flotr.Graph = Class.create({
 		return this.seriesData = dg;
 	},
 	
-	// @todo: make a tab manager (Flotr.Tabs)
-	showTab: function(tabName, onComplete){
+	/**
+	 * Shows the specified tab, by its name
+	 * @todo make a tab manager (Flotr.Tabs)
+	 * @param {String} tabName - The tab name
+	 */
+	showTab: function(tabName){
 		var elementsClassNames = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
 		switch(tabName) {
 			case 'graph':
@@ -611,6 +625,9 @@ Flotr.Graph = Class.create({
 			break;
 		}
 	},
+	/**
+	 * Builds the tabs in the DOM
+	 */
 	constructTabs: function(){
 		var tabsContainer = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
 		this.el.insert({bottom: tabsContainer});
@@ -626,8 +643,11 @@ Flotr.Graph = Class.create({
 		this.tabs.graph.observe('click', (function() {this.showTab('graph')}).bind(this));
 		this.tabs.data.observe('click', (function() {this.showTab('data')}).bind(this));
 	},
-  
-	// @todo: make a spreadsheet manager (Flotr.Spreadsheet)
+  /**
+   * Constructs the data table for the spreadsheet
+   * @todo make a spreadsheet manager (Flotr.Spreadsheet)
+   * @return {Element} The resulting table element
+   */
 	constructDataGrid: function(){
 		// If the data grid has already been built, nothing to do here
 		if (this.datagrid) return this.datagrid;
@@ -702,6 +722,9 @@ Flotr.Graph = Class.create({
 		this.el.insert(container);
 		return t;
 	},
+	/**
+	 * Selects the data table in the DOM for copy/paste
+	 */
 	selectAllData: function(){
 		if (this.tabs) {
 			var selection, range, doc, win, node = this.constructDataGrid();
@@ -729,6 +752,9 @@ Flotr.Graph = Class.create({
 		}
 		else return false;
 	},
+	/**
+	 * Converts the data into CSV in order to download a file
+	 */
 	downloadCSV: function(){
 		var i, csv = '"x"',
 		    series = this.series,
@@ -2138,6 +2164,7 @@ Flotr.Graph = Class.create({
 		    lw = series.pie.lineWidth,
 		    sw = series.shadowSize,
 		    data = series.data,
+		    plotOffset = this.plotOffset,
 		    radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2,
 		    html = [],
 			vScale = 1,//Math.cos(series.pie.viewAngle);
@@ -2150,8 +2177,8 @@ Flotr.Graph = Class.create({
 		},
 		
 		center = {
-			x: (this.canvasWidth+this.plotOffset.left)/2,
-			y: (this.canvasHeight-this.plotOffset.bottom)/2
+			x: plotOffset.left + (this.plotWidth)/2,
+			y: plotOffset.top + (this.plotHeight)/2
 		},
 		
 		// Pie portions
@@ -2160,7 +2187,7 @@ Flotr.Graph = Class.create({
 				return {
 					name: (hash.label || hash.data[0][1]),
 					value: [index, hash.data[0][1]],
-					explode: hash.pie.explode
+					options: hash.pie
 				};
 		}),
 		
@@ -2179,7 +2206,7 @@ Flotr.Graph = Class.create({
 				fraction: fraction,
 				x:        slice.value[0],
 				y:        value,
-				explode:  slice.explode,
+				options:  slice.options,
 				startAngle: 2 * angle * Math.PI,
 				endAngle:   2 * (angle + fraction) * Math.PI
 			};
@@ -2190,8 +2217,8 @@ Flotr.Graph = Class.create({
 		if(sw > 0){
 			slices.each(function (slice) {
 				var bisection = (slice.startAngle + slice.endAngle) / 2,
-				    xOffset = center.x + Math.cos(bisection) * slice.explode + sw,
-				    yOffset = center.y + Math.sin(bisection) * slice.explode + sw;
+				    xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
+				    yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
 				
 				this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
 				
@@ -2208,13 +2235,14 @@ Flotr.Graph = Class.create({
 		slices.each(function (slice, index) {
 			var bisection = (slice.startAngle + slice.endAngle) / 2,
 			    color = options.colors[index],
-				xOffset = center.x + Math.cos(bisection) * slice.explode,
-				yOffset = center.y + Math.sin(bisection) * slice.explode;
+			    fillColor = slice.options.fillColor || color,
+				xOffset = center.x + Math.cos(bisection) * slice.options.explode,
+				yOffset = center.y + Math.sin(bisection) * slice.options.explode;
 			
 			this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
 			
 			if(series.pie.fill){
-				ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.pie.fillOpacity).toString();
+				ctx.fillStyle = Flotr.parseColor(fillColor).scale(null, null, null, series.pie.fillOpacity).toString();
 				ctx.fill();
 			}
 			ctx.lineWidth = lw;
