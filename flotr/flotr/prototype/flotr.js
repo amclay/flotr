@@ -2187,7 +2187,8 @@ Flotr.Graph = Class.create({
 				return {
 					name: (hash.label || hash.data[0][1]),
 					value: [index, hash.data[0][1]],
-					options: hash.pie
+					options: hash.pie,
+					series: hash
 				};
 		}),
 		
@@ -2207,6 +2208,7 @@ Flotr.Graph = Class.create({
 				x:        slice.value[0],
 				y:        value,
 				options:  slice.options,
+				series:   slice.series,
 				startAngle: 2 * angle * Math.PI,
 				endAngle:   2 * (angle + fraction) * Math.PI
 			};
@@ -2234,7 +2236,7 @@ Flotr.Graph = Class.create({
 		
 		slices.each(function (slice, index) {
 			var bisection = (slice.startAngle + slice.endAngle) / 2,
-			    color = options.colors[index],
+			    color = slice.series.color,
 			    fillColor = slice.options.fillColor || color,
 				xOffset = center.x + Math.cos(bisection) * slice.options.explode,
 				yOffset = center.y + Math.sin(bisection) * slice.options.explode;
@@ -3026,6 +3028,80 @@ Flotr.Date = {
 		}
 		return r.join("");
 	},
+	formatter: function (v, axis) {
+		var d = new Date(v);
+
+		// first check global format
+		if (axis.options.timeformat != null)
+			return Flotr.Date.format(d, axis.options.timeformat);
+		
+		var t = axis.tickSize[0] * Flotr.Date.timeUnits[axis.tickSize[1]],
+		    span = axis.max - axis.min;
+		
+		if (t < Flotr.Date.timeUnits.minute)
+			fmt = "%h:%M:%S";
+		else if (t < Flotr.Date.timeUnits.day)
+			fmt = (span < 2 * Flotr.Date.timeUnits.day) ? "%h:%M" : "%b %d %h:%M";
+		else if (t < Flotr.Date.timeUnits.month)
+			fmt = "%b %d";
+		else if (t < Flotr.Date.timeUnits.year) 
+			fmt = (span < Flotr.Date.timeUnits.year) ? "%b" : "%b %y";
+		else 
+			fmt = "%y";
+		
+		return Flotr.Date.format(d, fmt);
+	},
+	generator: function(axis) {
+		var ticks = [],
+			tickSize = axis.tickSize[0], unit = axis.tickSize[1],
+			d = new Date(axis.min),
+			step = tickSize * timeUnitSize[unit];
+
+		switch (unit) {
+			case "second": d.setUTCSeconds(floorInBase(d.getUTCSeconds(), tickSize)); break;
+			case "minute": d.setUTCMinutes(floorInBase(d.getUTCMinutes(), tickSize)); break;
+			case "hour":   d.setUTCHours(floorInBase(d.getUTCHours(), tickSize)); break;
+			case "month":  d.setUTCMonth(floorInBase(d.getUTCMonth(), tickSize)); break;
+			case "year":   d.setUTCFullYear(floorInBase(d.getUTCFullYear(), tickSize));break;
+		}
+		
+		// reset smaller components
+		d.setUTCMilliseconds(0);
+		if (step >= timeUnitSize.minute)  d.setUTCSeconds(0);
+		if (step >= timeUnitSize.hour)    d.setUTCMinutes(0);
+		if (step >= timeUnitSize.day)     d.setUTCHours(0);
+		if (step >= timeUnitSize.day * 4) d.setUTCDate(1);
+		if (step >= timeUnitSize.year)    d.setUTCMonth(0);
+
+		var carry = 0, v = Number.NaN, prev;
+		do {
+			prev = v;
+			v = d.getTime();
+			ticks.push({ v: v, label: axis.tickFormatter(v, axis) });
+			if (unit == "month") {
+				if (tickSize < 1) {
+					/* a bit complicated - we'll divide the month up but we need to take care of fractions
+					 so we don't end up in the middle of a day */
+					d.setUTCDate(1);
+					var start = d.getTime();
+					d.setUTCMonth(d.getUTCMonth() + 1);
+					var end = d.getTime();
+					d.setTime(v + carry * timeUnitSize.hour + (end - start) * tickSize);
+					carry = d.getUTCHours();
+					d.setUTCHours(0);
+				}
+				else
+					d.setUTCMonth(d.getUTCMonth() + tickSize);
+			}
+			else if (unit == "year") {
+				d.setUTCFullYear(d.getUTCFullYear() + tickSize);
+			}
+			else
+				d.setTime(v + step);
+		} while (v < axis.max && v != prev);
+
+		return ticks;
+	},
 	timeUnits: {
 		second: 1000,
 		minute: 1000 * 60,
@@ -3036,11 +3112,11 @@ Flotr.Date = {
 	},
 	// the allowed tick sizes, after 1 year we use an integer algorithm
 	spec: [
-		[1, "second"], [2, "second"], [5, "second"], [10, "second"], [30, "second"], 
-		[1, "minute"], [2, "minute"], [5, "minute"], [10, "minute"], [30, "minute"], 
-		[1, "hour"], [2, "hour"], [4, "hour"], [8, "hour"], [12, "hour"],
-		[1, "day"], [2, "day"], [3, "day"],
-		[0.25, "month"], [0.5, "month"], [1, "month"], [2, "month"], [3, "month"], [6, "month"],
+		[1, "second"],   [2, "second"],  [5, "second"], [10, "second"], [30, "second"], 
+		[1, "minute"],   [2, "minute"],  [5, "minute"], [10, "minute"], [30, "minute"], 
+		[1, "hour"],     [2, "hour"],    [4, "hour"],   [8, "hour"],    [12, "hour"],
+		[1, "day"],      [2, "day"],     [3, "day"],
+		[0.25, "month"], [0.5, "month"], [1, "month"],  [2, "month"],   [3, "month"], [6, "month"],
 		[1, "year"]
 	],
 	monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
