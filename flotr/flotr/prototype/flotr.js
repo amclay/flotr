@@ -1332,7 +1332,9 @@ Flotr.Graph = Class.create({
 			if (axis.options.showLabels){
 				for(i = 0; i < axis.ticks.length; ++i){
 					tick = axis.ticks[i];
-					if(!tick.label || tick.label.length == 0) continue;
+					if(!tick.label || tick.label.length == 0 || 
+					    (this.plotOffset.left + this.tHoz(tick.v, axis) < 0) || 
+					    (this.plotOffset.left + this.tHoz(tick.v, axis) > this.canvasWidth)) continue;
 					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v, axis) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
@@ -1342,7 +1344,9 @@ Flotr.Graph = Class.create({
 			if (axis.options.showLabels && axis.used){
 				for(i = 0; i < axis.ticks.length; ++i){
 					tick = axis.ticks[i];
-					if(!tick.label || tick.label.length == 0) continue;
+					if(!tick.label || tick.label.length == 0 || 
+					    (this.plotOffset.left + this.tHoz(tick.v, axis) < 0) || 
+					    (this.plotOffset.left + this.tHoz(tick.v, axis) > this.canvasWidth)) continue;
 					html.push('<div style="position:absolute;top:' + (this.plotOffset.top - options.grid.labelMargin - axis.maxLabel.height) + 'px;left:' + (this.plotOffset.left + this.tHoz(tick.v, axis) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
@@ -1352,7 +1356,9 @@ Flotr.Graph = Class.create({
 			if (axis.options.showLabels){
 				for(i = 0; i < axis.ticks.length; ++i){
 					tick = axis.ticks[i];
-					if (!tick.label || tick.label.length == 0) continue;
+					if (!tick.label || tick.label.length == 0 ||
+							 (this.plotOffset.top + this.tVert(tick.v, axis) < 0) || 
+							 (this.plotOffset.top + this.tVert(tick.v, axis) > this.canvasHeight)) continue;
 					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v, axis) - axis.maxLabel.height/2) + 'px;left:0;width:' + (this.plotOffset.left - options.grid.labelMargin) + 'px;text-align:right;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
 				}
 			}
@@ -1366,7 +1372,9 @@ Flotr.Graph = Class.create({
 				
 				for(i = 0; i < axis.ticks.length; ++i){
 					tick = axis.ticks[i];
-					if (!tick.label || tick.label.length == 0) continue;
+					if (!tick.label || tick.label.length == 0 ||
+							 (this.plotOffset.top + this.tVert(tick.v, axis) < 0) || 
+							 (this.plotOffset.top + this.tVert(tick.v, axis) > this.canvasHeight)) continue;
 					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.tVert(tick.v, axis) - axis.maxLabel.height/2) + 'px;right:0;width:' + (this.plotOffset.right - options.grid.labelMargin) + 'px;text-align:left;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
 
 					ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + this.tVert(tick.v, axis));
