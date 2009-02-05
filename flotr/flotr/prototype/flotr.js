@@ -2239,7 +2239,7 @@ Flotr.Graph = Class.create({
 			}, this);
 		}
 		
-		if (options.HtmlText)
+		if (options.HtmlText || !this.textEnabled)
 			html = ['<div style="color:' + this.options.grid.color + '" class="flotr-labels">'];
 		
 		slices.each(function (slice, index) {
@@ -2305,7 +2305,7 @@ Flotr.Graph = Class.create({
 				distY = yOffset + Math.sin(bisection) * (series.pie.explode + radius);
 			
 			if (slice.fraction && label) {
-				if (options.HtmlText) {
+				if (options.HtmlText || !this.textEnabled) {
 					var divStyle = 'position:absolute;top:' + (distY - 5) + 'px;'; //@todo: change
 					if (textAlignRight)
 						divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
@@ -2325,7 +2325,7 @@ Flotr.Graph = Class.create({
 			}
 		}, this);
 		
-		if (options.HtmlText) {
+		if (options.HtmlText || !this.textEnabled) {
 			html.push('</div>');    
 			this.el.insert(html.join(''));
 		}
@@ -2336,15 +2336,13 @@ Flotr.Graph = Class.create({
 	plotSlice: function(x, y, radius, startAngle, endAngle, fill, vScale) {
 		var ctx = this.ctx;
 		vScale = vScale || 1;
-		
-		ctx.save();
+
 		ctx.scale(1, vScale);
 		ctx.beginPath();
 		ctx.moveTo(x, y);
 		ctx.arc   (x, y, radius, startAngle, endAngle, fill);
 		ctx.lineTo(x, y);
 		ctx.closePath();
-		ctx.restore();
 	},
 	/**
 	 * Adds a legend div to the canvas container or draws it on the canvas.

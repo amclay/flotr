@@ -382,8 +382,10 @@ var CanvasText = {
 };
 
 /** The text functions are bound to the CanvasRenderingContext2D prototype */
-CanvasRenderingContext2D.prototype.drawText      = CanvasText.draw;
-CanvasRenderingContext2D.prototype.measureText   = CanvasText.measure;
-CanvasRenderingContext2D.prototype.getTextBounds = CanvasText.getDimensions;
-CanvasRenderingContext2D.prototype.fontAscent    = CanvasText.ascent;
-CanvasRenderingContext2D.prototype.fontDescent   = CanvasText.descent;
+if (window.CanvasRenderingContext2D) {
+	CanvasRenderingContext2D.prototype.drawText      = CanvasText.draw;
+	CanvasRenderingContext2D.prototype.measureText   = CanvasText.measure;
+	CanvasRenderingContext2D.prototype.getTextBounds = CanvasText.getDimensions;
+	CanvasRenderingContext2D.prototype.fontAscent    = CanvasText.ascent;
+	CanvasRenderingContext2D.prototype.fontDescent   = CanvasText.descent;
+}
