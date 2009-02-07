@@ -281,7 +281,7 @@ Flotr.Graph = Class.create({
 			xaxis: {
 				ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
 				showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
-				labelsAngle: 0,        // => Labels' angle, in degrees
+				labelsAngle: 0,        // => labels' angle, in degrees
 				title: null,           // => axis title
 				titleAngle: 0,         // => axis title's angle, in degrees
 				noTicks: 5,            // => number of ticks for automagically generated ticks
@@ -296,7 +296,7 @@ Flotr.Graph = Class.create({
 			yaxis: {
 				ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
 				showLabels: true,      // => setting to true will show the axis ticks labels, hide otherwise
-				labelsAngle: 0,        // => Labels' angle, in degrees
+				labelsAngle: 0,        // => labels' angle, in degrees
 				title: null,           // => axis title
 				titleAngle: 90,        // => axis title's angle, in degrees
 				noTicks: 5,            // => number of ticks for automagically generated ticks
@@ -352,11 +352,11 @@ Flotr.Graph = Class.create({
 				fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
 				fillColor: null,       // => fill color
 				fillOpacity: 0.6,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-				explode: 6,
-				sizeRatio: 0.6,
-				startAngle: Math.PI/4,
+				explode: 6,            // => the number of pixels the splices will be far from the center
+				sizeRatio: 0.6,        // => the size ratio of the pie relative to the plot 
+				startAngle: Math.PI/4, // => the first slice start angle
 				labelFormatter: Flotr.defaultPieLabelFormatter,
-				pie3D: false,
+				pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
 				pie3DviewAngle: (Math.PI/2 * 0.8),
 				pie3DspliceThickness: 20
 			},
@@ -373,6 +373,11 @@ Flotr.Graph = Class.create({
 				mode: null,            // => one of null, 'x', 'y' or 'xy'
 				color: '#B6D9FF',      // => selection box color
 				fps: 20                // => frames-per-second
+			},
+			crosshair: {
+				mode: null,            // => one of null, 'x', 'y' or 'xy'
+				color: '#FF0000',      // => crosshair color
+				hideCursor: true       // => hide the cursor when the crosshair is shown
 			},
 			mouse: {
 				track: false,          // => true to track the mouse, no tracking otherwise
@@ -2528,9 +2533,15 @@ Flotr.Graph = Class.create({
     
 		this.lastMousePos.pageX = pos.absX;
 		this.lastMousePos.pageY = pos.absY;	
-		if(this.selectionInterval == null && (this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;}))){	
+		
+		if (this.options.crosshair.mode)
+			this.clearCrosshair();
+			
+		if(this.selectionInterval == null && (this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;})))
 			this.hit(pos);
-		}
+		
+		if (this.options.crosshair.mode)
+			this.drawCrosshair(pos);
     
 		this.el.fire('flotr:mousemove', [event, pos, this]);
 	},
@@ -2719,6 +2730,68 @@ Flotr.Graph = Class.create({
 		octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
 		octx.restore();
 	},
+	/**	 
+	 * Draws the selection box.
+	 */
+	drawCrosshair: function(pos) {
+		var octx = this.octx,
+			options = this.options,
+			plotOffset = this.plotOffset,
+			x = plotOffset.left+pos.relX+0.5,
+			y = plotOffset.top+pos.relY+0.5,
+			modeX = options.crosshair.mode.indexOf('x') != -1,
+			modeY = options.crosshair.mode.indexOf('y') != -1;
+		
+		if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
+			this.el.style.cursor = null;
+			this.el.removeClassName('flotr-crosshair');
+			return; 
+		}
+		
+		this.lastMousePos.relX = null;
+		this.lastMousePos.relY = null;
+		
+		if (options.crosshair.hideCursor) {
+			this.el.style.cursor = 'url(blank.cur), crosshair';
+			this.el.addClassName('flotr-crosshair');
+		}
+		
+		octx.save();
+		octx.strokeStyle = options.crosshair.color;
+		octx.lineWidth = 1;
+		octx.beginPath();
+		
+		if (modeX) {
+			octx.moveTo(x, plotOffset.top);
+			octx.lineTo(x, plotOffset.top + this.plotHeight);
+			this.lastMousePos.relX = x;
+		}
+		
+		if (modeY) {
+			octx.moveTo(plotOffset.left, y);
+			octx.lineTo(plotOffset.left + this.plotWidth, y);
+			this.lastMousePos.relY = y;
+		}
+		
+		octx.stroke();
+		octx.restore();
+	},
+	/**
+	 * Removes the selection box from the overlay canvas.
+	 */
+	clearCrosshair: function() {
+		if (this.lastMousePos.relX != null)
+		this.octx.clearRect(this.lastMousePos.relX-0.5,
+		                    this.plotOffset.top,
+		                    1,
+		                    this.plotHeight+1);
+							
+		if (this.lastMousePos.relY != null)
+		this.octx.clearRect(this.plotOffset.left,
+		                    this.lastMousePos.relY-0.5,
+		                    this.plotWidth+1,
+		                    1);		
+	},
 	/**
 	 * Determines whether or not the selection is sane and should be drawn.
 	 * @return {Boolean} - True when sane, false otherwise.
@@ -2744,6 +2817,27 @@ Flotr.Graph = Class.create({
 			);
 			this.prevHit = null;
 		}		
+	},
+	/**
+	 * Updates the mouse tracking point on the overlay.
+	 */
+	drawHit: function(n){
+		var octx = this.octx,
+		    options = this.options;
+			
+		if(n.mouse.lineColor != null){
+			octx.save();
+			octx.translate(this.plotOffset.left, this.plotOffset.top);
+			octx.lineWidth = options.points.lineWidth;
+			octx.strokeStyle = n.mouse.lineColor;
+			octx.fillStyle = '#ffffff';
+			octx.beginPath();
+			octx.arc(this.tHoz(n.x, n.xaxis), this.tVert(n.y, n.yaxis), options.mouse.radius, 0, 2 * Math.PI, true);
+			octx.fill();
+			octx.stroke();
+			octx.restore();
+		}
+		this.prevHit = n;
 	},
 	/**
 	 * Retrieves the nearest data point from the mouse cursor. If it's within
@@ -2806,7 +2900,7 @@ Flotr.Graph = Class.create({
 			}
 		}
 		
-		if(n.mouse && n.mouse.track && !prevHit || (prevHit && (n.x != prevHit.x || n.y != prevHit.y))){
+		if(n.mouse && n.mouse.track && !prevHit || (prevHit/* && (n.x != prevHit.x || n.y != prevHit.y)*/)){
 			var mt = this.mouseTrack || this.el.select(".flotr-mouse-value")[0],
 			    pos = '', 
 			    p = options.mouse.position, 
@@ -2840,19 +2934,7 @@ Flotr.Graph = Class.create({
 				mt.show();
 				
 				this.clearHit();
-				if(n.mouse.lineColor != null){
-					octx.save();
-					octx.translate(plotOffset.left, plotOffset.top);
-					octx.lineWidth = options.points.lineWidth;
-					octx.strokeStyle = n.mouse.lineColor;
-					octx.fillStyle = '#ffffff';
-					octx.beginPath();
-					octx.arc(this.tHoz(n.x, n.xaxis), this.tVert(n.y, n.yaxis), options.mouse.radius, 0, 2 * Math.PI, true);
-					octx.fill();
-					octx.stroke();
-					octx.restore();
-				}
-				this.prevHit = n;
+				this.drawHit(n);
 				
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;

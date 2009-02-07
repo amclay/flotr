@@ -532,6 +532,25 @@ var specs = {
 			def: 20
 		}
 	},
+	crosshair: {
+		_options: {
+			title: "Crosshair",
+			collapsed: true
+		},
+		mode: {
+			type: String,
+			def: null,
+			values: ['x', 'y', 'xy']
+		},
+		color: {
+			type: Color,
+			def: '#FF0000'
+		},
+		hideCursor: {
+			type: Boolean,
+			def: true
+		}
+	},
 	mouse: {
 		_options: {
 			title: "Mouse",
