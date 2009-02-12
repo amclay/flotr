@@ -231,6 +231,7 @@ Flotr.Graph = Class.create({
 		// Initialize some variables
 		this.lastMousePos = { pageX: null, pageY: null };
 		this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
+		this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
 		this.prevSelection = null;
 		this.selectionInterval = null;
 		this.ignoreClick = false;   
@@ -519,22 +520,20 @@ Flotr.Graph = Class.create({
 
 		// Insert main canvas.
 		if (!this.canvas) {
-			c = this.canvas = new Element('canvas', size);
+			c = this.canvas = $(document.createElement('canvas'));
 			c.className = 'flotr-canvas';
 			c = c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
-		} else {
-			c = this.canvas.writeAttribute(size);
 		}
+		c = this.canvas.writeAttribute(size).show();
 		el.insert(c);
     
 		// Insert overlay canvas for interactive features.
 		if (!this.overlay) {
-			oc = this.overlay = new Element('canvas', size);
+			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
 			oc = oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
-		} else {
-			oc = this.overlay.writeAttribute(size);
 		}
+		oc = this.overlay.writeAttribute(size).show();
 		el.insert(oc);
 		
 		if(Prototype.Browser.IE){
@@ -1096,20 +1095,18 @@ Flotr.Graph = Class.create({
 			}
 		}
 		
-		var p = this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-		p.left = p.right = p.top = p.bottom = maxOutset;
-		
+		var p = this.plotOffset;
 		p.bottom += (x.options.showLabels ?  (x.maxLabel.height  + margin) : 0) + 
-		            (x.options.title ?       (x.titleSize.height + margin) : 0);
+		            (x.options.title ?       (x.titleSize.height + margin) : 0) + maxOutset;
 		
 		p.top    += (x2.options.showLabels ? (x2.maxLabel.height  + margin) : 0) + 
-		            (x2.options.title ?      (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight;
+		            (x2.options.title ?      (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     
 		p.left   += (y.options.showLabels ?  (y.maxLabel.width  + margin) : 0) + 
-		            (y.options.title ?       (y.titleSize.width + margin) : 0);
+		            (y.options.title ?       (y.titleSize.width + margin) : 0) + maxOutset;
 		
 		p.right  += (y2.options.showLabels ? (y2.maxLabel.width  + margin) : 0) + 
-		            (y2.options.title ?      (y2.titleSize.width + margin) : 0);
+		            (y2.options.title ?      (y2.titleSize.width + margin) : 0) + maxOutset;
     
 		p.top = Math.floor(p.top); // In order the outline not to be blured
     
