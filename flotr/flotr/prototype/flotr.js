@@ -334,7 +334,8 @@ Flotr.Graph = Class.create({
 				fillColor: null,       // => fill color
 				fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
 				horizontal: false,
-				stacked: false
+				stacked: false,
+				centered: true         // => center the bars to their x axis value
 			},
 			candles: {
 				show: false,           // => setting to true will show candle sticks, false will hide
@@ -912,8 +913,8 @@ Flotr.Graph = Class.create({
 				b = s.bars;
 				c = s.candles;
 				if(s.xaxis == axis) {
-					// For candle sticks
-					if (c.show) {
+					// For candle sticks and centered bars
+					if (c.show || (b.centered && b.show)) {
 						// We don't use c.candleWidth in order not to stick the borders
 						newmax = Math.max(axis.datamax + 0.5, newmax);
 						newmin = Math.min(axis.datamin - 0.5, newmin);
@@ -922,7 +923,7 @@ Flotr.Graph = Class.create({
 					if (b.show) {
 						// For normal vertical bars
 						if (!b.horizontal && (b.barWidth + axis.datamax > newmax))
-							newmax = axis.max + b.barWidth;
+							newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
 
 						// For horizontal stacked bars
 						if(b.stacked && b.horizontal){
@@ -1928,7 +1929,7 @@ Flotr.Graph = Class.create({
 			if(series.bars.horizontal)
 				var left = stackOffset, right = x + stackOffset, bottom = y, top = y + barWidth;
 			else 
-				var left = x, right = x + barWidth, bottom = stackOffset, top = y + stackOffset;
+				var left = x - (series.bars.centered ? barWidth/2 : 0), right = x + barWidth - (series.bars.centered ? barWidth/2 : 0), bottom = stackOffset, top = y + stackOffset;
 
 			if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
 				continue;
@@ -2012,7 +2013,7 @@ Flotr.Graph = Class.create({
 			if(series.bars.horizontal) 
 				var left = stackOffset, right = x + stackOffset, bottom = y, top = y + barWidth;
 			else 
-				var left = x, right = x + barWidth, bottom = stackOffset, top = y + stackOffset;
+        var left = x - (series.bars.centered ? barWidth/2 : 0), right = x + barWidth - (series.bars.centered ? barWidth/2 : 0), bottom = stackOffset, top = y + stackOffset;
 			
 			if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
 				continue;
