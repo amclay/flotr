@@ -403,7 +403,7 @@ Flotr.Graph = Class.create({
 				toolbarDownload: 'Download CSV', // @todo: add language support
 				toolbarSelectAll: 'Select all'
 			}
-		}
+		};
 		
 		options.x2axis = Object.extend(Object.clone(options.xaxis), options.x2axis);
 		options.y2axis = Object.extend(Object.clone(options.yaxis), options.y2axis);
@@ -594,7 +594,7 @@ Flotr.Graph = Class.create({
 				else {
 					var newRow = [];
 					newRow[0] = x;
-					newRow[i+1] = y
+					newRow[i+1] = y;
 					dg.push(newRow);
 				}
 			});
@@ -639,7 +639,7 @@ Flotr.Graph = Class.create({
 		this.tabs = {
 			graph: new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.spreadsheet.tabGraphLabel),
 			data: new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.spreadsheet.tabDataLabel)
-		}
+		};
 		
 		tabsContainer.insert(this.tabs.graph).insert(this.tabs.data);
 		
@@ -2489,7 +2489,7 @@ Flotr.Graph = Class.create({
 		var offset = this.overlay.cumulativeOffset(),
 			rx = (event.pageX - offset.left - this.plotOffset.left),
 			ry = (event.pageY - offset.top - this.plotOffset.top),
-			ax = 0, ay = 0
+			ax = 0, ay = 0;
 			
 		if(event.pageX == null && event.clientX != null){
 			var de = document.documentElement, b = document.body;
