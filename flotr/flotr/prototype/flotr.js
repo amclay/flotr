@@ -2229,6 +2229,8 @@ Flotr.Graph = Class.create({
 		
 		if(sw > 0){
 			slices.each(function (slice) {
+				if (slice.startAngle == slice.endAngle) return;
+				
 				var bisection = (slice.startAngle + slice.endAngle) / 2,
 				    xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
 				    yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
@@ -2246,6 +2248,8 @@ Flotr.Graph = Class.create({
 			html = ['<div style="color:' + this.options.grid.color + '" class="flotr-labels">'];
 		
 		slices.each(function (slice, index) {
+			if (slice.startAngle == slice.endAngle) return;
+			
 			var bisection = (slice.startAngle + slice.endAngle) / 2,
 			    color = slice.series.color,
 			    fillColor = slice.options.fillColor || color,
