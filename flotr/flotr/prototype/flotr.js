@@ -2905,21 +2905,21 @@ Flotr.Graph = Class.create({
 		if(n.mouse && n.mouse.track && !prevHit || (prevHit/* && (n.x != prevHit.x || n.y != prevHit.y)*/)){
 			var mt = this.mouseTrack || this.el.select(".flotr-mouse-value")[0],
 			    pos = '', 
-			    p = options.mouse.position, 
-			    m = options.mouse.margin,
+			    p = n.mouse.position, 
+			    m = n.mouse.margin,
 			    elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
-			if (!options.mouse.relative) { // absolute to the canvas
+			if (!n.mouse.relative) { // absolute to the canvas
 				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
 				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
 			}
 			else { // relative to the mouse
-			         if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.y) + this.canvasHeight) + 'px;';
-				else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + this.tVert(n.y)) + 'px;';
-				     if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x)) + 'px;';
-				else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - this.tHoz(n.x) + this.canvasWidth) + 'px;';
+			         if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.y, n.ya) + this.canvasHeight) + 'px;';
+				else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + this.tVert(n.y, n.ya)) + 'px;';
+				     if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x, n.xa)) + 'px;';
+				else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - this.tHoz(n.x, n.xa) + this.canvasWidth) + 'px;';
 			}
 			
 			elStyle += pos;
