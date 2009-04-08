@@ -8,10 +8,9 @@
 		<script type="text/javascript" src="../../flotr/prototype/lib/prototype-1.6.0.2.js"></script>
 		<script type="text/javascript" src="examples.js"></script>
 		
-		<!--[if IE]>
-			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
-			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-		<![endif]-->
+		<!--[if IE]><script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script><![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		
 		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
 		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
 		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
@@ -106,7 +105,7 @@
 						}
 				});
 				
-				if (Prototype.Browser.IE) {
+				if (false && Prototype.Browser.IE) {
 					var form = $(document.forms['image-download']);
 					form.disable().insert({top: "Your browser doesn't allow you to use this feature, sorry :(<br />"});
 				}
