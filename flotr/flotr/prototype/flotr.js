@@ -2535,7 +2535,7 @@ Flotr.Graph = Class.create({
     
 		this.lastMousePos.pageX = pos.absX;
 		this.lastMousePos.pageY = pos.absY;	
-		
+    
 		if (this.options.crosshair.mode)
 			this.clearCrosshair();
 			
@@ -2905,11 +2905,11 @@ Flotr.Graph = Class.create({
 		if(n.mouse && n.mouse.track && !prevHit || (prevHit/* && (n.x != prevHit.x || n.y != prevHit.y)*/)){
 			var mt = this.mouseTrack || this.el.select(".flotr-mouse-value")[0],
 			    pos = '', 
-			    p = n.mouse.position, 
-			    m = n.mouse.margin,
+			    p = (n.mouse || options.mouse).position, 
+			    m = (n.mouse || options.mouse).margin,
 			    elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
-			if (!n.mouse.relative) { // absolute to the canvas
+			if (!(n.mouse || options.mouse).relative) { // absolute to the canvas
 				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
 				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
 				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
