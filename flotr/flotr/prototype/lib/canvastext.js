@@ -383,7 +383,7 @@ var CanvasText = {
 };
 
 /** The text functions are bound to the CanvasRenderingContext2D prototype */
-CanvasText.proto = window.CanvasRenderingContext2D || document.createElement('canvas').getContext('2d').__proto__;
+CanvasText.proto = window.CanvasRenderingContext2D ? window.CanvasRenderingContext2D.prototype : document.createElement('canvas').getContext('2d').__proto__;
 if (CanvasText.proto) {
 	CanvasText.proto.drawText      = CanvasText.draw;
 	CanvasText.proto.measureText   = CanvasText.measure;
