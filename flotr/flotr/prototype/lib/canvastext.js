@@ -383,10 +383,11 @@ var CanvasText = {
 };
 
 /** The text functions are bound to the CanvasRenderingContext2D prototype */
-if (window.CanvasRenderingContext2D) {
-	CanvasRenderingContext2D.prototype.drawText      = CanvasText.draw;
-	CanvasRenderingContext2D.prototype.measureText   = CanvasText.measure;
-	CanvasRenderingContext2D.prototype.getTextBounds = CanvasText.getDimensions;
-	CanvasRenderingContext2D.prototype.fontAscent    = CanvasText.ascent;
-	CanvasRenderingContext2D.prototype.fontDescent   = CanvasText.descent;
+CanvasText.proto = window.CanvasRenderingContext2D || document.createElement('canvas').getContext('2d').__proto__;
+if (CanvasText.proto) {
+	CanvasText.proto.drawText      = CanvasText.draw;
+	CanvasText.proto.measureText   = CanvasText.measure;
+	CanvasText.proto.getTextBounds = CanvasText.getDimensions;
+	CanvasText.proto.fontAscent    = CanvasText.ascent;
+	CanvasText.proto.fontDescent   = CanvasText.descent;
 }
