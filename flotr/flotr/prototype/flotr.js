@@ -127,14 +127,24 @@ var Flotr = {
 	 * @param base {Number} - The base (default: 1024)
 	 */
 	convertToBytes: function(value, precision, base){
-		var sizes = ['Y','Z','E','P','T','G','M','k',''],
-		    total = sizes.length;
-		
+		var sizes =         ['Y','Z','E','P','T','G','M','k',''],
+		    fractionSizes = ['y','z','a','f','p','n','µ','m',''], 
+				total = sizes.length;
+		    
 		base = base || 1024;
 		precision = precision || 2;
 
-		while (total-- && value > 1024 ) value /= base;
-		return (Math.round(value * precision) / precision) + sizes[total];
+    if (value == 0) return 0;
+		
+    if (value > 1) {
+			while (total-- && (value > 1)) value /= base;
+		}
+		else {
+			sizes = fractionSizes;
+			total = sizes.length;
+			while (total-- && (value < 1)) value *= base;
+		}
+    return (Math.round(value * precision) / precision) + sizes[total];
 	},
 	/**
 	 * Returns the magnitude of the input value.
@@ -929,15 +939,15 @@ Flotr.Graph = Class.create({
 						if(b.stacked && b.horizontal){
 							for (j = 0; j < s.data.length; j++) {
 								if (b.show && b.stacked) {
-									var x = s.data[j][0];
+									var x = s.data[j][0]+'';
 									stackedSums[x] = (stackedSums[x] || 0) + s.data[j][1];
 									lastSerie = s;
 								}
 							}
 					    
-							for (j = 0; j < stackedSums.length; j++) {
-								newmax = Math.max(stackedSums[j], newmax);
-							}
+              for (var j in stackedSums) {
+                newmax = Math.max(stackedSums[j], newmax);
+              }
 						}
 					}
 				}
@@ -955,7 +965,7 @@ Flotr.Graph = Class.create({
 		if(axis.options.max == null){
 			var newmax = axis.max,
 				  i, s, b, c,
-				  stackedSums = [],
+				  stackedSums = {},
 				  lastSerie = null;
 									
 			for(i = 0; i < this.series.length; ++i){
@@ -972,13 +982,13 @@ Flotr.Graph = Class.create({
 					if(b.stacked && !b.horizontal){
 						for (j = 0; j < s.data.length; j++) {
 							if (s.bars.show && s.bars.stacked) {
-								var x = s.data[j][0];
+								var x = s.data[j][0]+'';
 								stackedSums[x] = (stackedSums[x] || 0) + s.data[j][1];
 								lastSerie = s;
 							}
 						}
 						
-						for (j = 0; j < stackedSums.length; j++) {
+						for (var j in stackedSums) {
 							newmax = Math.max(stackedSums[j], newmax);
 						}
 					}
@@ -994,9 +1004,9 @@ Flotr.Graph = Class.create({
 	findXAxesValues: function(){
 		for(i = this.series.length-1; i > -1 ; --i){
 			s = this.series[i];
-			s.xaxis.values = s.xaxis.values || [];
+			s.xaxis.values = s.xaxis.values || {};
 			for (j = s.data.length-1; j > -1 ; --j){
-				s.xaxis.values[s.data[j][0]] = {};
+				s.xaxis.values[s.data[j][0]+''] = {};
 			}
 		}
 	},
@@ -1916,12 +1926,12 @@ Flotr.Graph = Class.create({
 			// Stacked bars
 			var stackOffset = 0;
 			if(series.bars.stacked) {
-				xa.values.each(function(o, v) {
-					if (v == x) {
-						stackOffset = o.stack || 0;
-						o.stack = stackOffset + y;
-					}
-				});
+        $H(xa.values).each(function(pair) {
+          if (pair.key == x) {
+            stackOffset = pair.value.stack || 0;
+            pair.value.stack = stackOffset + y;
+          }
+        });
 			}
 
 			// @todo: fix horizontal bars support
@@ -2001,11 +2011,11 @@ Flotr.Graph = Class.create({
 			// Stacked bars
 			var stackOffset = 0;
 			if(series.bars.stacked) {
-				xa.values.each(function(o, v) {
-				if (v == x) {
-					stackOffset = o.stackShadow || 0;
-					o.stackShadow = stackOffset + y;
-				}
+				$H(xa.values).each(function(pair) {
+  				if (pair.key == x) {
+  					stackOffset = pair.value.stackShadow || 0;
+  					pair.value.stackShadow = stackOffset + y;
+  				}
 				});
 			}
 			
