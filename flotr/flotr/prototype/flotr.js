@@ -533,7 +533,7 @@ Flotr.Graph = Class.create({
 		if (!this.canvas) {
 			c = this.canvas = $(document.createElement('canvas'));
 			c.className = 'flotr-canvas';
-			c = c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+			c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
 		}
 		c = this.canvas.writeAttribute(size).show();
 		el.insert(c);
@@ -542,14 +542,14 @@ Flotr.Graph = Class.create({
 		if (!this.overlay) {
 			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
-			oc = oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+			oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
 		}
 		oc = this.overlay.writeAttribute(size).show();
 		el.insert(oc);
 		
 		if(Prototype.Browser.IE){
-			c  = window.G_vmlCanvasManager.initElement(c);
-			oc = window.G_vmlCanvasManager.initElement(oc);
+			window.G_vmlCanvasManager.initElement(c);
+			window.G_vmlCanvasManager.initElement(oc);
 		}
 		this.ctx = c.getContext('2d');
 		this.octx = oc.getContext('2d');
@@ -2907,6 +2907,8 @@ Flotr.Graph = Class.create({
 						n.xaxis = xa;
 						n.yaxis = ya;
 						n.mouse = s.mouse;
+						n.series = s;
+						n.index = j;
 					}
 				}
 			}
@@ -2951,7 +2953,7 @@ Flotr.Graph = Class.create({
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;
 				
-				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals)});
+				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals), series: n.series, index: n.index});
 				mt.fire('flotr:hit', [n, this]);
 			}
 			else if(prevHit){
