@@ -114,6 +114,14 @@ var Flotr = {
 		return '('+obj.x+', '+obj.y+')';
 	}, 
 	/**
+	 * Formats the marker labels.
+	 * @param {Object} obj - Marker value Object {x:..,y:..}
+	 * @return {String} Formatted marker string
+	 */
+	defaultMarkerFormatter: function(obj){
+		return (Math.round(obj.y*100)/100)+'';
+	}, 
+	/**
 	 * Formats the pies labels.
 	 * @param {Object} slice - Slice object
 	 * @return {String} Formatted pie label string
@@ -381,7 +389,7 @@ Flotr.Graph = Class.create({
 				fillOpacity: 0.4,
 				stroke: false,
 				position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
-				labelFormatter: Flotr.defaultTrackFormatter
+				labelFormatter: Flotr.defaultMarkerFormatter
 			},
 			grid: {
 				color: '#545454',      // => primary color used for outline and labels
@@ -828,10 +836,8 @@ Flotr.Graph = Class.create({
 		var s = this.series, 
 		    a = this.axes;
 		
-		a.x.datamin  = a.x.datamax = 
-		a.x2.datamin = a.x2.datamax = 
-		a.y.datamin  = a.y.datamax = 
-		a.y2.datamin = a.y2.datamax = 0;
+		a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
+		a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
 		
 		if(s.length > 0){
 			var i, j, h, x, y, data, xaxis, yaxis;
@@ -849,15 +855,15 @@ Flotr.Graph = Class.create({
 					yaxis.used = true;
 
 					for(h = data.length - 1; h > -1; --h){
-	  					x = data[h][0];
-	  			         if(x < xaxis.datamin) xaxis.datamin = x;
-	   					else if(x > xaxis.datamax) xaxis.datamax = x;
-	  			    
-	  					for(j = 1; j < data[h].length; j++){
-	  						y = data[h][j];
-	  				         if(y < yaxis.datamin) yaxis.datamin = y;
-	  	  				else if(y > yaxis.datamax) yaxis.datamax = y;
-	  					}
+						x = data[h][0];
+						     if(x < xaxis.datamin) xaxis.datamin = x;
+						else if(x > xaxis.datamax) xaxis.datamax = x;
+
+						for(j = 1; j < data[h].length; j++){
+							y = data[h][j];
+							     if(y < yaxis.datamin) yaxis.datamin = y;
+							else if(y > yaxis.datamax) yaxis.datamax = y;
+						}
 					}
 				}
 			}
@@ -889,7 +895,7 @@ Flotr.Graph = Class.create({
 		var o = axis.options,
 		    min = o.min != null ? o.min : axis.datamin,
 		    max = o.max != null ? o.max : axis.datamax,
-		    margin;
+		    margin = o.autoscaleMargin;
 
 		if(max - min == 0.0){
 			var widen = (max == 0.0) ? 1.0 : 0.01;
@@ -899,24 +905,17 @@ Flotr.Graph = Class.create({
 		axis.tickSize = Flotr.getTickSize(o.noTicks, min, max, o.tickDecimals);
 
 		// Autoscaling.
-		if(o.min == null){
-			// Add a margin.
-			margin = o.autoscaleMargin;
-			if(margin != 0){
-				min -= axis.tickSize * margin;
-				
-				// Make sure we don't go below zero if all values are positive.
-				if(min < 0 && axis.datamin >= 0) min = 0;
-				min = axis.tickSize * Math.floor(min / axis.tickSize);
-			}
+		if(o.min == null && margin != 0){
+			min -= axis.tickSize * margin;
+			// Make sure we don't go below zero if all values are positive.
+			if(min < 0 && axis.datamin >= 0) min = 0;
+			min = axis.tickSize * Math.floor(min / axis.tickSize);
 		}
-		if(o.max == null){
-			margin = o.autoscaleMargin;
-			if(margin != 0){
-				max += axis.tickSize * margin;
-				if(max > 0 && axis.datamax <= 0) max = 0;				
-				max = axis.tickSize * Math.ceil(max / axis.tickSize);
-			}
+    
+		if(o.max == null && margin != 0){
+			max += axis.tickSize * margin;
+			if(max > 0 && axis.datamax <= 0) max = 0;				
+			max = axis.tickSize * Math.ceil(max / axis.tickSize);
 		}
 		axis.min = min;
 		axis.max = max;
