@@ -193,7 +193,7 @@ var CanvasText = {
 	 * @param {Object} style - The reference style
 	 */
 	ascent: function(style) {
-		style = style || {};
+		style = style || CanvasText.style;
 		return (style.size || CanvasText.style.size);
 	},
 	
@@ -201,7 +201,7 @@ var CanvasText = {
 	 * @param {Object} style - The reference style
 	 * */
 	descent: function(style) {
-		style = style || {};
+		style = style || CanvasText.style;
 		return 7.0*(style.size || CanvasText.style.size)/25.0;
 	},
 	
@@ -211,7 +211,7 @@ var CanvasText = {
 	 * */
 	measure: function(str, style) {
 		if (!str) return;
-		style = style || {};
+		style = style || CanvasText.style;
 		
 		var i, width, lexemes = CanvasText.parseLexemes(str),
 				total = 0;
@@ -225,6 +225,7 @@ var CanvasText = {
 	},
 	
 	getDimensions: function(str, style) {
+    style = style || CanvasText.style;
 		var width = CanvasText.measure(str, style),
 				height = style.size || CanvasText.style.size,
 				angle = style.angle || CanvasText.style.angle;
@@ -237,6 +238,7 @@ var CanvasText = {
 	},
 	
 	getBestAlign: function(angle, style) {
+    style = style || CanvasText.style;
 		angle += CanvasText.getAngleFromAlign(style.halign, style.valign);
 		var a = {h:'c', v:'m'};
 		if (Math.round(Math.cos(angle)*1000)/1000 != 0) 
