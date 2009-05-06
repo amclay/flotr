@@ -39,14 +39,26 @@
 			 * Wait till dom's finished loading.
 			 */
 			document.observe('dom:loaded', function(){
+        function markerFomatter(obj) {
+          return obj.y+' units';
+        }
+        
 				/**
 				 * Fill series d1 and d2 width random values.
 				 */
-				var d1 = [];
-				var d2 = [];				
-			    for(var i = 0; i < 4; i++ ){
-					d1.push([i,Math.ceil(Math.random()*10)]);
-					d2.push([i+0.5, Math.ceil(Math.random()*10)]);
+				var point, 
+            d1 = [],
+            d2 = [],
+            markers = {data:[], markers:{show: true, position: 'ct', labelFormatter: markerFomatter}, bars:{show: false}};
+            
+			  for(var i = 0; i < 4; i++ ){
+          point = [i, Math.ceil(Math.random()*10)];
+					d1.push(point);
+          markers.data.push(point);
+          
+          point = [i+0.5, Math.ceil(Math.random()*10)];
+					d2.push(point);
+          markers.data.push(point);
 				}
 				
 				/**
@@ -54,11 +66,12 @@
 				 */
 				Flotr.draw(
 					$('container'),
-					[d1, d2],
+					[d1, d2, markers],
 					{
             bars: {show:true, barWidth:0.5}, 
             mouse: {track:true, relative:true},
-					  yaxis: {min: 0}
+					  yaxis: {min: 0, autoscaleMargin: 1},
+            spreadsheet: {show: true}
 					}
 				);
 			});			

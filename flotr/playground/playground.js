@@ -30,7 +30,7 @@ var specs = {
 	legend: {
 		_options: {
 			title: "Legend",
-			collapsed: true,
+			collapsed: true
 		},
 		show: {
 			type: Boolean,
@@ -83,7 +83,7 @@ var specs = {
 	xaxis: {
 		_options: {
 			title: "x Axis",
-			collapsed: true,
+			collapsed: true
 		},
 		ticks: null,
 		showLabels: {
@@ -185,7 +185,7 @@ var specs = {
 	yaxis: {
 		_options: {
 			title: "y Axis",
-			collapsed: true,
+			collapsed: true
 		},
 		ticks: null,
 		showLabels: {
@@ -382,7 +382,7 @@ var specs = {
 		},
 		centered: {
       type: Boolean,
-      def: false
+      def: true
     }
 	},
 	candles: {
@@ -483,6 +483,51 @@ var specs = {
 			def: 20
 		}*/
 	},
+  markers: {
+    _options: {
+      title: "Markers",
+      collapsed: true,
+      inherited: true
+    },
+    show: {
+      type: Boolean,
+      def: false
+    },
+    lineWidth: {
+      type: Number,
+      def: 1
+    },
+    fill: {
+      type: Boolean,
+      def: false
+    },
+    fillColor: {
+      type: Color,
+      def: "#FFFFFF"
+    },
+    fillOpacity: {
+      type: Number,
+      def: 0.4
+    },
+    stroke: {
+      type: Boolean,
+      def: false
+    },
+    position: {
+      type: String,
+      def: 'ct',
+      values: ['lt', 'ct', 'rt', 
+               'lm', 'cm', 'rm',
+               'lb', 'cb', 'rb'],
+      labels: ['Left top',    'Center top',    'Right top', 
+               'Left middle', 'Center middle', 'Right middle',
+               'Left bottom', 'Center bottom', 'Right bottom']
+    },
+    labelFormatter: {
+      type: Function,
+      def: Flotr.defaultTrackFormatter
+    }
+  },
 	grid: {
 		_options: {
 			title: "Grid",
@@ -598,7 +643,15 @@ var specs = {
 		radius: {
 			type: Number,
 			def: 3
-		}
+		},
+    fillColor: {
+      type: Color,
+      def: null
+    },
+    fillOpacity: {
+      type: Number,
+      def: 0.4
+    }
 	},
 	spreadsheet: {
 		_options: {

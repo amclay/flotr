@@ -19,7 +19,8 @@ var Flotr = {
 		'points': 'drawSeriesPoints',
 		'bars': 'drawSeriesBars',
 		'candles': 'drawSeriesCandles',
-		'pie': 'drawSeriesPie'
+		'pie': 'drawSeriesPie',
+		'markers': 'drawSeriesMarkers'
 	},
 	/**
 	 * Can be used to register your own chart type. Default types are 'lines', 'points' and 'bars'.
@@ -372,6 +373,16 @@ Flotr.Graph = Class.create({
 				pie3DviewAngle: (Math.PI/2 * 0.8),
 				pie3DspliceThickness: 20
 			},
+			markers: {
+				show: false,
+				lineWidth: 1, 
+				fill: false,
+				fillColor: "#FFFFFF",  // => fill color
+				fillOpacity: 0.4,
+				stroke: false,
+				position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
+				labelFormatter: Flotr.defaultTrackFormatter
+			},
 			grid: {
 				color: '#545454',      // => primary color used for outline and labels
 				backgroundColor: null, // => null for transparent, else color
@@ -499,8 +510,10 @@ Flotr.Graph = Class.create({
 			s.bars    = Object.extend(Object.clone(this.options.bars), s.bars);
 			s.candles = Object.extend(Object.clone(this.options.candles), s.candles);
 			s.pie     = Object.extend(Object.clone(this.options.pie), s.pie);
+			s.markers = Object.extend(Object.clone(this.options.markers), s.markers);
 			s.mouse   = Object.extend(Object.clone(this.options.mouse), s.mouse);
 			
+			if(s.markers.show) s.mouse.track = false;
 			if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
 		}
 	},
@@ -646,11 +659,11 @@ Flotr.Graph = Class.create({
 	 * Builds the tabs in the DOM
 	 */
 	constructTabs: function(){
-		var tabsContainer = new Element('div', {className:'flotr-tabs-group', style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'});
+		var tabsContainer = new Element('div', {style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'}).addClassName('flotr-tabs-group');
 		this.el.insert({bottom: tabsContainer});
 		this.tabs = {
-			graph: new Element('div', {className:'flotr-tab selected', style:'float:left;'}).update(this.options.spreadsheet.tabGraphLabel),
-			data: new Element('div', {className:'flotr-tab', style:'float:left;'}).update(this.options.spreadsheet.tabDataLabel)
+			graph: new Element('div', {style:'float:left;'}).addClassName('flotr-tab selected').update(this.options.spreadsheet.tabGraphLabel),
+			data: new Element('div', {style:'float:left;'}).addClassName('flotr-tab').update(this.options.spreadsheet.tabDataLabel)
 		};
 		
 		tabsContainer.insert(this.tabs.graph).insert(this.tabs.data);
@@ -672,7 +685,7 @@ Flotr.Graph = Class.create({
 		var i, j, 
 		    s = this.series,
 		    datagrid = this.loadDataGrid(),
-			t = this.datagrid = new Element('table', {className:'flotr-datagrid', style:'height:100px;'}),
+			t = this.datagrid = new Element('table', {style:'height:100px;'}).addClassName('flotr-datagrid'),
 			colgroup = ['<colgroup><col />'];
 		
 		// First row : series' labels
@@ -728,11 +741,11 @@ Flotr.Graph = Class.create({
 			});
 		}
 		
-		var toolbar = new Element('div', {className: 'flotr-datagrid-toolbar'}).
-			insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
-			insert(new Element('button', {type:'button', className:'flotr-datagrid-toolbar-button'}).update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.selectAllData.bind(this)));
+		var toolbar = new Element('div').addClassName('flotr-datagrid-toolbar').
+			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.downloadCSV.bind(this))).
+			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.selectAllData.bind(this)));
 		
-		var container = new Element('div', {className:'flotr-datagrid-container', style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'});
+		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'}).addClassName('flotr-datagrid-container');
 		container.insert(toolbar);
 		t.wrap(container.hide());
 		
@@ -2325,6 +2338,64 @@ Flotr.Graph = Class.create({
 		ctx.closePath();
 	},
 	/**
+	 * Draws lines series in the canvas element.
+	 * @param {Object} series - Series with options.lines.show = true.
+	 */
+	drawSeriesMarkers: function(series){
+		series = series || this.series;
+		var ctx = this.ctx,
+		    xa = series.xaxis,
+		    ya = series.yaxis,
+		    tHoz = this.tHoz.bind(this),
+		    tVert = this.tVert.bind(this),
+		    options = series.markers,
+		    data = series.data;
+        
+		ctx.save();
+		ctx.translate(this.plotOffset.left, this.plotOffset.top);
+		ctx.lineJoin = 'round';
+		ctx.lineWidth = options.lineWidth;
+		ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+		ctx.fillStyle = Flotr.parseColor(options.fillColor).scale(null, null, null, options.fillOpacity).toString();
+
+		for(var i = 0; i < data.length; ++i){
+			var x = data[i][0], xPos = tHoz(x, xa),
+			    y = data[i][1], yPos = tVert(y, ya),
+			    label = options.labelFormatter({x: x, y: y});
+          
+			this.plotMarker(xPos, yPos, label, options);
+		}
+    
+		ctx.restore();
+	},
+	plotMarker: function(x, y, label, options) {
+		var ctx = this.ctx,
+		    dim = this.getTextDimensions(label, null, null),
+		    margin = 2,
+		    left = x,
+		    top = y;
+        
+		dim.width = Math.floor(dim.width+margin*2);
+		dim.height = Math.floor(dim.height+margin*2);
+
+		     if (options.position.indexOf('c') != -1) left -= dim.width/2 + margin;
+		else if (options.position.indexOf('l') != -1) left -= dim.width;
+    
+		     if (options.position.indexOf('m') != -1) top -= dim.height/2 + margin;
+		else if (options.position.indexOf('t') != -1) top -= dim.height;
+    
+		left = Math.floor(left)+0.5;
+		top = Math.floor(top)+0.5;
+    
+		if(options.fill)
+			ctx.fillRect(left, top, dim.width, dim.height);
+      
+		if(options.stroke)
+			ctx.strokeRect(left, top, dim.width, dim.height);
+    
+		ctx.drawText(label, left+margin, top+margin, {valign: 't', halign: 'l'});
+	},
+	/**
 	 * Adds a legend div to the canvas container or draws it on the canvas.
 	 */
 	insertLegend: function(){
@@ -2420,14 +2491,14 @@ Flotr.Graph = Class.create({
 		  			    label = legend.labelFormatter(s.label),
 		  			    boxWidth = legend.labelBoxWidth,
 		  			    boxHeight = legend.labelBoxHeight,
-		  			    opacity = 'opacity:' + s.bars.fillOpacity + ';filter:alpha(opacity=' + s.bars.fillOpacity + ');',
+		  			    opacity = 'opacity:' + s.bars.fillOpacity + ';filter:alpha(opacity=' + s.bars.fillOpacity*100 + ');',
 		  			    color = 'background-color:' + ((s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
 		  			
 					fragments.push(
 						'<td class="flotr-legend-color-box">',
 							'<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
-								'<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', 
-									'<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', opacity, color, '"></div>',
+								'<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
+									'<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', opacity, color, '"></div>', // Background
 								'</div>',
 							'</div>',
 						'</td>',
@@ -2441,13 +2512,13 @@ Flotr.Graph = Class.create({
 		  			if(options.legend.container != null){
 		  				$(options.legend.container).update(table);
 		  			}
-					else {
+				    else {
 		  				var pos = '', p = options.legend.position, m = options.legend.margin;
 		  				
-		  				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
-		  				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
-		  				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
-		  				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
+		  				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
+		  				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';					
+		  				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
+		  				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
 		  				     
 		  				var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').select('div.flotr-legend').first();
 		  				
@@ -2953,25 +3024,24 @@ Flotr.Graph = Class.create({
 			    elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 			
 			if (!n.mouse.relative) { // absolute to the canvas
-				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;';
-				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;';					
-				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;';
-				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;';
+				     if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
+				else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';
+				     if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
+				else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
 			}
 			else { // relative to the mouse or in the case of bar like graphs to the bar
 				if(!s.bars.show){
-					     if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.y, n.yaxis) + this.canvasHeight) + 'px;';
-					else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + this.tVert(n.y, n.yaxis)) + 'px;';
-					     if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x, n.xaxis)) + 'px;';
-					else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - this.tHoz(n.x, n.xaxis) + this.canvasWidth) + 'px;';
+					     if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.y, n.yaxis) + this.canvasHeight) + 'px;top:auto;';
+					else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + this.tVert(n.y, n.yaxis)) + 'px;bottom:auto;';
+					     if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x, n.xaxis)) + 'px;right:auto;';
+					else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - this.tHoz(n.x, n.xaxis) + this.canvasWidth) + 'px;left:auto;';
 				}
 
 				else {
-					pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.yaxis.min+((n.y-n.yaxis.min)/2), n.yaxis) + this.canvasHeight) + 'px;';
-					pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x - options.bars.barWidth/2 , n.xaxis)) + 'px;';
+					pos += 'bottom:' + (m - plotOffset.top - this.tVert(n.yaxis.min+((n.y-n.yaxis.min)/2), n.yaxis) + this.canvasHeight) + 'px;top:auto;';
+					pos += 'left:' + (m + plotOffset.left + this.tHoz(n.x - options.bars.barWidth/2 , n.xaxis)) + 'px;right:auto;';
 				}
 			}
-			
 			elStyle += pos;
 				     
 			if(!mt){
