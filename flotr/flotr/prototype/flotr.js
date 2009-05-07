@@ -432,7 +432,8 @@ Flotr.Graph = Class.create({
 				tabGraphLabel: 'Graph',
 				tabDataLabel: 'Data',
 				toolbarDownload: 'Download CSV', // @todo: add language support
-				toolbarSelectAll: 'Select all'
+				toolbarSelectAll: 'Select all',
+				csvFileSeparator: ','
 			}
 		};
 		
@@ -794,27 +795,30 @@ Flotr.Graph = Class.create({
 	 * Converts the data into CSV in order to download a file
 	 */
 	downloadCSV: function(){
-		var i, csv = '"x"',
+		var i, csv = '',
 		    series = this.series,
-		    dg = this.loadDataGrid();
+		    dg = this.loadDataGrid(),
+		    separator = encodeURIComponent(this.options.spreadsheet.csvFileSeparator);
 		
 		for (i = 0; i < series.length; ++i) {
-			csv += '%09"'+(series[i].label || String.fromCharCode(65+i))+'"'; // \t
+			csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).gsub('"', '\\"')+'"';
 		}
 		csv += "%0D%0A"; // \r\n
 		
 		for (i = 0; i < dg.length; ++i) {
+			var rowLabel = '';
 			if (this.options.xaxis.ticks) {
 				var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == dg[i][0] });
-				if (tick) dg[i][0] = tick[1];
+				if (tick) rowLabel = tick[1];
 			}
 			else {
-				dg[i][0] = this.options.xaxis.tickFormatter(dg[i][0]);
+				rowLabel = this.options.xaxis.tickFormatter(dg[i][0]);
 			}
-			csv += dg[i].join('%09')+"%0D%0A"; // \t and \r\n
+			rowLabel = '"'+(rowLabel+'').gsub('"', '\\"')+'"';
+			csv += rowLabel+separator+dg[i].slice(1).join(separator)+"%0D%0A"; // \t and \r\n
 		}
 		if (Prototype.Browser.IE) {
-			csv = csv.gsub('%09', '\t').gsub('%0A', '\n').gsub('%0D', '\r');
+			csv = csv.gsub(separator, decodeURIComponent(separator)).gsub('%0A', '\n').gsub('%0D', '\r');
 			window.open().document.write(csv);
 		}
 		else window.open('data:text/csv,'+csv);
@@ -2412,7 +2416,7 @@ Flotr.Graph = Class.create({
 		var noLegendItems = series.findAll(function(s) {return (s.label && !s.hide)}).size();
 
 		if (noLegendItems) {
-		    if (!options.HtmlText && this.textEnabled) {
+		    if (!options.HtmlText && this.textEnabled && !$(options.legend.container)) {
 				var style = {
 					size: options.fontSize*1.1,
 					color: options.grid.color

@@ -525,7 +525,7 @@ var specs = {
     },
     labelFormatter: {
       type: Function,
-      def: Flotr.defaultTrackFormatter
+      def: Flotr.defaultMarkerFormatter
     }
   },
 	grid: {
@@ -677,6 +677,10 @@ var specs = {
 		toolbarSelectAll: {
 			type: String,
 			def: 'Select all'
+		},
+		csvFileSeparator: {
+			type: String,
+			def: ','
 		}
 	}
 };
