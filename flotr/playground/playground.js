@@ -129,6 +129,16 @@ var specs = {
 		color: {
 			type: Color,
 			def: null
+		},
+		mode: {
+			type: String,
+			def: 'normal',
+			values: ['normal', 'time'],
+			labels: ['Normal', 'Time']
+		},
+		timeFormat: {
+			type: String,
+			def: null
 		}
 	},
 	x2axis: {
@@ -179,6 +189,16 @@ var specs = {
 		},
 		color: {
 			type: Color,
+			def: null
+		},
+		mode: {
+			type: String,
+			def: 'normal',
+			values: ['normal', 'time'],
+			labels: ['Normal', 'Time']
+		},
+		timeFormat: {
+			type: String,
 			def: null
 		}
 	},

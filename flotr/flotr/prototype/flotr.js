@@ -171,6 +171,9 @@ var Flotr = {
 	toRad: function(angle){
 		return -angle * (Math.PI/180);
 	},
+	floorInBase: function(n, base) {
+		return base * Math.floor(n / base);
+	},
 	/**
 	 * Parses a color string and returns a corresponding Color.
 	 * The different tests are in order of probability to improve speed.
@@ -313,7 +316,9 @@ Flotr.Graph = Class.create({
 				min: null,             // => min. value to show, null means set automatically
 				max: null,             // => max. value to show, null means set automatically
 				autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
-				color: null
+				color: null,           // => color of the ticks
+				mode: 'normal',        // => can be 'time' or 'normal'
+				timeFormat: null
 			},
 			x2axis: {},
 			yaxis: {
@@ -339,7 +344,7 @@ Flotr.Graph = Class.create({
 				lineWidth: 2,          // => line width in pixels
 				fill: true,            // => true to fill the points with a color, false for (transparent) no fill
 				fillColor: '#FFFFFF',  // => fill color
-				fillOpacity: 0.4
+				fillOpacity: 0.4       // => opacity of color inside the points
 			},
 			lines: {
 				show: false,           // => setting to true will show lines, false will hide
@@ -355,8 +360,8 @@ Flotr.Graph = Class.create({
 				fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
 				fillColor: null,       // => fill color
 				fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-				horizontal: false,
-				stacked: false,
+				horizontal: false,     // => horizontal bars (x and y inverted) @todo: needs fix
+				stacked: false,        // => stacked bar charts
 				centered: true         // => center the bars to their x axis value
 			},
 			candles: {
@@ -385,12 +390,12 @@ Flotr.Graph = Class.create({
 				pie3DspliceThickness: 20
 			},
 			markers: {
-				show: false,
-				lineWidth: 1, 
-				fill: false,
+				show: false,           // => setting to true will show markers, false will hide
+				lineWidth: 1,          // => line width of the rectangle around the marker
+				fill: false,           // => fill or not the marekers' rectangles
 				fillColor: "#FFFFFF",  // => fill color
-				fillOpacity: 0.4,
-				stroke: false,
+				fillOpacity: 0.4,      // => fill opacity
+				stroke: false,         // => draw the rectangle around the markers
 				position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
 				labelFormatter: Flotr.defaultMarkerFormatter
 			},
@@ -398,8 +403,8 @@ Flotr.Graph = Class.create({
 				show: false,           // => setting to true will show radar chart, false will hide
 				lineWidth: 2,          // => line width in pixels
 				fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
-				fillOpacity: 0.4,       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-				radiusRatio: 0.90
+				fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+				radiusRatio: 0.90      // => ratio of the radar, against the plot size
 			},
 			grid: {
 				color: '#545454',      // => primary color used for outline and labels
@@ -409,7 +414,7 @@ Flotr.Graph = Class.create({
 				verticalLines: true,   // => whether to show gridlines in vertical direction
 				horizontalLines: true, // => whether to show gridlines in horizontal direction
 				outlineWidth: 2,       // => width of the grid outline/border in pixels
-				circular: false
+				circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
 			},
 			selection: {
 				mode: null,            // => one of null, 'x', 'y' or 'xy'
@@ -434,15 +439,15 @@ Flotr.Graph = Class.create({
  				fillColor: null,       // => color to fill our select bar with only applies to bar and similar graphs (only bars for now)
 				fillOpacity: 0.4       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill 
 			},
-			shadowSize: 4,             // => size of the 'fake' shadow
-			defaultType: 'lines',      // => default series type
-			HtmlText: true,            // => wether to draw the text using HTML or on the canvas
-			fontSize: 7.5,             // => canvas' text font size
+			shadowSize: 4,           // => size of the 'fake' shadow
+			defaultType: 'lines',    // => default series type
+			HtmlText: true,          // => wether to draw the text using HTML or on the canvas
+			fontSize: 7.5,           // => canvas' text font size
 			spreadsheet: {
 				show: false,           // => show the data grid using two tabs
 				tabGraphLabel: 'Graph',
 				tabDataLabel: 'Data',
-				toolbarDownload: 'Download CSV', // @todo: add language support
+				toolbarDownload: 'Download CSV', // @todo: add better language support
 				toolbarSelectAll: 'Select all',
 				csvFileSeparator: ','
 			}
@@ -1068,21 +1073,52 @@ Flotr.Graph = Class.create({
 			}
 		}
 		else {
-			// Round to nearest multiple of tick size.
-			var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize),
-			    decimals;
-			
-			// Then store all possible ticks.
-			for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
-				v = start + i * axis.tickSize;
+			if (o.mode == 'time') {
+				var tu = Flotr.Date.timeUnits,
+				    spec = Flotr.Date.spec,
+						delta = (axis.max - axis.min) / axis.options.noTicks,
+						size, unit;
+
+				for (i = 0; i < spec.length - 1; ++i) {
+					var d = spec[i][0] * tu[spec[i][1]];
+					if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
+						break;
+				}
+				size = spec[i][0];
+				unit = spec[i][1];
 				
-				// Round (this is always needed to fix numerical instability).
-				decimals = o.tickDecimals;
-				if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
-				if(decimals < 0) decimals = 0;
+				// special-case the possibility of several years
+				if (unit == "year") {
+					var magn = Math.pow(10, Math.floor(Math.log(delta / tu.year) / Math.LN10));
+					var norm = (delta / tu.year) / magn;
+					     if (norm < 1.5) size = 1;
+					else if (norm < 3)   size = 2;
+					else if (norm < 7.5) size = 5;
+					else                 size = 10;
+					size *= magn;
+				}
 				
-				v = v.toFixed(decimals);
-				axis.ticks.push({ v: v, label: o.tickFormatter(v) });
+				axis.tickSize = size;
+				axis.tickUnit = unit;
+				axis.ticks = Flotr.Date.generator(axis);
+			}
+			else {
+				// Round to nearest multiple of tick size.
+				var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize),
+				    decimals;
+				
+				// Then store all possible ticks.
+				for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
+					v = start + i * axis.tickSize;
+					
+					// Round (this is always needed to fix numerical instability).
+					decimals = o.tickDecimals;
+					if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
+					if(decimals < 0) decimals = 0;
+					
+					v = v.toFixed(decimals);
+					axis.ticks.push({ v: v, label: o.tickFormatter(v) });
+				}
 			}
 		}
 	},
@@ -3349,11 +3385,22 @@ Flotr.Color.lookupColors = {
 Flotr.Date = {
 	format: function(d, format) {
 		if (!d) return;
-
-		var leftPad = function(n) {
-			n = n.toString();
-			return n.length == 1 ? "0" + n : n;
+		
+		var tokens = {
+			h: d.getUTCHours().toString(),
+			H: leftPad(d.getUTCHours()),
+			M: leftPad(d.getUTCMinutes()),
+			S: leftPad(d.getUTCSeconds()),
+			d: d.getUTCDate().toString(),
+			m: (d.getUTCMonth() + 1).toString(),
+			y: d.getUTCFullYear().toString(),
+			b: Flotr.Date.monthNames[d.getUTCMonth()]
 		};
+
+		function leftPad(n){
+			n += '';
+			return n.length == 1 ? "0" + n : n;
+		}
 		
 		var r = [], c,
 		    escape = false;
@@ -3362,109 +3409,101 @@ Flotr.Date = {
 			c = format.charAt(i);
 			
 			if (escape) {
-				switch (c) {
-					case 'h': c = d.getUTCHours().toString(); break;
-					case 'H': c = leftPad(d.getUTCHours()); break;
-					case 'M': c = leftPad(d.getUTCMinutes()); break;
-					case 'S': c = leftPad(d.getUTCSeconds()); break;
-					case 'd': c = d.getUTCDate().toString(); break;
-					case 'm': c = (d.getUTCMonth() + 1).toString(); break;
-					case 'y': c = d.getUTCFullYear().toString(); break;
-					case 'b': c = Flotr.Date.monthNames[d.getUTCMonth()]; break;
-				}
-				r.push(c);
+				r.push(tokens[c] || c);
 				escape = false;
 			}
-			else {
-				if (c == "%")
-					escape = true;
-				else
-					r.push(c);
-			}
+			else if (c == "%")
+				escape = true;
+			else
+				r.push(c);
 		}
-		return r.join("");
+		return r.join('');
 	},
 	formatter: function (v, axis) {
 		var d = new Date(v);
 
 		// first check global format
-		if (axis.options.timeformat != null)
-			return Flotr.Date.format(d, axis.options.timeformat);
+		if (axis.options.timeFormat != null)
+			return Flotr.Date.format(d, axis.options.timeFormat);
 		
-		var t = axis.tickSize[0] * Flotr.Date.timeUnits[axis.tickSize[1]],
-		    span = axis.max - axis.min;
+		var tu = Flotr.Date.timeUnits,
+		    span = axis.max - axis.min,
+				t = axis.tickSize * tu[axis.tickUnit];
 		
-		if (t < Flotr.Date.timeUnits.minute)
+		if (t < tu.minute)
 			fmt = "%h:%M:%S";
-		else if (t < Flotr.Date.timeUnits.day)
-			fmt = (span < 2 * Flotr.Date.timeUnits.day) ? "%h:%M" : "%b %d %h:%M";
-		else if (t < Flotr.Date.timeUnits.month)
+		else if (t < tu.day)
+			fmt = (span < 2 * tu.day) ? "%h:%M" : "%b %d %h:%M";
+		else if (t < tu.month)
 			fmt = "%b %d";
-		else if (t < Flotr.Date.timeUnits.year) 
-			fmt = (span < Flotr.Date.timeUnits.year) ? "%b" : "%b %y";
+		else if (t < tu.year)
+			fmt = (span < tu.year) ? "%b" : "%b %y";
 		else 
 			fmt = "%y";
-		
+			
 		return Flotr.Date.format(d, fmt);
 	},
 	generator: function(axis) {
 		var ticks = [],
-			tickSize = axis.tickSize[0], unit = axis.tickSize[1],
 			d = new Date(axis.min),
-			step = tickSize * timeUnitSize[unit];
+			tu = Flotr.Date.timeUnits;
+		
+		var step = axis.tickSize * tu[axis.tickUnit];
 
-		switch (unit) {
-			case "second": d.setUTCSeconds(floorInBase(d.getUTCSeconds(), tickSize)); break;
-			case "minute": d.setUTCMinutes(floorInBase(d.getUTCMinutes(), tickSize)); break;
-			case "hour":   d.setUTCHours(floorInBase(d.getUTCHours(), tickSize)); break;
-			case "month":  d.setUTCMonth(floorInBase(d.getUTCMonth(), tickSize)); break;
-			case "year":   d.setUTCFullYear(floorInBase(d.getUTCFullYear(), tickSize));break;
+		switch (axis.tickUnit) {
+			case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
+			case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
+			case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
+			case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), axis.tickSize)); break;
+			case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), axis.tickSize));break;
 		}
 		
 		// reset smaller components
 		d.setUTCMilliseconds(0);
-		if (step >= timeUnitSize.minute)  d.setUTCSeconds(0);
-		if (step >= timeUnitSize.hour)    d.setUTCMinutes(0);
-		if (step >= timeUnitSize.day)     d.setUTCHours(0);
-		if (step >= timeUnitSize.day * 4) d.setUTCDate(1);
-		if (step >= timeUnitSize.year)    d.setUTCMonth(0);
+		if (step >= tu.minute)  d.setUTCSeconds(0);
+		if (step >= tu.hour)    d.setUTCMinutes(0);
+		if (step >= tu.day)     d.setUTCHours(0);
+		if (step >= tu.day * 4) d.setUTCDate(1);
+		if (step >= tu.year)    d.setUTCMonth(0);
 
 		var carry = 0, v = Number.NaN, prev;
 		do {
 			prev = v;
 			v = d.getTime();
-			ticks.push({ v: v, label: axis.tickFormatter(v, axis) });
-			if (unit == "month") {
-				if (tickSize < 1) {
+			ticks.push({ v:v, label:Flotr.Date.formatter(v, axis) });
+			if (axis.tickUnit == "month") {
+				if (axis.tickSize < 1) {
 					/* a bit complicated - we'll divide the month up but we need to take care of fractions
 					 so we don't end up in the middle of a day */
 					d.setUTCDate(1);
 					var start = d.getTime();
 					d.setUTCMonth(d.getUTCMonth() + 1);
 					var end = d.getTime();
-					d.setTime(v + carry * timeUnitSize.hour + (end - start) * tickSize);
+					d.setTime(v + carry * tu.hour + (end - start) * axis.tickSize);
 					carry = d.getUTCHours();
 					d.setUTCHours(0);
 				}
 				else
-					d.setUTCMonth(d.getUTCMonth() + tickSize);
+					d.setUTCMonth(d.getUTCMonth() + axis.tickSize);
 			}
-			else if (unit == "year") {
-				d.setUTCFullYear(d.getUTCFullYear() + tickSize);
+			else if (axis.tickUnit == "year") {
+				d.setUTCFullYear(d.getUTCFullYear() + axis.tickSize);
 			}
 			else
 				d.setTime(v + step);
-		} while (v < axis.max && v != prev);
 
+		} while (v < axis.max && v != prev);
+		
 		return ticks;
 	},
 	timeUnits: {
+		millisecond: 1,
 		second: 1000,
 		minute: 1000 * 60,
 		hour:   1000 * 60 * 60,
 		day:    1000 * 60 * 60 * 24,
 		month:  1000 * 60 * 60 * 24 * 30,
-		year:   1000 * 60 * 60 * 24 * 30 * 365.2425
+		year:   1000 * 60 * 60 * 24 * 365.2425
 	},
 	// the allowed tick sizes, after 1 year we use an integer algorithm
 	spec: [
