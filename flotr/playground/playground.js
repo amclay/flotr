@@ -588,7 +588,7 @@ var specs = {
 		circular: {
 			type: Boolean,
 			def: false
-		},
+		}
 	},
 	selection: {
 		_options: {
