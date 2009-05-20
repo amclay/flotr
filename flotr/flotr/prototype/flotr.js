@@ -1089,13 +1089,7 @@ Flotr.Graph = Class.create({
 				
 				// special-case the possibility of several years
 				if (unit == "year") {
-					var magn = Math.pow(10, Math.floor(Math.log(delta / tu.year) / Math.LN10));
-					var norm = (delta / tu.year) / magn;
-					     if (norm < 1.5) size = 1;
-					else if (norm < 3)   size = 2;
-					else if (norm < 7.5) size = 5;
-					else                 size = 10;
-					size *= magn;
+					size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
 				}
 				
 				axis.tickSize = size;
@@ -3381,11 +3375,13 @@ Flotr.Color.lookupColors = {
 	yellow:[255,255,0]
 };
 
-// not used yet
 Flotr.Date = {
 	format: function(d, format) {
 		if (!d) return;
 		
+		// We should maybe use an "official" date format spec, like PHP date() or ColdFusion 
+		// http://fr.php.net/manual/en/function.date.php
+		// http://livedocs.adobe.com/coldfusion/8/htmldocs/help.html?content=functions_c-d_29.html
 		var tokens = {
 			h: d.getUTCHours().toString(),
 			H: leftPad(d.getUTCHours()),
@@ -3428,7 +3424,7 @@ Flotr.Date = {
 		
 		var tu = Flotr.Date.timeUnits,
 		    span = axis.max - axis.min,
-				t = axis.tickSize * tu[axis.tickUnit];
+		    t = axis.tickSize * tu[axis.tickUnit];
 		
 		if (t < tu.minute)
 			fmt = "%h:%M:%S";
