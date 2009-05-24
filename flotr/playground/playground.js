@@ -783,10 +783,12 @@ function insertElement(object, title, name, container){
 			else {
 				input = new Element('select');
 				$A(object.values).each(function(v, i){
-					input.insert(new Element('option', {
+					var o = new Element('option', {
 						value: v,
 						selected: object.def == v
-					}).update((object.labels && object.labels[i]) || v));
+					});
+					o.innerHTML = (object.labels && object.labels[i]) || v;
+					input.insert(o);
 				});
 			}
 			break;
@@ -843,7 +845,8 @@ function buildForm(specs, form){
 			var options = o._options;
 			
 			if (options.inherited || form.name == 'global') {
-				var legend = new Element('legend').update('<a href="#1">' + options.title + '</a>');
+				var legend = new Element('legend');
+				legend.innerHTML = '<a href="javascript:;">' + options.title + '</a>';
 				var fieldset = new Element('fieldset').insert(legend);
 				var container = new Element('span');
 				
@@ -891,9 +894,7 @@ function draw(){
 }
 
 function writeCode(container, series, options){
-	container.update();
-	container.insert('var options = ' + Object.toJSON(options) + ';<br /><br />');
-	container.insert('var series = ' + Object.toJSON(series) + ';');
+	container.innerHTML = 'var options = ' + Object.toJSON(options) + ';<br /><br />var series = ' + Object.toJSON(series) + ';';
 }
 
 function getOptionValue(element){
@@ -989,7 +990,10 @@ document.observe('dom:loaded', function(){
 	});
 	
 	dataset.each(function(serie){
-		var i, fieldsetData = new Element('fieldset').insert(new Element('legend').update('Data')), fieldsetSerie = new Element('fieldset').insert(new Element('legend').update('Options')), formData = new Element('form', {
+		var i, 
+		fieldsetData = new Element('fieldset').insert(new Element('legend').update('Data')), 
+		fieldsetSerie = new Element('fieldset').insert(new Element('legend').update('Options')), 
+		formData = new Element('form', {
 			name: serie.id + '-data'
 		}).insert(fieldsetData), formOptions = new Element('form', {
 			name: serie.id + '-options',
