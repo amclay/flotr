@@ -55,7 +55,7 @@ var Flotr = {
 	getSeries: function(data){
 		return data.collect(function(serie){
 			var i;
-			serie = (serie.data) ? Object.clone(serie) : {'data': serie};
+			serie = (serie.data) ? Object.clone(serie) : {data: serie};
 			for (i = serie.data.length-1; i > -1; --i) {
 				serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
 			}
@@ -377,7 +377,7 @@ Flotr.Graph = Class.create({
 				trackDecimals: 1,      // => decimals for the track values
 				sensibility: 2,        // => the lower this number, the more precise you have to aim to show a value
 				radius: 3,             // => radius of the track point
- 				fillColor: null,       // => color to fill our select bar with only applies to bar and similar graphs (only bars for now)
+				fillColor: null,       // => color to fill our select bar with only applies to bar and similar graphs (only bars for now)
 				fillOpacity: 0.4       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill 
 			},
 			shadowSize: 4,           // => size of the 'fake' shadow
@@ -500,7 +500,7 @@ Flotr.Graph = Class.create({
 
 		this.canvasWidth = el.getWidth();
 		this.canvasHeight = el.getHeight();
-		size = {'width': this.canvasWidth, 'height': this.canvasHeight};
+		size = {width: this.canvasWidth, height: this.canvasHeight};
 
 		if(this.canvasWidth <= 0 || this.canvasHeight <= 0){
 			throw 'Invalid dimensions for plot, width = ' + this.canvasWidth + ', height = ' + this.canvasHeight;
@@ -510,7 +510,7 @@ Flotr.Graph = Class.create({
 		if (!this.canvas) {
 			c = this.canvas = $(document.createElement('canvas'));
 			c.className = 'flotr-canvas';
-			c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+			c.writeAttribute(style, 'position:absolute;left:0px;top:0px;');
 		}
 		c = this.canvas.writeAttribute(size).show();
 		el.insert(c);
@@ -519,7 +519,7 @@ Flotr.Graph = Class.create({
 		if (!this.overlay) {
 			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
-			oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+			oc.writeAttribute(style, 'position:absolute;left:0px;top:0px;');
 		}
 		oc = this.overlay.writeAttribute(size).show();
 		el.insert(oc);
@@ -3313,7 +3313,7 @@ Object.extend(Flotr.Color, {
 		if(name == 'transparent'){
 			return new Color(255, 255, 255, 0);
 		}
-		return ((result = Color.name[name])) ? new Color(result[0], result[1], result[2]) : false;
+		return (result = Color.names[name]) ? new Color(result[0], result[1], result[2]) : false;
 	},
 	
 	/**
@@ -3331,7 +3331,7 @@ Object.extend(Flotr.Color, {
 		} while(!element.nodeName.match(/^body$/i));
 
 		// Catch Safari's way of signaling transparent.
-		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
+		return new Flotr.Color(color == 'rgba(0, 0, 0, 0)' ? 'transparent' : color);
 	},
 	
 	names: {
@@ -3393,6 +3393,7 @@ Flotr.Date = {
 			H: leftPad(d.getUTCHours()),
 			M: leftPad(d.getUTCMinutes()),
 			S: leftPad(d.getUTCSeconds()),
+			s: d.getUTCMilliseconds(),
 			d: d.getUTCDate().toString(),
 			m: (d.getUTCMonth() + 1).toString(),
 			y: d.getUTCFullYear().toString(),
@@ -3432,16 +3433,12 @@ Flotr.Date = {
 		    span = axis.max - axis.min,
 		    t = axis.tickSize * tu[axis.tickUnit];
 		
-		if (t < tu.minute)
-			fmt = "%h:%M:%S";
-		else if (t < tu.day)
-			fmt = (span < 2 * tu.day) ? "%h:%M" : "%b %d %h:%M";
-		else if (t < tu.month)
-			fmt = "%b %d";
-		else if (t < tu.year)
-			fmt = (span < tu.year) ? "%b" : "%b %y";
-		else 
-			fmt = "%y";
+		     if (t < tu.second) fmt = "%h:%M:%S.%s";
+		else if (t < tu.minute) fmt = "%h:%M:%S";
+		else if (t < tu.day)    fmt = (span < 2 * tu.day) ? "%h:%M" : "%b %d %h:%M";
+		else if (t < tu.month)  fmt = "%b %d";
+		else if (t < tu.year)   fmt = (span < tu.year) ? "%b" : "%b %y";
+		else                    fmt = "%y";
 			
 		return Flotr.Date.format(d, fmt);
 	},
@@ -3453,6 +3450,7 @@ Flotr.Date = {
 		var step = axis.tickSize * tu[axis.tickUnit];
 
 		switch (axis.tickUnit) {
+			case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), axis.tickSize)); break;
 			case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
 			case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
 			case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
@@ -3461,7 +3459,7 @@ Flotr.Date = {
 		}
 		
 		// reset smaller components
-		d.setUTCMilliseconds(0);
+		if (step >= tu.second)  d.setUTCMilliseconds(0);
 		if (step >= tu.minute)  d.setUTCSeconds(0);
 		if (step >= tu.hour)    d.setUTCMinutes(0);
 		if (step >= tu.day)     d.setUTCHours(0);
@@ -3509,6 +3507,7 @@ Flotr.Date = {
 	},
 	// the allowed tick sizes, after 1 year we use an integer algorithm
 	spec: [
+		[1, "millisecond"], [20, "millisecond"], [50, "millisecond"], [100, "millisecond"], [200, "millisecond"], [500, "millisecond"], 
 		[1, "second"],   [2, "second"],  [5, "second"], [10, "second"], [30, "second"], 
 		[1, "minute"],   [2, "minute"],  [5, "minute"], [10, "minute"], [30, "minute"], 
 		[1, "hour"],     [2, "hour"],    [4, "hour"],   [8, "hour"],    [12, "hour"],
