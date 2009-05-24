@@ -3186,6 +3186,11 @@ Flotr.Graph = Class.create({
 	},
 	saveImage: function (type, width, height, replaceCanvas) {
 		var image = null;
+		if (Prototype.Browser.IE) {
+			image = '<html><body>'+this.canvas.select('div').first().innerHTML+'</body></html>';
+			return window.open().document.write(image);
+		}
+			
 		switch (type) {
 			case 'jpeg':
 			case 'jpg': image = Canvas2Image.saveAsJPEG(this.canvas, replaceCanvas, width, height); break;

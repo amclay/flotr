@@ -107,7 +107,8 @@
 				
 				if (Prototype.Browser.IE) {
 					var form = $(document.forms['image-download']);
-					form.disable().insert({top: "Your browser doesn't allow you to use this feature, sorry :(<br />"});
+					form.disable().insert({top: "Your browser doesn't allow you to get a bitmap image from the plot, "+
+					"you can only get a VML image that you can use in Microsoft Office.<br />"});
 				}
 			});
 		</script>
