@@ -173,65 +173,6 @@ var Flotr = {
 	},
 	floorInBase: function(n, base) {
 		return base * Math.floor(n / base);
-	},
-	/**
-	 * Parses a color string and returns a corresponding Color.
-	 * The different tests are in order of probability to improve speed.
-	 * @param {String, Color} str - string thats representing a color
-	 * @return {Color} returns a Color object or false
-	 */
-	parseColor: function(str){
-		if (str instanceof Flotr.Color) return str;
-		
-		var result, Color = Flotr.Color;
-
-		// #a0b1c2
-		if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(str)))
-			return new Color(parseInt(result[1],16), parseInt(result[2],16), parseInt(result[3],16));
-
-		// rgb(num,num,num)
-		if((result = /rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(str)))
-			return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]));
-	
-		// #fff
-		if((result = /#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(str)))
-			return new Color(parseInt(result[1]+result[1],16), parseInt(result[2]+result[2],16), parseInt(result[3]+result[3],16));
-	
-		// rgba(num,num,num,num)
-		if((result = /rgba\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(str)))
-			return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]), parseFloat(result[4]));
-			
-		// rgb(num%,num%,num%)
-		if((result = /rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(str)))
-			return new Color(parseFloat(result[1])*2.55, parseFloat(result[2])*2.55, parseFloat(result[3])*2.55);
-	
-		// rgba(num%,num%,num%,num)
-		if((result = /rgba\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(str)))
-			return new Color(parseFloat(result[1])*2.55, parseFloat(result[2])*2.55, parseFloat(result[3])*2.55, parseFloat(result[4]));
-
-		// Otherwise, we're most likely dealing with a named color.
-		var name = str.strip().toLowerCase();
-		if(name == 'transparent'){
-			return new Color(255, 255, 255, 0);
-		}
-		return ((result = Color.lookupColors[name])) ? new Color(result[0], result[1], result[2]) : false;
-	},
-	/**
-	 * Extracts the background-color of the passed element.
-	 * @param {Element} element - The element from what the background color is extracted
-	 * @return {String} color string
-	 */
-	extractColor: function(element){
-		var color;
-		// Loop until we find an element with a background color and stop when we hit the body element. 
-		do {
-			color = element.getStyle('background-color').toLowerCase();
-			if(!(color == '' || color == 'transparent')) break;
-			element = element.up(0);
-		} while(!element.nodeName.match(/^body$/i));
-
-		// Catch Safari's way of signaling transparent.
-		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
 	}
 };
 /**
@@ -481,7 +422,7 @@ Flotr.Graph = Class.create({
 			if(c != null){
 				--neededColors;
 				if(Object.isNumber(c)) assignedColors.push(c);
-				else usedColors.push(Flotr.parseColor(c));
+				else usedColors.push(Flotr.Color.parse(c));
 			}
 		}
 		
@@ -491,7 +432,7 @@ Flotr.Graph = Class.create({
 
 		// Generate needed number of colors.
 		for(i = 0; colors.length < neededColors;){
-			c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.parseColor(oc[i]);
+			c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
 			
 			// Make sure each serie gets a different color.
 			var sign = variation % 2 == 1 ? -1 : 1;
@@ -530,13 +471,9 @@ Flotr.Graph = Class.create({
 			else if (s.yaxis == 2) s.yaxis = this.axes.y2;
 			
 			// Apply missing options to the series.
-			s.lines   = Object.extend(Object.clone(this.options.lines), s.lines);
-			s.points  = Object.extend(Object.clone(this.options.points), s.points);
-			s.bars    = Object.extend(Object.clone(this.options.bars), s.bars);
-			s.candles = Object.extend(Object.clone(this.options.candles), s.candles);
-			s.pie     = Object.extend(Object.clone(this.options.pie), s.pie);
-			s.markers = Object.extend(Object.clone(this.options.markers), s.markers);
-			s.radar   = Object.extend(Object.clone(this.options.radar), s.radar);
+			$H(Flotr._registeredTypes).each(function(t){
+				s[t.key] = Object.extend(Object.clone(this.options[t.key]), s[t.key]);
+			}, this);
 			s.mouse   = Object.extend(Object.clone(this.options.mouse), s.mouse);
 			
 			if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
@@ -1036,6 +973,7 @@ Flotr.Graph = Class.create({
 	 * Find every values of the x axes
 	 */
 	findXAxesValues: function(){
+		var i, j, s;
 		for(i = this.series.length-1; i > -1 ; --i){
 			s = this.series[i];
 			s.xaxis.values = s.xaxis.values || {};
@@ -1216,7 +1154,7 @@ Flotr.Graph = Class.create({
 		return (x - axis.min) * axis.scale;
 	},
 	/**
-	 * Translates absolute vertical x coordinates to relative coordinates.
+	 * Translates absolute vertical y coordinates to relative coordinates.
 	 * @param {Integer} y - absolute integer y coordinate
 	 * @param {Object} axis - the reference axis
 	 * @return {Integer} translated relative y coordinate
@@ -1925,7 +1863,7 @@ Flotr.Graph = Class.create({
 			lastX = Math.max(x2, x2old);
 		}
 		
-		ctx.lineTo(tHoz(lastX, xa), tVert(bottom, ya) + offset);
+		ctx.lineTo(tHoz(xa.max, xa), tVert(bottom, ya) + offset);
 		ctx.closePath();
 		ctx.fill();
 	},
@@ -1963,7 +1901,7 @@ Flotr.Graph = Class.create({
 		ctx.lineWidth = lw;
 		ctx.strokeStyle = series.color;
 		if(series.lines.fill){
-			ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : Flotr.parseColor(series.color).scale(null, null, null, series.lines.fillOpacity).toString();
+			ctx.fillStyle = series.lines.fillColor != null ? series.lines.fillColor : Flotr.Color.parse(series.color).scale(null, null, null, series.lines.fillOpacity).toString();
 			this.plotLineArea(series, 0);
 		}
 
@@ -2055,7 +1993,7 @@ Flotr.Graph = Class.create({
 
 		if(series.bars.fill){
 			var color = series.bars.fillColor || series.color;
-			ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.bars.fillOpacity).toString();
+			ctx.fillStyle = Flotr.Color.parse(color).scale(null, null, null, series.bars.fillOpacity).toString();
 		}
     
 		this.plotBars(series, bw, 0, series.bars.fill);
@@ -2249,7 +2187,7 @@ Flotr.Graph = Class.create({
 			 * Fill the candle.
 			 */
 			if(series.candles.fill && !series.candles.barcharts){
-				ctx.fillStyle = Flotr.parseColor(color).scale(null, null, null, series.candles.fillOpacity).toString();
+				ctx.fillStyle = Flotr.Color.parse(color).scale(null, null, null, series.candles.fillOpacity).toString();
 				ctx.fillRect(tHoz(left, xa), tVert(top2, ya) + offset, tHoz(right, xa) - tHoz(left, xa), tVert(bottom2, ya) - tVert(top2, ya));
 			}
 
@@ -2425,7 +2363,7 @@ Flotr.Graph = Class.create({
 			this.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
 			
 			if(series.pie.fill){
-				ctx.fillStyle = Flotr.parseColor(fillColor).scale(null, null, null, series.pie.fillOpacity).toString();
+				ctx.fillStyle = Flotr.Color.parse(fillColor).scale(null, null, null, series.pie.fillOpacity).toString();
 				ctx.fill();
 			}
 			ctx.lineWidth = lw;
@@ -2496,7 +2434,7 @@ Flotr.Graph = Class.create({
 		ctx.lineJoin = 'round';
 		ctx.lineWidth = options.lineWidth;
 		ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-		ctx.fillStyle = Flotr.parseColor(options.fillColor).scale(null, null, null, options.fillOpacity).toString();
+		ctx.fillStyle = Flotr.Color.parse(options.fillColor).scale(null, null, null, options.fillOpacity).toString();
 
 		for(var i = 0; i < data.length; ++i){
 			var x = data[i][0], xPos = tHoz(x, xa),
@@ -2551,7 +2489,7 @@ Flotr.Graph = Class.create({
 		this.plotRadar(series, series.shadowSize / 4);
 		
 		ctx.strokeStyle = series.color;
-		ctx.fillStyle = Flotr.parseColor(series.color).scale(null, null, null, series.radar.fillOpacity).toString();
+		ctx.fillStyle = Flotr.Color.parse(series.color).scale(null, null, null, series.radar.fillOpacity).toString();
 		this.plotRadar(series);
 		
 		ctx.restore();
@@ -2629,7 +2567,7 @@ Flotr.Graph = Class.create({
 				if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
 				
 				// Legend box
-				var color = Flotr.parseColor(options.legend.backgroundColor || 'rgb(240,240,240)').scale(null, null, null, options.legend.backgroundOpacity || 0.1).toString();
+				var color = Flotr.Color.parse(options.legend.backgroundColor || 'rgb(240,240,240)').scale(null, null, null, options.legend.backgroundOpacity || 0.1).toString();
 				
 				ctx.fillStyle = color;
 				ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
@@ -2712,8 +2650,8 @@ Flotr.Graph = Class.create({
 		  					 */
 		  					var c = options.legend.backgroundColor;
 		  					if(c == null){
-		  						var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.extractColor(div);
-		  						c = Flotr.parseColor(tmp).adjust(null, null, null, 1).toString();
+		  						var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.Color.extract(div);
+		  						c = Flotr.Color.parse(tmp).adjust(null, null, null, 1).toString();
 		  					}
 		  					this.el.insert('<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>').select('div.flotr-legend-bg').first().setStyle({
 		  						'opacity': options.legend.backgroundOpacity
@@ -2957,10 +2895,10 @@ Flotr.Graph = Class.create({
 			return;
 		
 		octx.save();
-		octx.strokeStyle = Flotr.parseColor(options.selection.color).scale(null, null, null, 0.8).toString();
+		octx.strokeStyle = Flotr.Color.parse(options.selection.color).scale(null, null, null, 0.8).toString();
 		octx.lineWidth = 1;
 		octx.lineJoin = 'miter';
-		octx.fillStyle = Flotr.parseColor(options.selection.color).scale(null, null, null, 0.4).toString();
+		octx.fillStyle = Flotr.Color.parse(options.selection.color).scale(null, null, null, 0.4).toString();
 
 		this.prevSelection = {
 			first: { x: s.first.x, y: s.first.y },
@@ -3082,7 +3020,7 @@ Flotr.Graph = Class.create({
 			octx.save();
 			octx.lineWidth = s.points.lineWidth;
 			octx.strokeStyle = s.mouse.lineColor;
-      octx.fillStyle = Flotr.parseColor(s.mouse.fillColor || '#ffffff').scale(null,null,null, s.mouse.fillOpacity).toString();
+      octx.fillStyle = Flotr.Color.parse(s.mouse.fillColor || '#ffffff').scale(null,null,null, s.mouse.fillOpacity).toString();
       
 			if(!s.bars.show){
 				octx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -3316,7 +3254,7 @@ Flotr.Color = Class.create({
 	
 	distance: function(color){
 		if (!color) return;
-		color = new Flotr.parseColor(color);
+		color = new Flotr.Color.parse(color);
 		var dist = 0, x = 3;
 		while(-1<--x){
 			dist += Math.abs(this[this.rgba[x]] - color[this.rgba[x]]);
@@ -3329,51 +3267,114 @@ Flotr.Color = Class.create({
 	}
 });
 
-Flotr.Color.lookupColors = {
-	aqua:[0,255,255],
-	azure:[240,255,255],
-	beige:[245,245,220],
-	black:[0,0,0],
-	blue:[0,0,255],
-	brown:[165,42,42],
-	cyan:[0,255,255],
-	darkblue:[0,0,139],
-	darkcyan:[0,139,139],
-	darkgrey:[169,169,169],
-	darkgreen:[0,100,0],
-	darkkhaki:[189,183,107],
-	darkmagenta:[139,0,139],
-	darkolivegreen:[85,107,47],
-	darkorange:[255,140,0],
-	darkorchid:[153,50,204],
-	darkred:[139,0,0],
-	darksalmon:[233,150,122],
-	darkviolet:[148,0,211],
-	fuchsia:[255,0,255],
-	gold:[255,215,0],
-	green:[0,128,0],
-	indigo:[75,0,130],
-	khaki:[240,230,140],
-	lightblue:[173,216,230],
-	lightcyan:[224,255,255],
-	lightgreen:[144,238,144],
-	lightgrey:[211,211,211],
-	lightpink:[255,182,193],
-	lightyellow:[255,255,224],
-	lime:[0,255,0],
-	magenta:[255,0,255],
-	maroon:[128,0,0],
-	navy:[0,0,128],
-	olive:[128,128,0],
-	orange:[255,165,0],
-	pink:[255,192,203],
-	purple:[128,0,128],
-	violet:[128,0,128],
-	red:[255,0,0],
-	silver:[192,192,192],
-	white:[255,255,255],
-	yellow:[255,255,0]
-};
+Object.extend(Flotr.Color, {
+	/**
+	 * Parses a color string and returns a corresponding Color.
+	 * The different tests are in order of probability to improve speed.
+	 * @param {String, Color} str - string thats representing a color
+	 * @return {Color} returns a Color object or false
+	 */
+	parse: function(str){
+		if (str instanceof Flotr.Color) return str;
+		
+		var result, Color = Flotr.Color;
+
+		// #a0b1c2
+		if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(str)))
+			return new Color(parseInt(result[1],16), parseInt(result[2],16), parseInt(result[3],16));
+
+		// rgb(num,num,num)
+		if((result = /rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(str)))
+			return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]));
+	
+		// #fff
+		if((result = /#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(str)))
+			return new Color(parseInt(result[1]+result[1],16), parseInt(result[2]+result[2],16), parseInt(result[3]+result[3],16));
+	
+		// rgba(num,num,num,num)
+		if((result = /rgba\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(str)))
+			return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]), parseFloat(result[4]));
+			
+		// rgb(num%,num%,num%)
+		if((result = /rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(str)))
+			return new Color(parseFloat(result[1])*2.55, parseFloat(result[2])*2.55, parseFloat(result[3])*2.55);
+	
+		// rgba(num%,num%,num%,num)
+		if((result = /rgba\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(str)))
+			return new Color(parseFloat(result[1])*2.55, parseFloat(result[2])*2.55, parseFloat(result[3])*2.55, parseFloat(result[4]));
+
+		// Otherwise, we're most likely dealing with a named color.
+		var name = str.strip().toLowerCase();
+		if(name == 'transparent'){
+			return new Color(255, 255, 255, 0);
+		}
+		return ((result = Color.name[name])) ? new Color(result[0], result[1], result[2]) : false;
+	},
+	
+	/**
+	 * Extracts the background-color of the passed element.
+	 * @param {Element} element - The element from what the background color is extracted
+	 * @return {String} color string
+	 */
+	extract: function(element){
+		var color;
+		// Loop until we find an element with a background color and stop when we hit the body element. 
+		do {
+			color = element.getStyle('background-color').toLowerCase();
+			if(!(color == '' || color == 'transparent')) break;
+			element = element.up(0);
+		} while(!element.nodeName.match(/^body$/i));
+
+		// Catch Safari's way of signaling transparent.
+		return (color == 'rgba(0, 0, 0, 0)') ? 'transparent' : color;
+	},
+	
+	names: {
+		aqua:[0,255,255],
+		azure:[240,255,255],
+		beige:[245,245,220],
+		black:[0,0,0],
+		blue:[0,0,255],
+		brown:[165,42,42],
+		cyan:[0,255,255],
+		darkblue:[0,0,139],
+		darkcyan:[0,139,139],
+		darkgrey:[169,169,169],
+		darkgreen:[0,100,0],
+		darkkhaki:[189,183,107],
+		darkmagenta:[139,0,139],
+		darkolivegreen:[85,107,47],
+		darkorange:[255,140,0],
+		darkorchid:[153,50,204],
+		darkred:[139,0,0],
+		darksalmon:[233,150,122],
+		darkviolet:[148,0,211],
+		fuchsia:[255,0,255],
+		gold:[255,215,0],
+		green:[0,128,0],
+		indigo:[75,0,130],
+		khaki:[240,230,140],
+		lightblue:[173,216,230],
+		lightcyan:[224,255,255],
+		lightgreen:[144,238,144],
+		lightgrey:[211,211,211],
+		lightpink:[255,182,193],
+		lightyellow:[255,255,224],
+		lime:[0,255,0],
+		magenta:[255,0,255],
+		maroon:[128,0,0],
+		navy:[0,0,128],
+		olive:[128,128,0],
+		orange:[255,165,0],
+		pink:[255,192,203],
+		purple:[128,0,128],
+		violet:[128,0,128],
+		red:[255,0,0],
+		silver:[192,192,192],
+		white:[255,255,255],
+		yellow:[255,255,0]
+	}
+});
 
 Flotr.Date = {
 	format: function(d, format) {
