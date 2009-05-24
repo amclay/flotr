@@ -510,7 +510,7 @@ Flotr.Graph = Class.create({
 		if (!this.canvas) {
 			c = this.canvas = $(document.createElement('canvas'));
 			c.className = 'flotr-canvas';
-			c.writeAttribute(style, 'position:absolute;left:0px;top:0px;');
+			c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
 		}
 		c = this.canvas.writeAttribute(size).show();
 		el.insert(c);
@@ -519,7 +519,7 @@ Flotr.Graph = Class.create({
 		if (!this.overlay) {
 			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
-			oc.writeAttribute(style, 'position:absolute;left:0px;top:0px;');
+			oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
 		}
 		oc = this.overlay.writeAttribute(size).show();
 		el.insert(oc);
