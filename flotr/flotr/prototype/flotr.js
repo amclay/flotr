@@ -513,6 +513,7 @@ Flotr.Graph = Class.create({
 			c.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
 		}
 		c = this.canvas.writeAttribute(size).show();
+		c.context_ = null; // Reset the ExCanvas context
 		el.insert(c);
     
 		// Insert overlay canvas for interactive features.
@@ -520,8 +521,10 @@ Flotr.Graph = Class.create({
 			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
 			oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
+			oc.eventsInitialized = false;
 		}
 		oc = this.overlay.writeAttribute(size).show();
+		oc.context_ = null; // Reset the ExCanvas context
 		el.insert(oc);
 		
 		if(Prototype.Browser.IE){
@@ -1261,10 +1264,12 @@ Flotr.Graph = Class.create({
 			
 			// Draw axis/grid border.
 			if(o.grid.outlineWidth != 0) {
-				ctx.lineWidth = o.grid.outlineWidth;
+				var lw = o.grid.outlineWidth,
+				    orig = 0.5-lw+((lw+1)%2/2);
+				ctx.lineWidth = lw;
 				ctx.strokeStyle = o.grid.color;
-				ctx.lineJoin = 'round';
-				ctx.strokeRect(0, 0, this.plotWidth, this.plotHeight);
+				ctx.lineJoin = 'miter';
+				ctx.strokeRect(orig, orig, this.plotWidth, this.plotHeight);
 			}
 		}
 		
@@ -2858,7 +2863,7 @@ Flotr.Graph = Class.create({
 	 * Allows the user the manually select an area.
 	 * @param {Object} area - Object with coordinates to select.
 	 */
-	setSelection: function(area){
+	setSelection: function(area, preventEvent){
 		var options = this.options,
 			xa = this.axes.x,
 			ya = this.axes.y,
@@ -2869,13 +2874,14 @@ Flotr.Graph = Class.create({
 		
 		this.clearSelection();
 
-		this.selection.first.y  = selX ? 0 : (ya.max - area.y1) * vertScale;
-		this.selection.second.y = selX ? this.plotHeight : (ya.max - area.y2) * vertScale;			
-		this.selection.first.x  = selY ? 0 : (area.x1 - xa.min) * hozScale;
-		this.selection.second.x = selY ? this.plotWidth : (area.x2 - xa.min) * hozScale;
+		this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
+		this.selection.second.y = (selX && !selY) ? this.plotHeight : (ya.max - area.y2) * vertScale;			
+		this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
+		this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
 		
 		this.drawSelection();
-		this.fireSelectEvent();
+		if (!preventEvent)
+			this.fireSelectEvent();
 	},
 	/**
 	 * Draws the selection box.
@@ -2893,7 +2899,7 @@ Flotr.Graph = Class.create({
 			s.second.x == prevSelection.second.x &&
 			s.second.y == prevSelection.second.y)
 			return;
-		
+
 		octx.save();
 		octx.strokeStyle = Flotr.Color.parse(options.selection.color).scale(null, null, null, 0.8).toString();
 		octx.lineWidth = 1;
@@ -3422,6 +3428,15 @@ Flotr.Date = {
 		}
 		return r.join('');
 	},
+	getFormat: function(time, span) {
+		var tu = Flotr.Date.timeUnits;
+		     if (time < tu.second) return "%h:%M:%S.%s";
+		else if (time < tu.minute) return "%h:%M:%S";
+		else if (time < tu.day)    return (span < 2 * tu.day) ? "%h:%M" : "%b %d %h:%M";
+		else if (time < tu.month)  return "%b %d";
+		else if (time < tu.year)   return (span < tu.year) ? "%b" : "%b %y";
+		else                       return "%y";
+	},
 	formatter: function (v, axis) {
 		var d = new Date(v);
 
@@ -3429,18 +3444,10 @@ Flotr.Date = {
 		if (axis.options.timeFormat != null)
 			return Flotr.Date.format(d, axis.options.timeFormat);
 		
-		var tu = Flotr.Date.timeUnits,
-		    span = axis.max - axis.min,
-		    t = axis.tickSize * tu[axis.tickUnit];
-		
-		     if (t < tu.second) fmt = "%h:%M:%S.%s";
-		else if (t < tu.minute) fmt = "%h:%M:%S";
-		else if (t < tu.day)    fmt = (span < 2 * tu.day) ? "%h:%M" : "%b %d %h:%M";
-		else if (t < tu.month)  fmt = "%b %d";
-		else if (t < tu.year)   fmt = (span < tu.year) ? "%b" : "%b %y";
-		else                    fmt = "%y";
-			
-		return Flotr.Date.format(d, fmt);
+		var span = axis.max - axis.min,
+		    t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
+				
+		return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
 	},
 	generator: function(axis) {
 		var ticks = [],
