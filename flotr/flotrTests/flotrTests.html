@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<title>Flotr tests</title>
+
+		<script type="text/javascript" src="assets/jsunittest.js"></script>
+		<script type="text/javascript" src="../flotr/prototype/lib/prototype.js"></script>
+		<script type="text/javascript" src="../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../flotr/prototype/flotr.js"></script>
+	
+		<script type="text/javascript" src="javascript/tests.js"></script>
+		<script type="text/javascript" src="javascript/testrunner.js"></script>
+    
+		<link rel="stylesheet" href="assets/unittest.css" type="text/css" />
+    <link rel="stylesheet" href="style.css" type="text/css" />
+	</head>
+
+	<body>
+		
+		<!-- Put sample/test html here -->
+		<div id="sample"></div>
+
+		<div id="content">
+		
+			<div id="header">
+				<h1>Flotr Tests</h1>
+				<button id="generateReferences">Generate References</button>
+				<button id="seeAllTests">seeAllTests</button>
+			</div>
+			
+			<!-- Log output (one per Runner, via {testLog: "testlog"} option)-->
+			<div id="testlog"></div>
+			
+		</div>
+		
+		<script type="text/javascript">
+			function callback() {
+				$("generateReferences").observe('click', function(){
+					window.open("references.html");
+				});
+				$("seeAllTests").observe('click', function(){
+					window.open("seeAllTests.html");
+				});
+				runTests();
+			}
+			var newScript = new Element('script', {type: 'text/javascript', src:'javascript/references.'+browser()+'.js'}).observe('load', callback);
+			$$('head')[0].insert(newScript);
+		</script>
+
+	</body>
+
+</html>
