@@ -6,7 +6,7 @@ function browser() {
 
 function getContainer(){
   var container = new Element('div', {style:'width:600px;height:300px'});
-	Element.insert(document.body, container);
+	Element.insert(document.body, {top: container});
   return container;
 }
 

@@ -325,10 +325,10 @@ var tests = [
         }
       });
       
-      ovl = graph.overlay;
-      var evt = document.createEvent("MouseEvents");
-      evt.initMouseEvent("mousemove", true, true, window, 0, 0, 0, 410, 150, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
+      graph.overlay.simulate('mousemove', {
+        pointerX: 410,
+        pointerY: 150
+      });
       
       return graph;
     }
@@ -386,18 +386,22 @@ var tests = [
        */
       var graph = Flotr.draw(container, [d1], options);
       
-      ovl = graph.overlay;
-      var evt = document.createEvent("MouseEvents");
-      evt.initMouseEvent("click", true, true, window, 0, 0, 0, 510, 30, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("click", true, true, window, 0, 0, 0, 210, 230, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("click", true, true, window, 0, 0, 0, 230, 280, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("click", true, true, window, 0, 0, 0, 560, 240, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("click", true, true, window, 0, 0, 0, 310, 130, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
+      graph.overlay.simulate('click', {
+        pointerX: 410,
+        pointerY: 30
+      }).simulate('click', {
+        pointerX: 210,
+        pointerY: 30
+      }).simulate('click', {
+        pointerX: 230,
+        pointerY: 280
+      }).simulate('click', {
+        pointerX: 560,
+        pointerY: 240
+      }).simulate('click', {
+        pointerX: 310,
+        pointerY: 130
+      });
       
       return graph;
     }
@@ -496,12 +500,13 @@ var tests = [
         });
       });
       
-      ovl = graph.overlay;
-      var evt = document.createEvent("MouseEvents");
-      evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 310, 150, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("mousemove", true, true, window, 0, 0, 0, 570, 50, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
+      graph.overlay.simulate('mousedown', {
+        pointerX: 310,
+        pointerY: 150
+      }).simulate('mousemove', {
+        pointerX: 570,
+        pointerY: 50
+      });
       
       return graph;
     }
@@ -576,14 +581,17 @@ var tests = [
         });
       });
       
-      ovl = graph.overlay;
-      var evt = document.createEvent("MouseEvents");
-      evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 310, 150, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("mousemove", true, true, window, 0, 0, 0, 570, 50, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("mouseup", true, true, window, 0, 0, 0, 570, 50, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
+      graph.overlay.simulate('mousedown', {
+        pointerX: 310,
+        pointerY: 150
+      }).simulate('mousemove', {
+        pointerX: 570,
+        pointerY: 50
+      }).simulate('mouseup', {
+        pointerX: 570,
+        pointerY: 50
+      });
+      
       return graph;
     }
   },
@@ -656,14 +664,16 @@ var tests = [
         });
       });
       
-      ovl = graph.overlay;
-      var evt = document.createEvent("MouseEvents");
-      evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 310, 150, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("mousemove", true, true, window, 0, 0, 0, 320, 50, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
-      evt.initMouseEvent("mouseup", true, true, window, 0, 0, 0, 320, 50, false, false, false, false, 0, null);
-      ovl.dispatchEvent(evt);
+      graph.overlay.simulate('mousedown', {
+        pointerX: 310,
+        pointerY: 150
+      }).simulate('mousemove', {
+        pointerX: 320,
+        pointerY: 50
+      }).simulate('mouseup', {
+        pointerX: 320,
+        pointerY: 50
+      });
       
       return graph;
     }

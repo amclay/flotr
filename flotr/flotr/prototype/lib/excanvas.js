@@ -150,6 +150,10 @@ if (!document.createElement('canvas').getContext) {
         // just remove all childNodes. We could hide all elements and remove
         // text nodes but who really cares about the fallback content.
         el.innerHTML = '';
+        
+        el.toDataURL = function(){
+          return 'data:application/xml;charset=utf-8,'+encodeURI(el.firstChild.innerHTML);
+        };
 
         // do not use inline function because that will leak memory
         el.attachEvent('onpropertychange', onPropertyChange);
@@ -1123,6 +1127,10 @@ if (!document.createElement('canvas').getContext) {
 
   contextPrototype.arcTo = function() {
     // TODO: Implement
+  };
+  
+  contextPrototype.getImageData = function(aX, aY, aWidth, aHeight) {
+    return {width:0, height:0, data:[]};
   };
 
   contextPrototype.createPattern = function(image, repetition) {
