@@ -190,6 +190,7 @@ Flotr.Graph = Class.create({
 		
 		if (!this.el) throw 'The target container doesn\'t exist';
 		
+		this.el.graph = this;
 		this.data = data;
 		this.series = Flotr.getSeries(data);
 		this.setOptions(options);
@@ -521,7 +522,6 @@ Flotr.Graph = Class.create({
 			oc = this.overlay = $(document.createElement('canvas'));
 			oc.className = 'flotr-overlay';
 			oc.writeAttribute('style', 'position:absolute;left:0px;top:0px;');
-			oc.eventsInitialized = false;
 		}
 		oc = this.overlay.writeAttribute(size).show();
 		oc.context_ = null; // Reset the ExCanvas context
