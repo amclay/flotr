@@ -16,21 +16,24 @@ var Flotr = {
 	 */
 	graphTypes:{},
 	/**
-	 * An object of the registered graph types. Use Flotr.addType(type, object)
-	 * to add your own type.
+	 * The list of the registerred plugins
 	 */
 	plugins:{},
 	/**
-	 * Can be used to register your own chart type. Default types are 'lines', 'points' and 'bars'.
-	 * This is still experimental.
-	 * @param {String} type - type of chart, like 'pies', 'bars' etc.
-	 * @param {String} object - The ovject containing the basic drawinf functions (draw, etc)
+	 * Can be used to add your own chart type. 
+	 * @param {String} name - Type of chart, like 'pies', 'bars' etc.
+	 * @param {String} graphType - The object containing the basic drawing functions (draw, etc)
 	 */
 	addType: function(name, graphType){
 		Flotr.graphTypes[name] = graphType;
 		Flotr.defaultOptions[name] = graphType.options || {};
-		Flotr.defaultOptions.defaultType = Flotr.defaultOptions.defaultType || name;
+		Flotr.defaultOptions.defaultType || (Flotr.defaultOptions.defaultType = name);
 	},
+  /**
+   * Can be used to add a plugin
+   * @param {String} name - The name of the plugin
+   * @param {String} plugin - The object containing the plugin's data (callbacks, options, function1, function2, ...)
+   */
 	addPlugin: function(name, plugin){
 		Flotr.plugins[name] = plugin;
 		Flotr.defaultOptions[name] = plugin.options || {};
@@ -178,8 +181,8 @@ var Flotr = {
 
 Flotr.defaultOptions = {
 	colors: ['#00A8F0', '#C0D800', '#CB4B4B', '#4DA74D', '#9440ED'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
-	title: null,
-	subtitle: null,
+	title: null,             // => The graph's title
+	subtitle: null,          // => The graph's subtitle
 	shadowSize: 4,           // => size of the 'fake' shadow
 	defaultType: null,       // => default series type
 	HtmlText: true,          // => wether to draw the text using HTML or on the canvas
@@ -227,7 +230,7 @@ Flotr.defaultOptions = {
 		min: null,             // => min. value to show, null means set automatically
 		max: null,             // => max. value to show, null means set automatically
 		autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
-		color: null
+		color: null            // => The color of the ticks
 	},
 	y2axis: {
 		titleAngle: 270
@@ -278,7 +281,6 @@ Flotr.Graph = Class.create({
  	 * @param {Object} options - an object containing options
 	 */
 	initialize: function(el, data, options){
-    try{
 		this.el = $(el);
     
 		if (!this.el) throw 'The target container doesn\'t exist';
@@ -328,7 +330,6 @@ Flotr.Graph = Class.create({
 		this.insertLegend();
     
 		this.el.fire('flotr:afterinit', [this]);
-    } catch(e){console.debug(e)}
 	},
 	/**
 	 * Sets options and initializes some variables and color specific values, used by the constructor. 
@@ -416,7 +417,7 @@ Flotr.Graph = Class.create({
 			for (var t in Flotr.graphTypes){
 				s[t] = Object.extend(Object.clone(this.options[t]), s[t]);
 			}
-			s.mouse   = Object.extend(Object.clone(this.options.mouse), s.mouse);
+			s.mouse = Object.extend(Object.clone(this.options.mouse), s.mouse);
 			
 			if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
 		}
@@ -439,9 +440,7 @@ Flotr.Graph = Class.create({
 
 		// For positioning labels and overlay.
 		el.style.position = 'relative';
-		if (!el.style.cursor) {
-			el.style.cursor = 'default';
-		}
+		el.style.cursor || (el.style.cursor = 'default');
 
 		size = el.getDimensions();
 		this.canvasWidth = size.width;
@@ -641,39 +640,29 @@ Flotr.Graph = Class.create({
 		
 		this.findXAxesValues();
 		
-		this.calculateRange(a.x);
-		this.extendXRange(a.x);
+		this.calculateRange(a.x, 'x');
 		
 		if (a.x2.used) {
-			this.calculateRange(a.x2);
-			this.extendXRange(a.x2);
+			this.calculateRange(a.x2, 'x');
 		}
 		
-		this.calculateRange(a.y);
-		this.extendYRange(a.y);
+		this.calculateRange(a.y, 'y');
 		
 		if (a.y2.used) {
-			this.calculateRange(a.y2);
-			this.extendYRange(a.y2);
+			this.calculateRange(a.y2, 'y');
 		}
 	},
-	extendXRange: function(axis) {
+	extendRange: function(axis, type) {
+		var f = (type === 'y') ? 'extendYRange' : 'extendXRange'
 		for (var t in Flotr.graphTypes) {
-			if (this[t].extendXRange) 
-				this[t].extendXRange(axis);
-		}
-	},
-	extendYRange: function(axis) {
-		for (var t in Flotr.graphTypes) {
-			if (this[t].extendYRange) 
-				this[t].extendYRange(axis);
+			if (this[t][f]) this[t][f](axis);
 		}
 	},
 	/**
 	 * Calculates the range of an axis to apply autoscaling.
 	 * @param {Object} axis - The axis for what the range will be calculated
 	 */
-	calculateRange: function(axis){
+	calculateRange: function(axis, type){
 		var o = axis.options,
 		    min = o.min != null ? o.min : axis.datamin,
 		    max = o.max != null ? o.max : axis.datamax,
@@ -701,6 +690,8 @@ Flotr.Graph = Class.create({
 		}
 		axis.min = min;
 		axis.max = max;
+		
+		this.extendRange(axis, type);
 	},
 	/** 
 	 * Find every values of the x axes

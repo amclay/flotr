@@ -859,10 +859,8 @@ function buildForm(specs, form){
 				if (options.collapsed) 
 					container.hide();
 				$H(o).each(function(pair){
-					if (pair.key != '_options') {
-						if (pair.value) {
-							insertElement(pair.value, pair.key, key + '-' + pair.key, container);
-						}
+					if (pair.value && pair.key != '_options') {
+						insertElement(pair.value, pair.key, key + '-' + pair.key, container);
 					}
 				});
 			}
@@ -871,7 +869,6 @@ function buildForm(specs, form){
 			if (form.name == 'global') {
 				insertElement(o, key, key, form);
 			}
-		
 	});
 }
 
@@ -930,8 +927,7 @@ function formToOptions(form){
 			value = e.value;
 			
 			if (parts[1]) {
-				options[parts[0]] = options[parts[0]] ||
-				{};
+				options[parts[0]] = options[parts[0]] || {};
 				options[parts[0]][parts[1]] = getOptionValue(e);
 			}
 			else {
@@ -954,13 +950,7 @@ function getDataInputs(data, n){
 }
 
 function inputsToData(form, serie){
-	var i, data = {
-		x: [],
-		y: [],
-		a: [],
-		b: [],
-		c: []
-	};
+	var i, data = {x: [], y: [], a: [], b: [], c: []};
 	
 	$H(data).each(function(pair){
 		form.getInputs('text', pair.key).each(function(e){
@@ -982,7 +972,7 @@ function inputsToSerie(form, serie){
 	serie.hide = !form.elements.show.checked;
 }
 
-document.observe('dom:loaded', function(){
+function main(){
 	buildForm(specs, $(document.forms.global));
 	
 	$(document.forms.global).getElements().each(function(e){
@@ -991,8 +981,8 @@ document.observe('dom:loaded', function(){
 	
 	dataset.each(function(serie){
 		var i, 
-		fieldsetData = new Element('fieldset').insert(new Element('legend').update('Data')), 
-		fieldsetSerie = new Element('fieldset').insert(new Element('legend').update('Options')), 
+		fieldsetData = new Element('fieldset').insert('<legend>Data</legend>'), 
+		fieldsetSerie = new Element('fieldset').insert('<legend>Options</legend>'), 
 		formData = new Element('form', {
 			name: serie.id + '-data'
 		}).insert(fieldsetData), formOptions = new Element('form', {
@@ -1071,4 +1061,6 @@ document.observe('dom:loaded', function(){
 	});
 	new Control.Tabs('tabs');
 	draw();
-});
+}
+
+document.observe('dom:loaded', main);
