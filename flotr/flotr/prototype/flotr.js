@@ -215,7 +215,8 @@ Flotr.defaultOptions = {
 		autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
 		color: null,           // => color of the ticks
 		mode: 'normal',        // => can be 'time' or 'normal'
-		timeFormat: null
+		timeFormat: null,
+		scaling: 'linear'      // => Scaling, can be 'linear' or 'logarithmic'
 	},
 	x2axis: {},
 	yaxis: {
@@ -230,7 +231,8 @@ Flotr.defaultOptions = {
 		min: null,             // => min. value to show, null means set automatically
 		max: null,             // => max. value to show, null means set automatically
 		autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
-		color: null            // => The color of the ticks
+		color: null,           // => The color of the ticks
+		scaling: 'linear'      // => Scaling, can be 'linear' or 'logarithmic'
 	},
 	y2axis: {
 		titleAngle: 270
@@ -286,6 +288,19 @@ Flotr.Graph = Class.create({
 		if (!this.el) throw 'The target container doesn\'t exist';
 		if (!this.el.clientWidth) throw 'The target container must be visible';
     
+		// Initialize some variables
+		this.el.graph = this;
+		this.data = data;
+		this.lastMousePos = { pageX: null, pageY: null };
+		this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
+		this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
+		this.prevSelection = null;
+		this.selectionInterval = null;
+		this.ignoreClick = false;   
+		this.prevHit = null;
+		this.series = Flotr.getSeries(data);
+		this.setOptions(options);
+    
 		this.registerPlugins();
     
 		this.el.fire('flotr:beforeinit', [this]);
@@ -299,22 +314,10 @@ Flotr.Graph = Class.create({
 			}
 		}
     
-		this.el.graph = this;
-		this.data = data;
-		this.series = Flotr.getSeries(data);
-		this.setOptions(options);
-    
-		// Initialize some variables
-		this.lastMousePos = { pageX: null, pageY: null };
-		this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
-		this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-		this.prevSelection = null;
-		this.selectionInterval = null;
-		this.ignoreClick = false;   
-		this.prevHit = null;
-
 		// Create and prepare canvas.
 		this.constructCanvas();
+    
+		this.el.fire('flotr:afterconstruct', [this]);
 		
 		// Add event handlers for mouse tracking, clicking and selection
 		this.initEvents();
@@ -583,10 +586,7 @@ Flotr.Graph = Class.create({
 		}
 		
     // The data grid is sorted by x value
-		dg = dg.sortBy(function(v) {
-			return v[0];
-		});
-		return this.seriesData = dg;
+		return this.seriesData = dg.sortBy(function(v){return v[0]});
 	},
 	/**
 	 * Initializes event some handlers.
@@ -875,7 +875,8 @@ Flotr.Graph = Class.create({
 	 */
 	tHoz: function(x, axis){
 		axis || (axis = this.axes.x);
-		return (x - axis.min) * axis.scale;
+		var v = (x - axis.min) * axis.scale;
+		return axis.options.scaling !== 'logarithmic' ? v : Math.log(Math.max(v, Number.MIN_VALUE));
 	},
 	/**
 	 * Translates absolute vertical y coordinates to relative coordinates.
@@ -885,7 +886,8 @@ Flotr.Graph = Class.create({
 	 */
 	tVert: function(y, axis){
 		axis || (axis = this.axes.y);
-		return this.plotHeight - (y - axis.min) * axis.scale;
+		var v = (y - axis.min) * axis.scale;
+		return this.plotHeight - (axis.options.scaling !== 'logarithmic' ? v : Math.log(Math.max(v, Number.MIN_VALUE)));
 	},
 	/**
 	 * Draws a grid for the graph.
@@ -3466,23 +3468,28 @@ Flotr.addPlugin('spreadsheet', {
 	 * Builds the tabs in the DOM
 	 */
 	callbacks: {
-    'flotr:afterinit': function(){
+    'flotr:afterconstruct': function(){
       if (!this.options.spreadsheet.show) return;
       
       var ss = this.spreadsheet;
-  		var tabsContainer = new Element('div', {style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'}).addClassName('flotr-tabs-group');
-  		this.el.insert({bottom: tabsContainer});
+      this.el.select('.flotr-tabs-group').invoke('remove');
+      ss.tabsContainer = new Element('div', {style:'position:absolute;left:0px;top:'+this.canvasHeight+'px;width:'+this.canvasWidth+'px;'}).addClassName('flotr-tabs-group');
+
   		ss.tabs = {
   			graph: new Element('div', {style:'float:left;'}).addClassName('flotr-tab selected').update(this.options.spreadsheet.tabGraphLabel),
   			data: new Element('div', {style:'float:left;'}).addClassName('flotr-tab').update(this.options.spreadsheet.tabDataLabel)
   		};
   		
-  		tabsContainer.insert(ss.tabs.graph).insert(ss.tabs.data);
-  		
-  		this.el.setStyle({height: this.canvasHeight+ss.tabs.data.getHeight()+2+'px'});
-  		
-  		ss.tabs.graph.observe('click', (function() {ss.showTab('graph')}).bind(this));
-  		ss.tabs.data.observe('click', (function() {ss.showTab('data')}).bind(this));
+  		ss.tabsContainer.insert(ss.tabs.graph).insert(ss.tabs.data);
+      
+      this.el.insert({bottom: ss.tabsContainer});
+      
+      var offset = ss.tabs.data.getHeight() + 2;
+      this.plotOffset.bottom += offset;
+      ss.tabsContainer.setStyle({top: this.canvasHeight-offset+'px'});
+      
+  		ss.tabs.graph.observe('click', function(){ss.showTab('graph')});
+  		ss.tabs.data.observe('click', function(){ss.showTab('data')});
   	}
   },
   /**
@@ -3494,11 +3501,12 @@ Flotr.addPlugin('spreadsheet', {
 		// If the data grid has already been built, nothing to do here
 		if (this.spreadsheet.datagrid) return this.spreadsheet.datagrid;
 		
+    this.el.select('.flotr-datagrid-container').invoke('remove');
 		var i, j, 
 		    s = this.series,
 		    datagrid = this.loadDataGrid(),
-			t = this.spreadsheet.datagrid = new Element('table', {style:'height:100px;'}).addClassName('flotr-datagrid'),
-			colgroup = ['<colgroup><col />'];
+		    t = this.spreadsheet.datagrid = new Element('table', {style:'height:100px;'}).addClassName('flotr-datagrid'),
+		    colgroup = ['<colgroup><col />'];
 		
 		// First row : series' labels
 		var html = ['<tr class="first-row">'];
@@ -3548,7 +3556,7 @@ Flotr.addPlugin('spreadsheet', {
 				});
 				
 				td.observe('mouseout', function(){
-					t.select('colgroup col.hover, th.hover').each(function(e){e.removeClassName('hover')});
+					t.select('colgroup col.hover, th.hover').invoke('removeClassName', 'hover');
 				});
 			});
 		}
@@ -3557,7 +3565,7 @@ Flotr.addPlugin('spreadsheet', {
 			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.spreadsheet.downloadCSV.bind(this))).
 			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.spreadsheet.selectAllData.bind(this)));
 		
-		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+this.canvasHeight+'px;overflow:auto;'}).addClassName('flotr-datagrid-container');
+		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+(this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2)+'px;overflow:auto;'}).addClassName('flotr-datagrid-container');
 		container.insert(toolbar);
 		t.wrap(container.hide());
 		
