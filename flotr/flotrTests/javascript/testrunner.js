@@ -4,9 +4,20 @@ function browser() {
 	}
 }
 
+// This is not really the right distance, we should do it 
+// on pixels, not on the compressed PNG data
+function dist($1, $2) {
+	var $1_ = $1.split(''),
+	    $2_ = $2.split(''), dist = 0;
+	for (var i = $1_.length-1; i >= 0; --i) {
+		if (!$1_[i] || $1_[i] != $2_[i]) dist++;
+	}
+	return dist;
+}
+
 function getContainer(){
   var container = new Element('div', {style:'width:600px;height:300px'});
-	Element.insert(document.body, {top: container});
+	$$('body')[0].insert({top: container});
   return container;
 }
 
@@ -40,13 +51,16 @@ function runTests() {
 
 	tests.each(function(test) {
 		testcases["test "+test.name] = function() {
-      container.update();
+      container.remove();
+			container = getContainer();
 			var graph = test.draw(container);
 
 			// Test the dataURL output
 			var testReference = references[test.name];
 			this.assert(testReference != undefined, test.name +': reference not found!');
-			this.assert(graph.canvas.toDataURL() == testReference, test.name+': dataURL output has changed!');
+			
+			var d = dist(graph.canvas.toDataURL(), testReference);
+			this.assert(d == 0, test.name+': dataURL output has changed! ('+d+' characters changed)');
 
 			// test specific validation
 			if (test.test)

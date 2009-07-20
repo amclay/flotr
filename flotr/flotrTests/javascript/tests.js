@@ -519,7 +519,7 @@ var tests = [
       var d3 = [];
       for (var i = 0; i < 40; i += 0.5) {
         var y1 = Math.sin(i) + 3 * Math.cos(i);
-        d1.push([i, i+Math.random()*30+Math.sin(i/20+Math.random()*2)*20+Math.sin(i/10+Math.random())*10]);
+        d1.push([i, y1]);
         d2.push([i, Math.pow(1.1, i)]);
         d3.push([i, 40 - i + y1]);
       }

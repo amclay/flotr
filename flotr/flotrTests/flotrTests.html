@@ -15,7 +15,6 @@
 		<script type="text/javascript" src="../flotr/prototype/lib/canvastext.js"></script>
 		<script type="text/javascript" src="../flotr/prototype/flotr.js"></script>
 		<script type="text/javascript" src="assets/event.simulate.js"></script>
-	
 		<script type="text/javascript" src="javascript/tests.js"></script>
 		<script type="text/javascript" src="javascript/testrunner.js"></script>
     
@@ -43,12 +42,7 @@
 		
 		<script type="text/javascript">
 			var newScript = new Element('script', {type: 'text/javascript', src:'javascript/references.'+browser()+'.js'});
-      if (Prototype.Browser.IE) { // Viva IE !
-        newScript.observe('readystatechange', function(e) {
-          if (e.element().readyState == 'complete') runTests();
-        });
-      }
-      else newScript.observe('load', runTests);
+      newScript.observe('load', runTests);
 			$$('head')[0].insert(newScript);
 		</script>
 
