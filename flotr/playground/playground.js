@@ -1,5 +1,4 @@
-var Color = Color ||
-{};
+var Color = Color || {};
 
 var specs = {
 	title: {
@@ -26,6 +25,10 @@ var specs = {
 	fontSize: {
 		type: Number,
 		def: 7.5
+	},
+	resolution: {
+		type: Number,
+		def: 1
 	},
 	legend: {
 		_options: {
@@ -65,7 +68,7 @@ var specs = {
 			type: String,
 			def: 'nw',
 			values: ['se', 'ne', 'sw', 'nw'],
-			labels: ['Bottom left', 'Top left', 'Bottom right', 'Top left']
+			labels: ['Bottom right', 'Top right', 'Bottom left', 'Top left']
 		},
 		margin: {
 			type: Number,
@@ -662,7 +665,7 @@ var specs = {
 			type: String,
 			def: 'se',
 			values: ['se', 'ne', 'sw', 'nw'],
-			labels: ['Bottom left', 'Top left', 'Bottom right', 'Top left']
+			labels: ['Bottom right', 'Top right', 'Bottom left', 'Top left']
 		},
 		relative: {
 			type: Boolean,
