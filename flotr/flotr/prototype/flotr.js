@@ -496,15 +496,15 @@ Flotr.Graph = Class.create({
 		size = el.getDimensions();
 		this.canvasWidth = size.width;
 		this.canvasHeight = size.height;
-    
-    var style = {
-      width: size.width+'px',
-      height: size.height+'px'
-    };
-    
-    var o = this.options;
-    size.width *= o.resolution;
-    size.height *= o.resolution;
+
+		var style = {
+			width: size.width+'px',
+			height: size.height+'px'
+		};
+
+		var o = this.options;
+		size.width *= o.resolution;
+		size.height *= o.resolution;
 
 		if(this.canvasWidth <= 0 || this.canvasHeight <= 0){
 			throw 'Invalid dimensions for plot, width = ' + this.canvasWidth + ', height = ' + this.canvasHeight;
@@ -537,8 +537,10 @@ Flotr.Graph = Class.create({
 		this.ctx = c.getContext('2d');
 		this.octx = oc.getContext('2d');
     
-    this.ctx.scale(o.resolution, o.resolution);
-    this.octx.scale(o.resolution, o.resolution);
+		if(!Prototype.Browser.IE){
+			this.ctx.scale(o.resolution, o.resolution);
+			this.octx.scale(o.resolution, o.resolution);
+		}
 
 		// Enable text functions
 		this.textEnabled = !!this.ctx.drawText;
