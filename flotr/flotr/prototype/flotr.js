@@ -16,7 +16,7 @@ var Flotr = {
 	 */
 	graphTypes:{},
 	/**
-	 * The list of the registerred plugins
+	 * The list of the registered plugins
 	 */
 	plugins:{},
 	/**
@@ -549,7 +549,7 @@ Flotr.Graph = Class.create({
     if (!color) return 'rgba(0, 0, 0, 0)';
     
     options = Object.extend({
-      x1: 0, y1: 0, x2: 0, y2: 0, opacity: 1, ctx: this.ctx
+      x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx
     }, options);
     
     if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
@@ -913,7 +913,7 @@ Flotr.Graph = Class.create({
 		y2.scale = this.plotHeight / (y2.max - y2.min);
 	},
 	/**
-	 * Draws grid, labels and series.
+	 * Draws grid, labels, series and outline.
 	 */
 	draw: function() {
 		this.drawGrid();
@@ -927,6 +927,7 @@ Flotr.Graph = Class.create({
 					this.drawSeries(this.series[i]);
 			}
 		}
+		this.drawOutline();
 		this.el.fire('flotr:afterdraw', [this.series, this]);
 	},
 	/**
@@ -974,21 +975,6 @@ Flotr.Graph = Class.create({
 				}
 			}
 			ctx.stroke();
-			
-			// Draw axis/grid border.
-			if(o.grid.outlineWidth != 0) {
-				ctx.beginPath();
-				ctx.lineWidth = o.grid.outlineWidth;
-				ctx.strokeStyle = o.grid.color;
-				ctx.lineJoin = 'round';
-				
-				for(var i = 0; i <= sides; ++i){
-					ctx[i == 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
-				}
-				//ctx.arc(0, 0, radius, 0, Math.PI*2, true);
-
-				ctx.stroke();
-			}
 		}
 		else {
 			ctx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -1030,22 +1016,57 @@ Flotr.Graph = Class.create({
 				}
 			}
 			ctx.stroke();
-			
-			// Draw axis/grid border.
-			if(o.grid.outlineWidth != 0) {
-				var lw = o.grid.outlineWidth,
-				    orig = 0.5-lw+((lw+1)%2/2);
-				ctx.lineWidth = lw;
-				ctx.strokeStyle = o.grid.color;
-				ctx.lineJoin = 'miter';
-				ctx.strokeRect(orig, orig, this.plotWidth, this.plotHeight);
-			}
 		}
 		
 		ctx.restore();
 		if(o.grid.verticalLines || o.grid.horizontalLines){
 			this.el.fire('flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
 		}
+	}, 
+	/**
+   * Draws a outline for the graph.
+   */
+	drawOutline: function(){
+    var v, o = this.options,
+        ctx = this.ctx;
+		
+    if (o.grid.outlineWidth == 0) return;
+		
+    ctx.save();
+		
+    if (o.grid.circular) {
+      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
+      var radius = Math.min(this.plotHeight, this.plotWidth)*o.radar.radiusRatio/2,
+          sides = this.axes.x.ticks.length,
+          coeff = 2*(Math.PI/sides),
+          angle = -Math.PI/2;
+      
+      // Draw axis/grid border.
+      ctx.beginPath();
+      ctx.lineWidth = o.grid.outlineWidth;
+      ctx.strokeStyle = o.grid.color;
+      ctx.lineJoin = 'round';
+      
+      for(var i = 0; i <= sides; ++i){
+        ctx[i == 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
+      }
+      //ctx.arc(0, 0, radius, 0, Math.PI*2, true);
+
+      ctx.stroke();
+    }
+    else {
+      ctx.translate(this.plotOffset.left, this.plotOffset.top);
+      
+      // Draw axis/grid border.
+      var lw = o.grid.outlineWidth,
+          orig = 0.5-lw+((lw+1)%2/2);
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = o.grid.color;
+      ctx.lineJoin = 'miter';
+      ctx.strokeRect(orig, orig, this.plotWidth, this.plotHeight);
+    }
+    
+    ctx.restore();
 	},
 	/**
 	 * Draws labels for x and y axis.
