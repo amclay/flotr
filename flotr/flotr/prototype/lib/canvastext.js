@@ -106,23 +106,71 @@ var CanvasText = {
 		'|': { width: 8,  points: [[4,25],[4,-7]] },
 		'}': { width: 14, points: [[5,25],[7,24],[8,23],[9,21],[9,19],[8,17],[7,16],[6,14],[6,12],[8,10],null,[7,24],[8,22],[8,20],[7,18],[6,17],[5,15],[5,13],[6,11],[10,9],[6,7],[5,5],[5,3],[6,1],[7,0],[8,-2],[8,-4],[7,-6],null,[8,8],[6,6],[6,4],[7,2],[8,1],[9,-1],[9,-3],[8,-5],[7,-6],[5,-7]] },
 		'~': { width: 24, points: [[3,6],[3,8],[4,11],[6,12],[8,12],[10,11],[14,8],[16,7],[18,7],[20,8],[21,10],null,[3,8],[4,10],[6,11],[8,11],[10,10],[14,7],[16,6],[18,6],[20,7],[21,10],[21,12]] },
+		
+		// Lower case Latin-1
+    'à': { diacritic: '`', letter: 'a' },
+    'á': { diacritic: '´', letter: 'a' },
+    'â': { diacritic: '^', letter: 'a' },
+    'ä': { diacritic: '¨', letter: 'a' },
+		
+    'è': { diacritic: '`', letter: 'e' },
 		'é': { diacritic: '´', letter: 'e' },
-		'è': { diacritic: '`', letter: 'e' },
 		'ê': { diacritic: '^', letter: 'e' },
 		'ë': { diacritic: '¨', letter: 'e' },
-		'à': { diacritic: '`', letter: 'a' },
-		'â': { diacritic: '^', letter: 'a' },
+    
+    'ì': { diacritic: '`', letter: 'i' },
+    'í': { diacritic: '´', letter: 'i' },
+    'î': { diacritic: '^', letter: 'i' },
+    'ï': { diacritic: '¨', letter: 'i' },
+		
+    'ò': { diacritic: '`', letter: 'o' },
+    'ó': { diacritic: '´', letter: 'o' },
+    'ô': { diacritic: '^', letter: 'o' },
+    'ö': { diacritic: '¨', letter: 'o' },
+    'õ': { diacritic: '~', letter: 'o' },
+    
+    'ù': { diacritic: '`', letter: 'u' },
+    'ú': { diacritic: '´', letter: 'u' },
+    'û': { diacritic: '^', letter: 'u' },
+    'ü': { diacritic: '¨', letter: 'u' },
+		
+    'ý': { diacritic: '´', letter: 'y' },
+    'ÿ': { diacritic: '¨', letter: 'y' },
+		
 		'ç': { diacritic: '¸', letter: 'c' },
 		'ñ': { diacritic: '~', letter: 'n' },
-		'ô': { diacritic: '^', letter: 'o' },
+    
+		// Upper case Latin-1
+    'À': { diacritic: '`', letter: 'A' },
+    'Á': { diacritic: '´', letter: 'A' },
+    'Â': { diacritic: '^', letter: 'A' },
+    'Ä': { diacritic: '¨', letter: 'A' },
+		
+    'È': { diacritic: '`', letter: 'E' },
 		'É': { diacritic: '´', letter: 'E' },
-		'È': { diacritic: '`', letter: 'E' },
 		'Ê': { diacritic: '^', letter: 'E' },
 		'Ë': { diacritic: '¨', letter: 'E' },
-		'À': { diacritic: '`', letter: 'A' },
+    
+    'Ì': { diacritic: '`', letter: 'I' },
+    'Í': { diacritic: '´', letter: 'I' },
+    'Î': { diacritic: '^', letter: 'I' },
+    'Ï': { diacritic: '¨', letter: 'I' },
+    
+    'Ò': { diacritic: '`', letter: 'O' },
+    'Ó': { diacritic: '´', letter: 'O' },
+    'Ô': { diacritic: '^', letter: 'O' },
+    'Ö': { diacritic: '¨', letter: 'O' },
+    'Õ': { diacritic: '~', letter: 'O' },
+    
+    'Ù': { diacritic: '`', letter: 'U' },
+    'Ú': { diacritic: '´', letter: 'U' },
+    'Û': { diacritic: '^', letter: 'U' },
+    'Ü': { diacritic: '¨', letter: 'U' },
+		
+    'Ý': { diacritic: '´', letter: 'Y' },
+		
 		'Ç': { diacritic: '¸', letter: 'C' },
-		'Ñ': { diacritic: '~', letter: 'N' },
-		'Ô': { diacritic: '^', letter: 'O' }
+		'Ñ': { diacritic: '~', letter: 'N' }
 	},
 	
 	specialchars: {
