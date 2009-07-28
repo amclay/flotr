@@ -3421,7 +3421,7 @@ Flotr.addType('markers', {
 		for(var i = 0; i < data.length; ++i){
 			var x = data[i][0], xPos = xa.d2p(x),
 			    y = data[i][1], yPos = ya.d2p(y),
-			    label = options.labelFormatter({x: x, y: y});
+			    label = options.labelFormatter({x: x, y: y, index: i, data : data});
           
 			this.markers.plot(xPos, yPos, label, options);
 		}
