@@ -23,7 +23,7 @@ function insertElement(object, title, name, container){
 		case Function:
 			input = new Element('textarea', {
 				cols: 30,
-				rows: 4
+				rows: 3
 			}).update(object.def);
 			break;
 		case Number:
@@ -116,6 +116,9 @@ function input(){
 	});
   
   buildDataForms();
+	
+  new Control.Tabs('tabs');
+  new Control.Tabs('tabs-io');
 }
 
 function draw(){
@@ -133,11 +136,11 @@ function draw(){
 	
 	var f = Flotr.draw($('container'), series, globalOptions);
 	
-	writeCode($$('code')[0], series, globalOptions);
+	writeCode($('output-code'), series, globalOptions);
 }
 
 function writeCode(container, series, options){
-	container.innerHTML = 'options = ' + Object.toJSON(options) + ';<br /><br />series = ' + Object.toJSON(series) + ';';
+	container.innerHTML = 'options = <span style="white-space: normal">' + Object.toJSON(options) + ';</span><br /><br />series = ' + Object.toJSON(series) + ';';
 }
 
 function getOptionValue(element){

@@ -1,61 +1,51 @@
 body{
-	font-family:Arial,Helvetica,sans-serif;
-	font-size: 12px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size: 12px;
   width: 1000px;
   margin: 1em auto;
 }
 
 a:link, a:visited{
-	color: #004892;
-	font-weight: bold;
-	text-decoration: none;
+  color: #004892;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 a:visited{
-	color: #1763b5;
+  color: #1763b5;
 }
 
 a:focus, a:hover, a:active{
-	color: #3c85d4;
-	background-color: #b6d9ff;
+  color: #3c85d4;
+  background-color: #b6d9ff;
 }
 
 p {
-	margin: 10px;
-}
-
-code {
-	background: #b6d9ff;
-	font-size: 0.9em;
-	color: #004892;
+  margin: 10px;
 }
 
 pre {
-	border: 1px solid #B6D9FF;
-	background:#d2e8ff;
-	color: #004892;
+  font-size: 0.9em;
+  border: 1px solid #B6D9FF;
+  background:#d2e8ff;
+  color: #004892;
   margin: 0;
-}
-
-pre code {
-	background-color: transparent;
-	display:block;
-	white-space:pre;
-	padding: 3px;
-	height: 300px;
-	overflow: auto;
+  display:block;
+  padding: 3px;
+  height: 300px;
+  overflow: auto;
 }
 
 #input-code textarea {
   border: 1px solid #FFB16D;
   background: #FFF6DF;
-	height: 300px;
-	padding: 3px;
+  height: 300px;
+  padding: 3px;
   width: 100%;
-	font-size: 0.9em;
+  font-size: 0.9em;
   font-family:"Courier New", Courier, monospace;
   color: #AD6C37;
-	overflow: auto;
+  overflow: auto;
 }
 
 label {
@@ -106,12 +96,17 @@ table td {
   padding: 0;
 }
 
+input, table {
+  font-size: 1em;
+}
+
 #configurator,#output {
   vertical-align: top;
 }
 
 #configurator {
   border: 1px solid #ccc;
+  width: 430px;
 }
 
 #output {
@@ -159,6 +154,8 @@ ul.subsection_tabs li.tab a {
   color: #666;
   width: 40px;
   border: 1px solid #ddd;
+  -moz-border-radius: 6px 6px 0 0;
+  border-radius: 6px 6px 0 0;
   border-bottom: none;
 }
 
@@ -214,7 +211,7 @@ ul.subsection_tabs li.tab a.active {
   border: 2px outset #fff;
 }
 .flotr-datagrid-toolbar {
-	padding: 1px;
+  padding: 1px;
   border-bottom: 1px solid #ccc;
   background: #f9f9f9;
 }
@@ -229,7 +226,7 @@ ul.subsection_tabs li.tab a.active {
   padding-bottom: 1px;
 }
 .flotr-tabs-group {
-	border-top: 1px solid #999;
+  border-top: 1px solid #999;
 }
 .flotr-tab {
   border: 1px solid #666;

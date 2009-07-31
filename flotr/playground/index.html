@@ -20,21 +20,25 @@
   <body>
     <table>
       <tr>
-        <td style="width: 430px;">
-          <p>Here you can configure a chart by changing the values in the form on the left side of the page. </p>
-          <p>
-            After every change, the code to plot the chart is updated. 
-            <br/>
-            The checkboxes on the left indicate if you use the custom value (checked) or the default value (unchecked) of the options.
-            <br/>
-            To change the options of a collapsed group, you must click on its title.
-          </p>
-          <p>
-            Please, report any bug <a href="http://code.google.com/p/flotr/issues/list" target="_blank">here</a>.
-          </p>
-          <p>This playground is from the code present in the SVN trunk, so any bug found here doesn't concern the downloadable Zip.</p>
-          <p>I recommend using Firefox, Opera, Chrome or Safari instead of Internet Explorer as it is really slow and all the features probably won't work.</p>
-          
+        <td>
+				  <h3>
+					  <a href="javascript:;" onclick="$(this).up().next().toggle()">Informations &gt;</a>
+					</h3>
+					<div style="display: none;">
+	          <p>Here you can configure a chart by changing the values in the form on the left side of the page. </p>
+	          <p>
+	            After every change, the code to plot the chart is updated. 
+	            <br/>
+	            The checkboxes on the left indicate if you use the custom value (checked) or the default value (unchecked) of the options.
+	            <br/>
+	            To change the options of a collapsed group, you must click on its title.
+	          </p>
+	          <p>
+	            Please, report any bug <a href="http://code.google.com/p/flotr/issues/list" target="_blank">here</a>.
+	          </p>
+	          <p>This playground is from the code present in the SVN trunk, so any bug found here doesn't concern the downloadable Zip.</p>
+	          <p>I recommend using Firefox, Opera, Chrome or Safari instead of Internet Explorer as it is really slow and all the features probably won't work.</p>
+          </div>
           <button type="button" onclick="draw()" style="float: right;">Draw &gt;</button>
           <ul id="tabs" class="subsection_tabs">
             <li class="tab">
@@ -49,10 +53,10 @@
             
             <ul id="tabs-io" class="subsection_tabs">
               <li class="tab"><a href="#output-code">Output</a></li>
-              <li class="tab"><a href="#input-code">Input</a></li>
+              <li class="tab"><a href="#input-code" style="white-space: nowrap; width: auto;">Input (not yet functional)</a></li>
             </ul>
             
-            <pre id="output-code"><code class="javascript"></code></pre>
+            <pre id="output-code"></pre>
             <div id="input-code">
               <textarea></textarea>
               <button type="button" onclick="input()">&lt; Get</button>
