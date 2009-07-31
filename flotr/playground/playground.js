@@ -16,7 +16,7 @@ function insertElement(object, title, name, container){
 						selected: object.def == v
 					});
 					o.innerHTML = (object.labels && object.labels[i]) || v;
-					input.insert(o);
+					input.appendChild(o);
 				});
 			}
 			break;
@@ -64,22 +64,23 @@ function insertElement(object, title, name, container){
 		new Control.ColorPicker(input);
     input.addClassName('colorpickerInput');
 	}
-	line.insert(label);
-	container.insert(line);
+	line.appendChild(label);
+	container.appendChild(line);
 }
 
 function buildForm(specs, form, options){
+  var o, key, opt;
 	$H(specs).each(function(pair){
-		var o = pair.value;
-		var key = pair.key;
+		o = pair.value;
+		key = pair.key;
 		
 		if (Object.isUndefined(o.def)) {
-			var opt = o._options;
+			opt = o._options;
 			
 			if (opt.inherited || form.name == 'global') {
-				var legend = new Element('legend').update('<a href="javascript:;">' + opt.title + '</a>');
-				var fieldset = new Element('fieldset', {className:'removeable'}).insert(legend);
-				var container = new Element('span');
+				var legend = new Element('legend').update('<a href="javascript:;">' + opt.title + '</a>'),
+            fieldset = new Element('fieldset', {className:'removeable'}).insert(legend),
+            container = new Element('span');
 				
 				fieldset.insert(container);
 				form.insert(fieldset);
@@ -194,7 +195,7 @@ function getDataInputs(data, n){
 	for (i = 0; i < n; i++) {
 		str += '<input type="text" size="2" value="' + (data ? (data[i] || 0) : '') + '" name="' + type[i] + '" class="level-' + i + '" ' + (i > 5 ? 'disabled="disabled"' : '') + '/>';
 	}
-	str += '<button type="button" onclick="this.up().remove()">-</button></div>';
+	str += '<a href="javascript:;" onclick="$(this).up().remove()">-</a></div>';
 	return str;
 }
 
@@ -223,19 +224,19 @@ function inputsToSerie(form, serie){
 }
 
 function buildDataForms(){
-	data.each(function(serie){
-		var i, 
-		fieldsetData = new Element('fieldset').insert(new Element('legend').update('Data')), 
-		fieldsetSerie = new Element('fieldset').insert(new Element('legend').update('Options')), 
+  var i, k, a, values, entries, fieldsetData, fieldsetSerie, formData, formOptions, formSerie;
+	data.each(function(serie){ 
+		fieldsetData = new Element('fieldset').insert(new Element('legend').update('Data'));
+		fieldsetSerie = new Element('fieldset').insert(new Element('legend').update('Options')); 
     
 		formData = new Element('form', {
 			name: serie.id + '-data'
-		}).insert(fieldsetData),
+		}).insert(fieldsetData);
     
     formOptions = new Element('form', {
 			name: serie.id + '-options',
 			style: 'clear: both;'
-		}), 
+		});
     
     formSerie = new Element('form', {
 			name: serie.id + '-serie',
@@ -249,10 +250,10 @@ function buildDataForms(){
 		}).hide().insert(formSerie).insert(formData).insert(formOptions));
 		
 		serie.toJSON = function(){
-			var values = [];
+			values = [];
 			for (k in serie) {
 				if (k != 'toJSON' && k != 'id' && k != 'hide' && this[k] !== null) {
-					var i, entries = [], a;
+					entries = [];
 					if (Object.isArray(this[k])) {
 						a = this[k];
 						for (i = 0; i < a.length; i++) {
@@ -272,7 +273,7 @@ function buildDataForms(){
 		for (i = 0; i < serie.data.length; i++) {
 			fieldsetData.insert(getDataInputs(serie.data[i]));
 		}
-		fieldsetSerie.insert('<div style="float: right;">' +
+		fieldsetSerie.insert('<div class="axis-select">' +
 		'x Axis :' +
 		'<label><input type="radio" value="1" name="xaxis" checked="checked" />bottom</label>' +
 		'<label><input type="radio" value="2" name="xaxis" />top</label>' +
@@ -282,7 +283,7 @@ function buildDataForms(){
 		'<input type="text" value="' + serie.label + '" name="label" size="14" /> '+
 		'<input type="text" value="' + serie.color + '" name="color" size="8" /><br />' +
 		'<label><input type="checkbox" checked="checked" name="show" /> Show</label>');
-		fieldsetData.insert('<button type="button" onclick="this.insert({before: getDataInputs()})">+</button>');
+		fieldsetData.insert('<a href="javascript:;" class="plus" onclick="$(this).insert({before: getDataInputs()})">+</a>');
 		
     var colorField = fieldsetSerie.select('input[name=color]')[0];
 		new Control.ColorPicker(colorField.addClassName('colorpickerInput'));

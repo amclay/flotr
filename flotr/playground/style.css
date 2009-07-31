@@ -115,18 +115,53 @@ input, table {
 
 .data-entry {
   float: left; 
-  margin: 2px;
+  margin: 0;
 }
 
 .data-entry input {
   display: block;
+  margin: -1px -1px 0 0;
+  width: 30px;
+  border: 1px solid #ccc;
 }
 
 .data-entry input[disabled] {
   display: none;
 }
 
+.data-entry a, 
+a.plus {
+  font-weight: bold;
+  font-size: 2em;
+  line-height: 6px;
+  text-align: center;
+  display: block;
+  background: #eee;
+  margin: 0 2px;
+  padding: 4px;
+  border: 1px solid #ccc;
+}
+
+a.plus {
+  display: inline-block;
+  padding: 4px;
+  -moz-border-radius: 4px;
+}
+
+.data-entry a {
+  border-top: none;
+  -moz-border-radius: 0 0 4px 4px;
+}
+
 .serie-options label {
+  display: inline;
+}
+
+.axis-select {
+  float: right;
+}
+
+.axis-select label {
   display: inline;
 }
 
