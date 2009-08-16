@@ -575,6 +575,33 @@ var specs = {
 			def: 0.9
 		}
 	},
+	bubbles: {
+		_options: {
+			title: "Bubbles",
+			collapsed: true,
+			inherited: true
+		},
+		show: {
+			type: Boolean,
+			def: false
+		},
+		lineWidth: {
+			type: Number,
+			def: 2
+		},
+		fill: {
+			type: Boolean,
+			def: true
+		},
+		fillOpacity: {
+			type: Number,
+			def: 0.4
+		},
+		baseRadius: {
+			type: Number,
+			def: 2
+		}
+	},
 	grid: {
 		_options: {
 			title: "Grid",
