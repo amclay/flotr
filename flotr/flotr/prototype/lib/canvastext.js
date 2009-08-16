@@ -108,66 +108,66 @@ var CanvasText = {
 		'~': { width: 24, points: [[3,6],[3,8],[4,11],[6,12],[8,12],[10,11],[14,8],[16,7],[18,7],[20,8],[21,10],null,[3,8],[4,10],[6,11],[8,11],[10,10],[14,7],[16,6],[18,6],[20,7],[21,10],[21,12]] },
 		
 		// Lower case Latin-1
-    'à': { diacritic: '`', letter: 'a' },
-    'á': { diacritic: '´', letter: 'a' },
-    'â': { diacritic: '^', letter: 'a' },
-    'ä': { diacritic: '¨', letter: 'a' },
+		'à': { diacritic: '`', letter: 'a' },
+		'á': { diacritic: '´', letter: 'a' },
+		'â': { diacritic: '^', letter: 'a' },
+		'ä': { diacritic: '¨', letter: 'a' },
 		
-    'è': { diacritic: '`', letter: 'e' },
+		'è': { diacritic: '`', letter: 'e' },
 		'é': { diacritic: '´', letter: 'e' },
 		'ê': { diacritic: '^', letter: 'e' },
 		'ë': { diacritic: '¨', letter: 'e' },
-    
-    'ì': { diacritic: '`', letter: 'i' },
-    'í': { diacritic: '´', letter: 'i' },
-    'î': { diacritic: '^', letter: 'i' },
-    'ï': { diacritic: '¨', letter: 'i' },
 		
-    'ò': { diacritic: '`', letter: 'o' },
-    'ó': { diacritic: '´', letter: 'o' },
-    'ô': { diacritic: '^', letter: 'o' },
-    'ö': { diacritic: '¨', letter: 'o' },
-    'õ': { diacritic: '~', letter: 'o' },
-    
-    'ù': { diacritic: '`', letter: 'u' },
-    'ú': { diacritic: '´', letter: 'u' },
-    'û': { diacritic: '^', letter: 'u' },
-    'ü': { diacritic: '¨', letter: 'u' },
+		'ì': { diacritic: '`', letter: 'i' },
+		'í': { diacritic: '´', letter: 'i' },
+		'î': { diacritic: '^', letter: 'i' },
+		'ï': { diacritic: '¨', letter: 'i' },
 		
-    'ý': { diacritic: '´', letter: 'y' },
-    'ÿ': { diacritic: '¨', letter: 'y' },
+		'ò': { diacritic: '`', letter: 'o' },
+		'ó': { diacritic: '´', letter: 'o' },
+		'ô': { diacritic: '^', letter: 'o' },
+		'ö': { diacritic: '¨', letter: 'o' },
+		'õ': { diacritic: '~', letter: 'o' },
+		
+		'ù': { diacritic: '`', letter: 'u' },
+		'ú': { diacritic: '´', letter: 'u' },
+		'û': { diacritic: '^', letter: 'u' },
+		'ü': { diacritic: '¨', letter: 'u' },
+		
+		'ý': { diacritic: '´', letter: 'y' },
+		'ÿ': { diacritic: '¨', letter: 'y' },
 		
 		'ç': { diacritic: '¸', letter: 'c' },
 		'ñ': { diacritic: '~', letter: 'n' },
     
 		// Upper case Latin-1
-    'À': { diacritic: '`', letter: 'A' },
-    'Á': { diacritic: '´', letter: 'A' },
-    'Â': { diacritic: '^', letter: 'A' },
-    'Ä': { diacritic: '¨', letter: 'A' },
+		'À': { diacritic: '`', letter: 'A' },
+		'Á': { diacritic: '´', letter: 'A' },
+		'Â': { diacritic: '^', letter: 'A' },
+		'Ä': { diacritic: '¨', letter: 'A' },
 		
-    'È': { diacritic: '`', letter: 'E' },
+		'È': { diacritic: '`', letter: 'E' },
 		'É': { diacritic: '´', letter: 'E' },
 		'Ê': { diacritic: '^', letter: 'E' },
 		'Ë': { diacritic: '¨', letter: 'E' },
     
-    'Ì': { diacritic: '`', letter: 'I' },
-    'Í': { diacritic: '´', letter: 'I' },
-    'Î': { diacritic: '^', letter: 'I' },
-    'Ï': { diacritic: '¨', letter: 'I' },
-    
-    'Ò': { diacritic: '`', letter: 'O' },
-    'Ó': { diacritic: '´', letter: 'O' },
-    'Ô': { diacritic: '^', letter: 'O' },
-    'Ö': { diacritic: '¨', letter: 'O' },
-    'Õ': { diacritic: '~', letter: 'O' },
-    
-    'Ù': { diacritic: '`', letter: 'U' },
-    'Ú': { diacritic: '´', letter: 'U' },
-    'Û': { diacritic: '^', letter: 'U' },
-    'Ü': { diacritic: '¨', letter: 'U' },
+		'Ì': { diacritic: '`', letter: 'I' },
+		'Í': { diacritic: '´', letter: 'I' },
+		'Î': { diacritic: '^', letter: 'I' },
+		'Ï': { diacritic: '¨', letter: 'I' },
 		
-    'Ý': { diacritic: '´', letter: 'Y' },
+		'Ò': { diacritic: '`', letter: 'O' },
+		'Ó': { diacritic: '´', letter: 'O' },
+		'Ô': { diacritic: '^', letter: 'O' },
+		'Ö': { diacritic: '¨', letter: 'O' },
+		'Õ': { diacritic: '~', letter: 'O' },
+		
+		'Ù': { diacritic: '`', letter: 'U' },
+		'Ú': { diacritic: '´', letter: 'U' },
+		'Û': { diacritic: '^', letter: 'U' },
+		'Ü': { diacritic: '¨', letter: 'U' },
+		
+		'Ý': { diacritic: '´', letter: 'Y' },
 		
 		'Ç': { diacritic: '¸', letter: 'C' },
 		'Ñ': { diacritic: '~', letter: 'N' }
@@ -273,7 +273,7 @@ var CanvasText = {
 	},
 	
 	getDimensions: function(str, style) {
-    style = style || CanvasText.style;
+		style = style || CanvasText.style;
 		var width = CanvasText.measure(str, style),
 				height = style.size || CanvasText.style.size,
 				angle = style.angle || CanvasText.style.angle;
@@ -286,7 +286,7 @@ var CanvasText = {
 	},
 	
 	getBestAlign: function(angle, style) {
-    style = style || CanvasText.style;
+		style = style || CanvasText.style;
 		angle += CanvasText.getAngleFromAlign(style.halign, style.valign);
 		var a = {h:'c', v:'m'};
 		if (Math.round(Math.cos(angle)*1000)/1000 != 0) 
@@ -339,6 +339,7 @@ var CanvasText = {
 			}
 		}
 		ctx.stroke();
+		ctx.closePath();
 	},
 	
 	/** Draws a text at given coordinates and with a given style
@@ -422,6 +423,7 @@ var CanvasText = {
 				this.beginPath();
 				this.arc(0, 0, 1.5, 0, Math.PI*2, true);
 				this.fill();
+				this.closePath();
 				this.restore();
 			}
 			

@@ -12,8 +12,7 @@
  */
 if (window.Control == undefined) Control = {};
 
-Control.ColorPicker = Class.create();
-Control.ColorPicker.prototype = {
+Control.ColorPicker = Class.create({
 	initialize: function (element, options) {
 		this.element = $(element);
 		this.options = Object.extend({
@@ -113,7 +112,7 @@ Control.ColorPicker.prototype = {
 		if (!abort)
 			this.hidePicker();
 	}
-};
+});
 
 Control.ColorPickerPanel = Class.create();
 Control.ColorPickerPanel.prototype = {
@@ -320,5 +319,4 @@ Control.ColorPickerPanel.prototype = {
 	clearSetting: function(name) {
 		this.saveSetting(name,"",-1);
 	}
-
 };

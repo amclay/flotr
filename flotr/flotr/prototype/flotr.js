@@ -14,11 +14,11 @@ var Flotr = {
 	 * An object of the registered graph types. Use Flotr.addType(type, object)
 	 * to add your own type.
 	 */
-	graphTypes:{},
+	graphTypes: {},
 	/**
 	 * The list of the registered plugins
 	 */
-	plugins:{},
+	plugins: {},
 	/**
 	 * Can be used to add your own chart type. 
 	 * @param {String} name - Type of chart, like 'pies', 'bars' etc.
@@ -27,7 +27,7 @@ var Flotr = {
 	addType: function(name, graphType){
 		Flotr.graphTypes[name] = graphType;
 		Flotr.defaultOptions[name] = graphType.options || {};
-		Flotr.defaultOptions.defaultType || (Flotr.defaultOptions.defaultType = name);
+		Flotr.defaultOptions.defaultType = Flotr.defaultOptions.defaultType || name;
 	},
   /**
    * Can be used to add a plugin
@@ -47,9 +47,9 @@ var Flotr = {
 	 * @param {Class} _GraphKlass_ - (optional) Class to pass the arguments to, defaults to Flotr.Graph
 	 * @return {Object} returns a new graph object and of course draws the graph.
 	 */
-	draw: function(el, data, options, _GraphKlass_){	
-		_GraphKlass_ = _GraphKlass_ || Flotr.Graph;
-		return new _GraphKlass_(el, data, options);
+	draw: function(el, data, options, GraphKlass){	
+		GraphKlass = GraphKlass || Flotr.Graph;
+		return new GraphKlass(el, data, options);
 	},
 	/**
 	 * Collects dataseries from input and parses the series into the right format. It returns an Array 
@@ -74,10 +74,10 @@ var Flotr = {
 	 * @return {Object} recursively merged Object
 	 */
 	merge: function(src, dest){
-		var v, result = dest || {};
-		for(var i in src){
+		var i, v, result = dest || {};
+		for(i in src){
       v = src[i];
-			result[i] = (v != null && typeof(v) == 'object' && !(v.constructor == Array || v.constructor == RegExp) && !Object.isElement(v)) ? Flotr.merge(v, dest[i]) : result[i] = v;
+			result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !Object.isElement(v)) ? Flotr.merge(v, dest[i]) : result[i] = v;
 		}
 		return result;
 	},
@@ -87,10 +87,10 @@ var Flotr = {
 	 * @return {Object} the clone
 	 */
 	clone: function(object){
-		var v, clone = {};
-		for(var i in object){
+		var i, v, clone = {};
+		for(i in object){
 			v = object[i];
-			clone[i] = (v != null && typeof(v) == 'object' && !(v.constructor == Array || v.constructor == RegExp) && !Object.isElement(v)) ? Flotr.clone(v) : v;
+			clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !Object.isElement(v)) ? Flotr.clone(v) : v;
 		}
 		return clone;
 	},
@@ -103,13 +103,11 @@ var Flotr = {
 	 * @return {Integer} returns the ticksize in pixels
 	 */
 	getTickSize: function(noTicks, min, max, decimals){
-		var delta = (max - min) / noTicks;	
-		var magn = Flotr.getMagnitude(delta);
-		
-		// Norm is between 1.0 and 10.0.
-		var norm = delta / magn;
-		
-		var tickSize = 10;
+		var delta = (max - min) / noTicks,
+        magn = Flotr.getMagnitude(delta),
+        tickSize = 10,
+		    norm = delta / magn; // Norm is between 1.0 and 10.0.
+		    
 		if(norm < 1.5) tickSize = 1;
 		else if(norm < 2.25) tickSize = 2;
 		else if(norm < 3) tickSize = ((decimals == 0) ? 2 : 2.5);
@@ -365,12 +363,12 @@ Flotr.Graph = Class.create({
 		    oc = this.options.colors, 
 		    usedColors = [],
 		    variation = 0,
-		    c, i, j, s, tooClose;
+		    c, i, j, s;
 
 		// Collect user-defined colors from series.
 		for(i = neededColors - 1; i > -1; --i){
 			c = this.series[i].color;
-			if(c != null){
+			if(c){
 				--neededColors;
 				if(Object.isNumber(c)) assignedColors.push(c);
 				else usedColors.push(Flotr.Color.parse(c));
@@ -386,8 +384,8 @@ Flotr.Graph = Class.create({
 			c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
 			
 			// Make sure each serie gets a different color.
-			var sign = variation % 2 == 1 ? -1 : 1;
-			var factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
+			var sign = variation % 2 == 1 ? -1 : 1,
+          factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
 			c.scale(factor, factor, factor);
 
 			/**
@@ -581,7 +579,7 @@ Flotr.Graph = Class.create({
     return gradient;
   },
 	registerPlugins: function(){
-		var name, plugin, c, f;
+		var name, plugin, c;
 		for (name in Flotr.plugins) {
 			plugin = Flotr.plugins[name];
 			for (c in plugin.callbacks) {
@@ -612,8 +610,8 @@ Flotr.Graph = Class.create({
 			};
 		}
 		else {
-			var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>').select(".flotr-dummy-div")[0];
-			dim = dummyDiv.getDimensions();
+			var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>').select(".flotr-dummy-div")[0],
+			    dim = dummyDiv.getDimensions();
 			dummyDiv.remove();
 			return dim;
 		}
@@ -3467,7 +3465,7 @@ Flotr.addType('radar', {
 	},
 	draw: function(series){
 		var ctx = this.ctx,
-		    options = this.options;;
+		    options = this.options;
 		
 		ctx.save();
 		ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
@@ -3508,6 +3506,104 @@ Flotr.addType('radar', {
 		if (series.radar.fill) ctx.fill();
 		ctx.stroke();
 	}
+});
+
+Flotr.addType('bubbles', {
+	options: {
+		show: false,      // => setting to true will show radar chart, false will hide
+		lineWidth: 2,     // => line width in pixels
+		fill: true,       // => true to fill the area from the line to the x axis, false for (transparent) no fill
+		fillOpacity: 0.4, // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+		baseRadius: 2     // => ratio of the radar, against the plot size
+	},
+	draw: function(series){
+		var ctx = this.ctx,
+		    options = this.options;
+		
+		ctx.save();
+		ctx.translate(this.plotOffset.left, this.plotOffset.top);
+		ctx.lineWidth = series.bubbles.lineWidth;
+		
+		ctx.fillStyle = 'rgba(0,0,0,0.05)';
+		ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+		this.bubbles.plot(series, series.shadowSize / 2);
+		
+		ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+		this.bubbles.plot(series, series.shadowSize / 4);
+		
+		ctx.strokeStyle = series.color;
+		ctx.fillStyle = this.processColor(series.color, {opacity: series.radar.fillOpacity});
+		this.bubbles.plot(series);
+		
+		ctx.restore();
+	},
+	plot: function(series, offset){
+		var ctx = this.ctx,
+		    options = this.options,
+		    data = series.data,
+		    radius = options.bubbles.baseRadius;
+				
+		offset = offset || 0;
+		
+		for(var i = 0; i < data.length; ++i){
+			var x = data[i][0],
+			    y = data[i][1],
+			    z = data[i][2];
+          
+			ctx.beginPath();
+			ctx.arc(series.xaxis.d2p(x) + offset, series.yaxis.d2p(y) + offset, radius * z, 0, Math.PI*2, true);
+			ctx.stroke();
+			if (series.bubbles.fill) ctx.fill();
+			ctx.closePath();
+		}
+	}/*,
+	extendXRange: function(axis){
+		if(axis.options.max == null){
+			var newmin = axis.min,
+			    newmax = axis.max,
+			    i, j, c, r, data, d;
+          
+			for(i = 0; i < this.series.length; ++i){
+				c = this.series[i].bubbles;
+				if(c.show && this.series[i].xaxis == axis) {
+					data = this.series[i].data;
+					if (data)
+					for(j = 0; j < data.length; j++) {
+						d = data[j];
+						r = d[2] * c.baseRadius * (this.plotWidth / (axis.datamax - axis.datamin));
+						console.debug((this.plotWidth));
+  						newmax = Math.max(d[0] + r, newmax);
+  						newmin = Math.min(d[0] - r, newmin);
+					}
+				}
+			}
+			axis.max = newmax;
+			axis.min = newmin;
+		}
+	},
+	extendYRange: function(axis){
+		if(axis.options.max == null){
+			var newmin = axis.min,
+			    newmax = axis.max,
+			    i, j, c, r, data, d;
+
+			for(i = 0; i < this.series.length; ++i){
+				c = this.series[i].bubbles;
+				if(c.show && this.series[i].yaxis == axis) {
+					data = this.series[i].data;
+					if (data)
+					for(j = 0; j < data.length; j++) {
+						d = data[j];
+						r = d[2] * c.baseRadius;
+						newmax = Math.max(d[1] + r, newmax);
+						newmin = Math.min(d[1] - r, newmin);
+					}
+				}
+			}
+			axis.max = newmax;
+			axis.min = newmin;
+		}
+	}*/
 });
 
 Flotr.addPlugin('spreadsheet', {
