@@ -189,7 +189,7 @@ Flotr.defaultOptions = {
 	legend: {
 		show: true,            // => setting to true will show the legend, hide otherwise
 		noColumns: 1,          // => number of colums in legend table // @todo: doesn't work for HtmlText = false
-		labelFormatter: Prototype.K, // => fn: string -> string
+		labelFormatter: function(v){return v}, // => fn: string -> string
 		labelBoxBorderColor: '#CCCCCC', // => border color for the little label boxes
 		labelBoxWidth: 14,
 		labelBoxHeight: 10,
@@ -489,7 +489,7 @@ Flotr.Graph = Class.create({
 
 		// For positioning labels and overlay.
 		el.style.position = 'relative';
-		el.style.cursor || (el.style.cursor = 'default');
+		el.style.cursor = el.style.cursor || 'default';
 
 		size = el.getDimensions();
 		this.canvasWidth = size.width;
@@ -1473,10 +1473,7 @@ Flotr.Graph = Class.create({
 					size: options.fontSize*1.1,
 					color: options.grid.color
 				};
-				
-				// @todo: take css into account
-				//var dummyDiv = this.el.insert('<div class="flotr-legend" style="position:absolute;top:-10000px;"></div>');
-				
+
 				var p = legend.position, 
 				    m = legend.margin,
 				    lbw = legend.labelBoxWidth,
@@ -1562,7 +1559,7 @@ Flotr.Graph = Class.create({
 		  		if(rowStarted) fragments.push('</tr>');
 		  		
 		  		if(fragments.length > 0){
-		  			var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join("") + '</table>';
+		  			var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
 		  			if(options.legend.container != null){
 		  				$(options.legend.container).innerHTML = table;
 		  			}
@@ -1587,7 +1584,7 @@ Flotr.Graph = Class.create({
 		  						c = this.processColor(tmp, null, {opacity: 1});
 		  					}
 		  					this.el.insert('<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>')
-                       .select('div.flotr-legend-bg').first().setOpacity(options.legend.backgroundOpacity);
+		  					    .select('div.flotr-legend-bg').first().setOpacity(options.legend.backgroundOpacity);
 		  				}
 		  			}
 		  		}
@@ -2245,7 +2242,7 @@ Object.extend(Flotr.Color, {
 		do {
 			color = element.getStyle('background-color').toLowerCase();
 			if(!(color == '' || color == 'transparent')) break;
-			element = element.up(0);
+			element = element.up();
 		} while(!element.nodeName.match(/^body$/i));
 
 		// Catch Safari's way of signaling transparent.
@@ -3571,7 +3568,6 @@ Flotr.addType('bubbles', {
 					for(j = 0; j < data.length; j++) {
 						d = data[j];
 						r = d[2] * c.baseRadius * (this.plotWidth / (axis.datamax - axis.datamin));
-						console.debug((this.plotWidth));
   						newmax = Math.max(d[0] + r, newmax);
   						newmin = Math.min(d[0] - r, newmin);
 					}
@@ -3670,8 +3666,8 @@ Flotr.addPlugin('spreadsheet', {
 		for (j = 0; j < datagrid.length; ++j) {
 			html.push('<tr>');
 			for (i = 0; i < s.length+1; ++i) {
-				var tag = 'td';
-				var content = (datagrid[j][i] != null ? Math.round(datagrid[j][i]*100000)/100000 : '');
+				var tag = 'td',
+				    content = (datagrid[j][i] != null ? Math.round(datagrid[j][i]*100000)/100000 : '');
 				
 				if (i == 0) {
 					tag = 'th';
@@ -3782,7 +3778,7 @@ Flotr.addPlugin('spreadsheet', {
 		    separator = encodeURIComponent(this.options.spreadsheet.csvFileSeparator);
 		
 		for (i = 0; i < series.length; ++i) {
-			csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).gsub('"', '\\"')+'"';
+			csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
 		}
 		csv += "%0D%0A"; // \r\n
 		
@@ -3795,11 +3791,11 @@ Flotr.addPlugin('spreadsheet', {
 			else {
 				rowLabel = this.options.xaxis.tickFormatter(dg[i][0]);
 			}
-			rowLabel = '"'+(rowLabel+'').gsub('"', '\\"')+'"';
+			rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
 			csv += rowLabel+separator+dg[i].slice(1).join(separator)+"%0D%0A"; // \t and \r\n
 		}
 		if (Prototype.Browser.IE) {
-			csv = csv.gsub(separator, decodeURIComponent(separator)).gsub('%0A', '\n').gsub('%0D', '\r');
+			csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');
 			window.open().document.write(csv);
 		}
 		else window.open('data:text/csv,'+csv);

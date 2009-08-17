@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>Flotr: Basic Example</title>
+		<title>Flotr: Basic Pie Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
 
 		<script type="text/javascript" src="../../flotr/mootools/lib/mootools.js"></script>
@@ -32,29 +32,42 @@
 			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
 		</div>
 		
-		<!-- ad -->
+    <!-- ad -->
 		
 		<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading.
-			 */
-			window.addEvent('domready', function(){
-				/**
-				 * Fill series d1 and d2.
-				 */
-				var d1 = [];
-			    for(var i = 0; i < 14; i += 0.5)
-			        d1.push([i, Math.sin(i)]);
-			
-			    var d2 = [[0, 3], [4, 8], [8, 5], [9, 13]];
-			    
-				/**
-				 * Draw the graph.
-				 */
-			    var f = Flotr.draw($('container'), [ d1, d2 ]);
-			});			
+window.addEvent('domready', function(){
+	// Fill series.
+	var d1 = [[0, 4]];
+	var d2 = [[0, 3]];
+	var d3 = [[0, "1.03"]];
+	var d4 = [[0, 3.5]];
+	
+	//Draw the graph.
+	var f = Flotr.draw($('container'), [
+		{data:d1, label: 'Comedy'}, 
+		{data:d2, label: 'Action'}, 
+		{data:d3, label: 'Romance', pie:{explode: 50} }, 
+		{data:d4, label: 'Drama'}
+ ], {
+			HtmlText: false, 
+			grid: {
+				verticalLines: false, 
+				horizontalLines: false
+			},
+			xaxis: {showLabels: false},
+			yaxis: {showLabels: false}, 
+			pie: {
+        show: true, 
+        explode: 6
+      },
+			legend:{
+				position: 'se',
+				backgroundColor: '#D2E8FF'
+			}
+	});
+});
 		</script>
-		
+
 		<!-- analytics -->
 	</body>
 </html>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>Flotr: Basic Example</title>
+		<title>Flotr: Basic Bubbles Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
 
 		<script type="text/javascript" src="../../flotr/mootools/lib/mootools.js"></script>
@@ -24,8 +24,7 @@
 			<h1></h1>
 			<div id="container" style="width:600px;height:300px;"></div>
 			<h2>Example</h2>
-			<p>This example shows the ease of using Flotr. With just one line of javascript you can
-			draw a nice looking graph.</p>
+			<p>Random bubble graph.</p>
 			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
 			<h2>The Code</h2>
 			<pre id="code-view"><code class="javascript"></code></pre>
@@ -40,21 +39,35 @@
 			 */
 			window.addEvent('domready', function(){
 				/**
-				 * Fill series d1 and d2.
+				 * Fill series d1 and d2 width random values.
 				 */
-				var d1 = [];
-			    for(var i = 0; i < 14; i += 0.5)
-			        d1.push([i, Math.sin(i)]);
-			
-			    var d2 = [[0, 3], [4, 8], [8, 5], [9, 13]];
-			    
+				var point, 
+            d1 = [], d2 = [];
+            
+			  for(var i = 0; i < 10; i++ ){
+          point = [i, Math.ceil(Math.random()*10), Math.ceil(Math.random()*10)];
+					d1.push(point);
+          
+          point = [i, Math.ceil(Math.random()*10), Math.ceil(Math.random()*10)];
+					d2.push(point);
+				}
+				
 				/**
-				 * Draw the graph.
+				 * Draw the graph in the first container.
 				 */
-			    var f = Flotr.draw($('container'), [ d1, d2 ]);
+				Flotr.draw(
+					$('container'),
+					[d1, d2],
+					{
+            bubbles: {show:true, baseRadius: 5},
+            xaxis: {min: -4, max: 14},
+            yaxis: {min: -4, max: 14}
+					}
+				);
 			});			
 		</script>
 		
 		<!-- analytics -->
+		
 	</body>
 </html>
