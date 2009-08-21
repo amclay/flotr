@@ -583,7 +583,7 @@ Flotr.Graph = Class.create({
 		for (name in Flotr.plugins) {
 			plugin = Flotr.plugins[name];
 			for (c in plugin.callbacks) {
-				this.el.observe(c, plugin.callbacks[c].bind(this));
+				this.el.observe(c, plugin.callbacks[c].bindAsEventListener(this));
 			}
 			this[name] = Object.clone(plugin);
 			for (p in this[name]) {
@@ -654,9 +654,9 @@ Flotr.Graph = Class.create({
 	initEvents: function () {
 		//@todo: maybe stopObserving with only flotr functions
 		this.overlay.stopObserving()
-		    .observe('mousedown', this.mouseDownHandler.bind(this))
-		    .observe('mousemove', this.mouseMoveHandler.bind(this))
-		    .observe('click', this.clickHandler.bind(this));
+		    .observe('mousedown', this.mouseDownHandler.bindAsEventListener(this))
+		    .observe('mousemove', this.mouseMoveHandler.bindAsEventListener(this))
+		    .observe('click', this.clickHandler.bindAsEventListener(this));
 	},
 	/**
 	 * Function determines the min and max values for the xaxis and yaxis.
@@ -1671,9 +1671,9 @@ Flotr.Graph = Class.create({
 			clearInterval(this.selectionInterval);
 		}
 		this.lastMousePos.pageX = null;
-		this.selectionInterval = setInterval(this.updateSelection.bind(this), 1000/this.options.selection.fps);
+		this.selectionInterval = setInterval(this.updateSelection.bindAsEventListener(this), 1000/this.options.selection.fps);
 		
-		this.mouseUpHandler = this.mouseUpHandler.bind(this);
+		this.mouseUpHandler = this.mouseUpHandler.bindAsEventListener(this);
 		$(document).observe('mouseup', this.mouseUpHandler);
 	},
 	/**
@@ -2081,7 +2081,8 @@ Flotr.Graph = Class.create({
 				mt = this.mouseTrack = this.el.select('.flotr-mouse-value').first();
 			}
 			else {
-				this.mouseTrack = mt.setStyle(elStyle);
+				mt.style.cssText = elStyle;
+				this.mouseTrack = mt;
 			}
 			
 			if(n.x !== null && n.y !== null){
@@ -3609,7 +3610,8 @@ Flotr.addPlugin('spreadsheet', {
 		tabDataLabel: 'Data',
 		toolbarDownload: 'Download CSV', // @todo: add better language support
 		toolbarSelectAll: 'Select all',
-		csvFileSeparator: ','
+		csvFileSeparator: ',',
+		decimalSeparator: '.'
 	},
 	/**
 	 * Builds the tabs in the DOM
@@ -3705,8 +3707,8 @@ Flotr.addPlugin('spreadsheet', {
 		}
 		
 		var toolbar = new Element('div').addClassName('flotr-datagrid-toolbar').
-			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.spreadsheet.downloadCSV.bind(this))).
-			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.spreadsheet.selectAllData.bind(this)));
+			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.spreadsheet.downloadCSV.bindAsEventListener(this))).
+			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.spreadsheet.selectAllData.bindAsEventListener(this)));
 		
 		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+(this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2)+'px;overflow:auto;'}).addClassName('flotr-datagrid-container');
 		container.insert(toolbar);
@@ -3724,7 +3726,8 @@ Flotr.addPlugin('spreadsheet', {
 		var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
 		switch(tabName) {
 			case 'graph':
-				this.spreadsheet.datagrid.up().hide();
+				if (this.spreadsheet.datagrid)
+					this.spreadsheet.datagrid.up().hide();
 				this.el.select(selector).invoke('show');
 				this.spreadsheet.tabs.data.removeClassName('selected');
 				this.spreadsheet.tabs.graph.addClassName('selected');
@@ -3748,7 +3751,7 @@ Flotr.addPlugin('spreadsheet', {
 			this.spreadsheet.showTab('data');
 			
 			// deferred to be able to select the table
-			(function () {
+			setTimeout(function () {
 				if ((doc = node.ownerDocument) && (win = doc.defaultView) && 
 				    win.getSelection && doc.createRange && 
 				    (selection = window.getSelection()) && 
@@ -3763,7 +3766,7 @@ Flotr.addPlugin('spreadsheet', {
 						range.moveToElementText(node);
 						range.select();
 				}
-			}).defer();
+			}, 0);
 			return true;
 		}
 		else return false;
@@ -3774,25 +3777,37 @@ Flotr.addPlugin('spreadsheet', {
 	downloadCSV: function(){
 		var i, csv = '',
 		    series = this.series,
+		    options = this.options,
 		    dg = this.loadDataGrid(),
-		    separator = encodeURIComponent(this.options.spreadsheet.csvFileSeparator);
+		    separator = encodeURIComponent(options.spreadsheet.csvFileSeparator);
 		
+		if (options.spreadsheet.decimalSeparator === options.spreadsheet.csvFileSeparator) {
+			throw "The decimal separator is the same as the column separator ("+options.spreadsheet.decimalSeparator+")";
+		}
+		
+		// The first row
 		for (i = 0; i < series.length; ++i) {
 			csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
 		}
 		csv += "%0D%0A"; // \r\n
 		
+		// For each row
 		for (i = 0; i < dg.length; ++i) {
 			var rowLabel = '';
+			// The first column
 			if (this.options.xaxis.ticks) {
-				var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == dg[i][0] });
+				var tick = this.options.xaxis.ticks.find(function (x){return x[0] == dg[i][0]});
 				if (tick) rowLabel = tick[1];
 			}
 			else {
 				rowLabel = this.options.xaxis.tickFormatter(dg[i][0]);
 			}
 			rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
-			csv += rowLabel+separator+dg[i].slice(1).join(separator)+"%0D%0A"; // \t and \r\n
+			var numbers = dg[i].slice(1).join(separator);
+			if (options.spreadsheet.decimalSeparator !== '.') {
+				numbers = numbers.replace(/\./g, options.spreadsheet.decimalSeparator);
+			}
+			csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
 		}
 		if (Prototype.Browser.IE) {
 			csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');

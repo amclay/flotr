@@ -608,7 +608,7 @@ Flotr.Graph = new Class({
 		for (name in Flotr.plugins) {
 			plugin = Flotr.plugins[name];
 			for (c in plugin.callbacks) {
-				this.el.addEvent(c, plugin.callbacks[c].bind(this));
+				this.el.addEvent(c, plugin.callbacks[c].bindWithEvent(this));
 			}
 			this[name] = $extend({}, plugin);
 			for (p in this[name]) {
@@ -1678,14 +1678,17 @@ Flotr.Graph = new Class({
 	mouseDownHandler: function (event){
 		if(!this.options.selection.mode) return;
 		
+		event.pageX = event.page.x;
+		event.pageY = event.page.y;
+		
 		this.setSelectionPos(this.selection.first, event);
 		if(this.selectionInterval != null){
 			clearInterval(this.selectionInterval);
 		}
 		this.lastMousePos.pageX = null;
-		this.selectionInterval = setInterval(this.updateSelection.bind(this), 1000/this.options.selection.fps);
+		this.selectionInterval = setInterval(this.updateSelection.bindWithEvent(this), 1000/this.options.selection.fps);
 		
-		this.mouseUpHandler = this.mouseUpHandler.bind(this);
+		this.mouseUpHandler = this.mouseUpHandler.bindWithEvent(this);
 		$(document).addEvent('mouseup', this.mouseUpHandler);
 	},
 	/**
@@ -1720,10 +1723,12 @@ Flotr.Graph = new Class({
 			clearInterval(this.selectionInterval);
 			this.selectionInterval = null;
 		}
+		
+		event.pageX = event.page.x;
+		event.pageY = event.page.y;
 
 		this.setSelectionPos(this.selection.second, event);
 		this.clearSelection();
-		
 		if(this.selectionIsSane()){
 			this.drawSelection();
 			this.fireSelectEvent();
@@ -2093,7 +2098,8 @@ Flotr.Graph = new Class({
 				mt = this.mouseTrack = this.el.getFirst('.flotr-mouse-value');
 			}
 			else {
-				this.mouseTrack = mt.setStyles(elStyle);
+				mt.style.cssText = elStyle;
+				this.mouseTrack = mt;
 			}
 			
 			if(n.x !== null && n.y !== null){
@@ -2780,10 +2786,10 @@ Flotr.addType('bars', {
 			// Stacked bars
 			var stackOffset = 0;
 			if(series.bars.stacked) {
-				$H(xa.values).each(function(pair) {
-					if (pair.key == x) {
-						stackOffset = pair.value.stack || 0;
-						pair.value.stack = stackOffset + y;
+				$H(xa.values).each(function(value, key) {
+					if (key == x) {
+						stackOffset = value.stack || 0;
+						value.stack = stackOffset + y;
 					}
 				});
 			}
@@ -2863,10 +2869,10 @@ Flotr.addType('bars', {
 			// Stacked bars
 			var stackOffset = 0;
 			if(series.bars.stacked) {
-				$H(xa.values).each(function(pair) {
-					if (pair.key == x) {
-						stackOffset = pair.value.stackShadow || 0;
-						pair.value.stackShadow = stackOffset + y;
+				$H(xa.values).each(function(value, key) {
+					if (key == x) {
+						stackOffset = value.stackShadow || 0;
+						value.stackShadow = stackOffset + y;
 					}
 				});
 			}
@@ -3622,7 +3628,8 @@ Flotr.addPlugin('spreadsheet', {
 		tabDataLabel: 'Data',
 		toolbarDownload: 'Download CSV', // @todo: add better language support
 		toolbarSelectAll: 'Select all',
-		csvFileSeparator: ','
+		csvFileSeparator: ',',
+		decimalSeparator: '.'
 	},
 	/**
 	 * Builds the tabs in the DOM
@@ -3701,7 +3708,7 @@ Flotr.addPlugin('spreadsheet', {
 			html.push('</tr>');
 		}
 		colgroup.push('</colgroup>');
-		t.innerHTML = colgroup.join('')+html.join('');
+		t.set('html', colgroup.join('')+html.join(''));
 		
 		if (!Browser.Engine.trident) {
 			t.getElements('td').each(function(td) {
@@ -3718,8 +3725,8 @@ Flotr.addPlugin('spreadsheet', {
 		}
 		
 		var toolbar = new Element('div').addClass('flotr-datagrid-toolbar').
-			grab(new Element('button', {type:'button'}).addClass('flotr-datagrid-toolbar-button').set('html', this.options.spreadsheet.toolbarDownload).addEvent('click', this.spreadsheet.downloadCSV.bind(this))).
-			grab(new Element('button', {type:'button'}).addClass('flotr-datagrid-toolbar-button').set('html', this.options.spreadsheet.toolbarSelectAll).addEvent('click', this.spreadsheet.selectAllData.bind(this)));
+			grab(new Element('button', {type:'button'}).addClass('flotr-datagrid-toolbar-button').set('html', this.options.spreadsheet.toolbarDownload).addEvent('click', this.spreadsheet.downloadCSV.bindWithEvent(this))).
+			grab(new Element('button', {type:'button'}).addClass('flotr-datagrid-toolbar-button').set('html', this.options.spreadsheet.toolbarSelectAll).addEvent('click', this.spreadsheet.selectAllData.bindWithEvent(this)));
 		
 		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+(this.canvasHeight-this.spreadsheet.tabsContainer.getSize().y-2)+'px;overflow:auto;'}).addClass('flotr-datagrid-container');
 		container.grab(toolbar);
@@ -3737,7 +3744,8 @@ Flotr.addPlugin('spreadsheet', {
 		var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
 		switch(tabName) {
 			case 'graph':
-				this.spreadsheet.datagrid.getParent().hide();
+				if (this.spreadsheet.datagrid)
+					this.spreadsheet.datagrid.getParent().hide();
 				this.el.getElements(selector).show();
 				this.spreadsheet.tabs.data.removeClass('selected');
 				this.spreadsheet.tabs.graph.addClass('selected');
@@ -3787,25 +3795,37 @@ Flotr.addPlugin('spreadsheet', {
 	downloadCSV: function(){
 		var i, csv = '',
 		    series = this.series,
+		    options = this.options,
 		    dg = this.loadDataGrid(),
-		    separator = encodeURIComponent(this.options.spreadsheet.csvFileSeparator);
+		    separator = encodeURIComponent(options.spreadsheet.csvFileSeparator);
 		
+		if (options.spreadsheet.decimalSeparator === options.spreadsheet.csvFileSeparator) {
+			throw "The decimal separator is the same as the column separator ("+options.spreadsheet.decimalSeparator+")";
+		}
+		
+		// The first row
 		for (i = 0; i < series.length; ++i) {
 			csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
 		}
 		csv += "%0D%0A"; // \r\n
 		
+		// For each row
 		for (i = 0; i < dg.length; ++i) {
 			var rowLabel = '';
+			// The first column
 			if (this.options.xaxis.ticks) {
-				var tick = this.options.xaxis.ticks.filter(function (x) { return x[0] == dg[i][0] })[0];
+				var tick = options.xaxis.ticks.filter(function(x){return x[0] == dg[i][0]})[0];
 				if (tick) rowLabel = tick[1];
 			}
 			else {
 				rowLabel = this.options.xaxis.tickFormatter(dg[i][0]);
 			}
 			rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
-			csv += rowLabel+separator+dg[i].slice(1).join(separator)+"%0D%0A"; // \t and \r\n
+			var numbers = dg[i].slice(1).join(separator);
+			if (options.spreadsheet.decimalSeparator !== '.') {
+				numbers = numbers.replace(/\./g, options.spreadsheet.decimalSeparator);
+			}
+			csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
 		}
 		if (Browser.Engine.trident) {
 			csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');

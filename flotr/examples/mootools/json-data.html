@@ -67,12 +67,13 @@
 				 */
 				new Request.JSON({
 					url: 'json.txt',
-					onSuccess: function(json){
+					onSuccess: function(json, text){
+						json = JSON.decode(text); // JSON not evaluated by default ?
 						if(json.series && json.options){
 							/**
 							 * The json is valid! Display the canvas container.
 							 */
-							$('container').setStyle('display','block');
+							$('container').show();
 							
 							/**
 							 * Draw the graph using the JSON data. Of course the

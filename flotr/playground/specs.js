@@ -759,6 +759,10 @@ var specs = {
 		csvFileSeparator: {
 			type: String,
 			def: ','
+		},
+		decimalSeparator: {
+			type: String,
+			def: '.'
 		}
 	}
 };

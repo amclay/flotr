@@ -71,7 +71,7 @@
 					/**
 					 * Clone the options, so the 'options' variable always keeps intact.
 					 */
-					var o = $merge($extend(options), opts || {});
+					var o = $extend($extend({}, options), opts || {});
 					/**
 					 * Return a new graph.
 					 */
@@ -90,12 +90,7 @@
 				/**
 				 * Hook into the 'flotr:select' event.
 				 */
-				$('container').addEvent('flotr:select', function(evt, area){
-					/**
-					 * Get the selected area coordinates passed as event memo.
-					 */
-					var area = evt.memo[0];
-					
+				$('container').addEvent('flotr:select', function(area){
 					/**
 					 * What happens: empty the container element, and draw a new 
 					 * graph with bounded axis. The axis correspond to the selection
