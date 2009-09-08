@@ -3629,7 +3629,8 @@ Flotr.addPlugin('spreadsheet', {
 		toolbarDownload: 'Download CSV', // @todo: add better language support
 		toolbarSelectAll: 'Select all',
 		csvFileSeparator: ',',
-		decimalSeparator: '.'
+		decimalSeparator: '.',
+		tickFormatter: null
 	},
 	/**
 	 * Builds the tabs in the DOM
@@ -3670,7 +3671,7 @@ Flotr.addPlugin('spreadsheet', {
 		var i, j, 
 		    s = this.series,
 		    datagrid = this.loadDataGrid(),
-		    t = this.spreadsheet.datagrid = new Element('table', {style:'height:100px'}).addClass('flotr-datagrid'),
+		    t = this.spreadsheet.datagrid = new Element('table').addClass('flotr-datagrid'),
 		    colgroup = ['<colgroup><col />'];
 		
 		// First row : series' labels
@@ -3696,6 +3697,9 @@ Flotr.addPlugin('spreadsheet', {
 						var tick = this.options.xaxis.ticks.filter(function (x) { return x[0] == datagrid[j][i] })[0];
 						if (tick) label = tick[1];
 					} 
+					else if (this.options.spreadsheet.tickFormatter){
+						label = this.options.spreadsheet.tickFormatter(content);
+					}
 					else {
 						label = this.options.xaxis.tickFormatter(content);
 					}
@@ -3813,12 +3817,15 @@ Flotr.addPlugin('spreadsheet', {
 		for (i = 0; i < dg.length; ++i) {
 			var rowLabel = '';
 			// The first column
-			if (this.options.xaxis.ticks) {
+			if (options.xaxis.ticks) {
 				var tick = options.xaxis.ticks.filter(function(x){return x[0] == dg[i][0]})[0];
 				if (tick) rowLabel = tick[1];
 			}
+      else if (options.spreadsheet.tickFormatter){
+        rowLabel = options.spreadsheet.tickFormatter(dg[i][0]);
+      }
 			else {
-				rowLabel = this.options.xaxis.tickFormatter(dg[i][0]);
+				rowLabel = options.xaxis.tickFormatter(dg[i][0]);
 			}
 			rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
 			var numbers = dg[i].slice(1).join(separator);
