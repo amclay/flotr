@@ -773,6 +773,9 @@ Flotr.Graph = new Class({
 			if(max > 0 && axis.datamax <= 0) max = 0;				
 			max = axis.tickSize * Math.ceil(max / axis.tickSize);
 		}
+
+		if (min == max) max = min + 1;
+
 		axis.min = min;
 		axis.max = max;
 		

@@ -485,7 +485,7 @@ Flotr.Graph = Class.create({
 		this.overlay = el.select('.flotr-overlay')[0];
 		
 		// ... and all the child elements are removed
-		el.childElements().invoke('remove');
+		el.descendants().invoke('remove');
 
 		// For positioning labels and overlay.
 		el.style.position = 'relative';
@@ -748,6 +748,9 @@ Flotr.Graph = Class.create({
 			if(max > 0 && axis.datamax <= 0) max = 0;				
 			max = axis.tickSize * Math.ceil(max / axis.tickSize);
 		}
+
+		if (min == max) max = min + 1;
+
 		axis.min = min;
 		axis.max = max;
 		
