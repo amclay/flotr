@@ -3168,8 +3168,10 @@ Flotr.addType('pie', {
 			
 			var label = options.pie.labelFormatter(slice),
 			    textAlignRight = (Math.cos(bisection) < 0),
-			    distX = xOffset + Math.cos(bisection) * (series.pie.explode + radius),
-			    distY = yOffset + Math.sin(bisection) * (series.pie.explode + radius);
+			    textAlignTop = (Math.sin(bisection) > 0),
+			    explodeCoeff = (slice.options.explode || series.pie.explode) + radius + 4,
+			    distX = center.x + Math.cos(bisection) * explodeCoeff,
+			    distY = center.y + Math.sin(bisection) * explodeCoeff;
 			
 			if (slice.fraction && label) {
 				if (options.HtmlText || !this.textEnabled) {
@@ -3182,12 +3184,8 @@ Flotr.addType('pie', {
 				}
 				else {
 					style.halign = textAlignRight ? 'r' : 'l';
-					ctx.drawText(
-						label, 
-						distX, 
-						distY + style.size / 2, 
-						style
-					);
+					style.valign = textAlignTop ? 't' : 'b';
+					ctx.drawText(label, distX, distY, style);
 				}
 			}
 		}, this);
