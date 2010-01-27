@@ -656,6 +656,7 @@ Flotr.Graph = Class.create({
 		this.overlay.stopObserving()
 		    .observe('mousedown', this.mouseDownHandler.bindAsEventListener(this))
 		    .observe('mousemove', this.mouseMoveHandler.bindAsEventListener(this))
+		    .observe('mouseout', this.clearHit.bindAsEventListener(this))
 		    .observe('click', this.clickHandler.bindAsEventListener(this));
 	},
 	/**
@@ -745,7 +746,7 @@ Flotr.Graph = Class.create({
     
 		if(o.max == null && margin != 0){
 			max += axis.tickSize * margin;
-			if(max > 0 && axis.datamax <= 0) max = 0;				
+			if(max > 0 && axis.datamax <= 0 && axis.datamax != axis.datamin) max = 0;				
 			max = axis.tickSize * Math.ceil(max / axis.tickSize);
 		}
 
@@ -2006,7 +2007,8 @@ Flotr.Graph = Class.create({
 				xaxis:null,
 				yaxis:null,
 				series:null,
-				index:null
+				index:null,
+				seriesIndex:null
 			};
 		
 		for(i = 0; i < series.length; i++){
@@ -2045,6 +2047,7 @@ Flotr.Graph = Class.create({
 						n.mouse = s.mouse;
 						n.series = s;
 						n.index = j;
+						n.seriesIndex = i;
 					}
 				}
 			}
@@ -2097,7 +2100,13 @@ Flotr.Graph = Class.create({
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;
 				
-				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals), series: n.series, index: n.index});
+				mt.innerHTML = n.mouse.trackFormatter({
+					x: n.x.toFixed(decimals), 
+					y: n.y.toFixed(decimals), 
+					series: n.series, 
+					index: n.index,
+					nearest: n
+				});
 				mt.fire('flotr:hit', [n, this]);
 			}
 			else if(prevHit){

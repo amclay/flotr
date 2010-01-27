@@ -681,6 +681,7 @@ Flotr.Graph = new Class({
 		this.overlay.removeEvents()
 		    .addEvent('mousedown', this.mouseDownHandler.bindWithEvent(this))
 		    .addEvent('mousemove', this.mouseMoveHandler.bindWithEvent(this))
+		    .addEvent('mouseout', this.clearHit.bindWithEvent(this))
 		    .addEvent('click', this.clickHandler.bindWithEvent(this));
 	},
 	/**
@@ -768,7 +769,7 @@ Flotr.Graph = new Class({
 			min = axis.tickSize * Math.floor(min / axis.tickSize);
 		}
     
-		if(o.max == null && margin != 0){
+		if(o.max == null && margin != 0 && axis.datamax != axis.datamin){
 			max += axis.tickSize * margin;
 			if(max > 0 && axis.datamax <= 0) max = 0;				
 			max = axis.tickSize * Math.ceil(max / axis.tickSize);
@@ -2023,7 +2024,8 @@ Flotr.Graph = new Class({
 				xaxis:null,
 				yaxis:null,
 				series:null,
-				index:null
+				index:null,
+				seriesIndex:null
 			};
 		
 		for(i = 0; i < series.length; i++){
@@ -2062,6 +2064,7 @@ Flotr.Graph = new Class({
 						n.mouse = s.mouse;
 						n.series = s;
 						n.index = j;
+						n.seriesIndex = i;
 					}
 				}
 			}
@@ -2114,7 +2117,13 @@ Flotr.Graph = new Class({
 				var decimals = n.mouse.trackDecimals;
 				if(decimals == null || decimals < 0) decimals = 0;
 				
-				mt.innerHTML = n.mouse.trackFormatter({x: n.x.toFixed(decimals), y: n.y.toFixed(decimals), series: n.series, index: n.index});
+				mt.innerHTML = n.mouse.trackFormatter({
+					x: n.x.toFixed(decimals), 
+					y: n.y.toFixed(decimals), 
+					series: n.series, 
+					index: n.index,
+					nearest: n
+				});
 				mt.fireEvent('flotr:hit', [n, this]);
 			}
 			else if(prevHit){
