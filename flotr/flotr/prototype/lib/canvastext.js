@@ -129,7 +129,7 @@ var CanvasText = {
 		'ô': { diacritic: '^', letter: 'o' },
 		'ö': { diacritic: '¨', letter: 'o' },
 		'õ': { diacritic: '~', letter: 'o' },
-		
+
 		'ù': { diacritic: '`', letter: 'u' },
 		'ú': { diacritic: '´', letter: 'u' },
 		'û': { diacritic: '^', letter: 'u' },
@@ -140,7 +140,7 @@ var CanvasText = {
 		
 		'ç': { diacritic: '¸', letter: 'c' },
 		'ñ': { diacritic: '~', letter: 'n' },
-    
+
 		// Upper case Latin-1
 		'À': { diacritic: '`', letter: 'A' },
 		'Á': { diacritic: '´', letter: 'A' },
@@ -152,7 +152,7 @@ var CanvasText = {
 		'É': { diacritic: '´', letter: 'E' },
 		'Ê': { diacritic: '^', letter: 'E' },
 		'Ë': { diacritic: '¨', letter: 'E' },
-    
+
 		'Ì': { diacritic: '`', letter: 'I' },
 		'Í': { diacritic: '´', letter: 'I' },
 		'Î': { diacritic: '^', letter: 'I' },
@@ -195,8 +195,8 @@ var CanvasText = {
 		font: null,         // not yet implemented
 		color: '#000000',   // font color
 		weight: 1,          // float, 1 for 'normal'
-		halign: 'l',        // l: left, r: right, c: center
-		valign: 'b',        // t: top, m: middle, b: bottom 
+		textAlign: 'left',  // left, right, center
+		textBaseline: 'bottom', // top, middle, bottom 
 		adjustAlign: false, // modifies the alignments if the angle is different from 0 to make the spin point always at the good position
 		angle: 0,           // in radians, anticlockwise
 		tracking: 1,        // space between the letters, float, 1 for 'normal'
@@ -206,7 +206,15 @@ var CanvasText = {
 	
 	debug: false,
 	_bufferLexemes: {},
-	
+
+	extend: function(dest, src) {
+		for (var property in src) {
+			if (property in dest) continue;
+			dest[property] = src[property];
+		}
+		return dest;
+	},
+
 	/** Get the letter data corresponding to a char
 	 * @param {String} ch - The char
 	 */
@@ -218,8 +226,9 @@ var CanvasText = {
 		if (CanvasText._bufferLexemes[str]) 
 			return CanvasText._bufferLexemes[str];
 		
-		var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g);
-		var result = [], chars = [];
+		var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g),
+		    result = [], chars = [];
+		    
 		for (i = 0; i < matches.length; i++) {
 			c = matches[i];
 			if (c.length == 1) 
@@ -236,7 +245,7 @@ var CanvasText = {
 			c = chars[i];
 			if (c = CanvasText.letters[c] || CanvasText.specialchars[c]) result.push(c);
 		}
-		for(i = 0; i < result.length; i++) {
+		for (i = 0; i < result.length; i++) {
 			if (result === null || typeof result === 'undefined') 
 			delete result[i];
 		}
@@ -280,6 +289,7 @@ var CanvasText = {
 	
 	getDimensions: function(str, style) {
 		style = style || CanvasText.style;
+    
 		var width = CanvasText.measure(str, style),
 				height = style.size || CanvasText.style.size,
 				angle = style.angle || CanvasText.style.angle;
@@ -289,33 +299,6 @@ var CanvasText = {
 			width:	Math.abs(Math.cos(angle) * width) + Math.abs(Math.sin(angle) * height),
 			height: Math.abs(Math.sin(angle) * width) + Math.abs(Math.cos(angle) * height)
 		}
-	},
-	
-	getBestAlign: function(angle, style) {
-		style = style || CanvasText.style;
-		angle += CanvasText.getAngleFromAlign(style.halign, style.valign);
-		var a = {h:'c', v:'m'};
-		if (Math.round(Math.cos(angle)*1000)/1000 != 0) 
-			a.h = (Math.cos(angle) > 0 ? 'r' : 'l');
-		
-		if (Math.round(Math.sin(angle)*1000)/1000 != 0) 
-			a.v = (Math.sin(angle) > 0 ? 't' : 'b');
-		return a;
-	},
-	
-	getAngleFromAlign: function(halign, valign) {
-		var pi = Math.PI, table = {
-			'rm': 0,
-			'rt': pi/4,
-			'ct': pi/2,
-			'lt': 3*(pi/4),
-			'lm': pi,
-			'lb': -3*(pi/4),
-			'cb': -pi/2,
-			'rb': -pi/4,
-			'cm': 0
-		}
-		return table[halign+valign];
 	},
 	
 	/** Draws serie of points at given coordinates 
@@ -356,37 +339,31 @@ var CanvasText = {
 	 */
 	draw: function(str, xOrig, yOrig, style) {
 		if (!str) return;
-		style = style || CanvasText.style;
-		style.halign = style.halign || CanvasText.style.halign;
-		style.valign = style.valign || CanvasText.style.valign;
-		style.angle = style.angle || CanvasText.style.angle;
-		style.size = style.size || CanvasText.style.size;
-		style.adjustAlign = style.adjustAlign || CanvasText.style.adjustAlign;
+		CanvasText.extend(style, CanvasText.style);
 		
 		var i, c, total = 0,
 		    mag = style.size / 25.0,
 		    x = 0, y = 0,
 		    lexemes = CanvasText.parseLexemes(str),
-			offset = {x:0, y:0}, 
+		    offset = {x: 0, y: 0}, 
 		    measure = CanvasText.measure(str, style),
 		    align;
 				
 		if (style.adjustAlign) {
 			align = CanvasText.getBestAlign(style.angle, style);
-			style.halign = align.h;
-			style.valign = align.v;
+			CanvasText.extend(style, align);
 		}
 				
-		switch (style.halign) {
-			case 'l': break;
-			case 'c': offset.x = -measure / 2; break;
-			case 'r': offset.x = -measure; break;
+		switch (style.textAlign) {
+			case 'left': break;
+			case 'center': offset.x = -measure / 2; break;
+			case 'right':  offset.x = -measure; break;
 		}
 		
-		switch (style.valign) {
-			case 'b': break;
-			case 'm': offset.y = style.size / 2; break;
-			case 't': offset.y = style.size; break;
+		switch (style.textBaseline) {
+			case 'bottom': break;
+			case 'middle': offset.y = style.size / 2; break;
+			case 'top':    offset.y = style.size; break;
 		}
 		
 		this.save();
@@ -444,7 +421,7 @@ var CanvasText = {
 CanvasText.proto = window.CanvasRenderingContext2D ? window.CanvasRenderingContext2D.prototype : document.createElement('canvas').getContext('2d').__proto__;
 if (CanvasText.proto) {
 	CanvasText.proto.drawText      = CanvasText.draw;
-	CanvasText.proto.measureText   = CanvasText.measure;
+	CanvasText.proto.measure       = CanvasText.measure;
 	CanvasText.proto.getTextBounds = CanvasText.getDimensions;
 	CanvasText.proto.fontAscent    = CanvasText.ascent;
 	CanvasText.proto.fontDescent   = CanvasText.descent;
