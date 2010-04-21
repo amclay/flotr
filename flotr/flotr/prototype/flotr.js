@@ -10,15 +10,18 @@ var Flotr = {
 	version: '%version%',
 	author: 'Bas Wenneker',
 	website: 'http://www.solutoire.com',
+	
 	/**
 	 * An object of the registered graph types. Use Flotr.addType(type, object)
 	 * to add your own type.
 	 */
 	graphTypes: {},
+	
 	/**
 	 * The list of the registered plugins
 	 */
 	plugins: {},
+	
 	/**
 	 * Can be used to add your own chart type. 
 	 * @param {String} name - Type of chart, like 'pies', 'bars' etc.
@@ -29,6 +32,7 @@ var Flotr = {
 		Flotr.defaultOptions[name] = graphType.options || {};
 		Flotr.defaultOptions.defaultType = Flotr.defaultOptions.defaultType || name;
 	},
+	
 	/**
 	 * Can be used to add a plugin
 	 * @param {String} name - The name of the plugin
@@ -38,6 +42,7 @@ var Flotr = {
 		Flotr.plugins[name] = plugin;
 		Flotr.defaultOptions[name] = plugin.options || {};
 	},
+	
 	/**
 	 * Draws the graph. This function is here for backwards compatibility with Flotr version 0.1.0alpha.
 	 * You could also draw graphs by directly calling Flotr.Graph(element, data, options).
@@ -51,6 +56,7 @@ var Flotr = {
 		GraphKlass = GraphKlass || Flotr.Graph;
 		return new GraphKlass(el, data, options);
 	},
+	
 	/**
 	 * Collects dataseries from input and parses the series into the right format. It returns an Array 
 	 * of Objects each having at least the 'data' key set.
@@ -66,6 +72,7 @@ var Flotr = {
 			return serie;
 		});
 	},
+	
 	/**
 	 * Recursively merges two objects.
 	 * @param {Object} src - source object (likely the object with the least properties)
@@ -80,6 +87,7 @@ var Flotr = {
 		}
 		return result;
 	},
+	
 	/**
 	 * Recursively clones an object.
 	 * @param {Object} object - The object to clone
@@ -93,6 +101,7 @@ var Flotr = {
 		}
 		return clone;
 	},
+	
 	/**
 	 * Function calculates the ticksize and returns it.
 	 * @param {Integer} noTicks - number of ticks
@@ -114,6 +123,7 @@ var Flotr = {
 		
 		return tickSize * magn;
 	},
+	
 	/**
 	 * Default tick formatter.
 	 * @param {String, Integer} val - tick value integer
@@ -122,6 +132,7 @@ var Flotr = {
 	defaultTickFormatter: function(val){
 		return val+'';
 	},
+	
 	/**
 	 * Formats the mouse tracker values.
 	 * @param {Object} obj - Track value Object {x:..,y:..}
@@ -130,6 +141,7 @@ var Flotr = {
 	defaultTrackFormatter: function(obj){
 		return '('+obj.x+', '+obj.y+')';
 	}, 
+	
 	/**
 	 * Utility function to convert file size values in bytes to kB, MB, ...
 	 * @param value {Number} - The value to convert
@@ -157,6 +169,7 @@ var Flotr = {
 
 		return (Math.round(value * precision) / precision) + sizes[total];
 	},
+	
 	/**
 	 * Returns the magnitude of the input value.
 	 * @param {Integer, Float} x - integer or float value
@@ -1326,7 +1339,14 @@ Flotr.Graph = Class.create({
 					if(!tick.label || tick.label.length == 0 || 
 					    (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
 					    (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin) + 'px;left:' + (this.plotOffset.left +axis.d2p(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
+					
+					html.push(
+					  '<div style="position:absolute;top:', 
+					  (this.plotOffset.top + this.plotHeight + options.grid.labelMargin), 'px;left:', 
+					  (this.plotOffset.left +axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
+					  xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
+					  '" class="flotr-grid-label">', tick.label, '</div>'
+					);
 				}
 			}
 			
@@ -1338,7 +1358,14 @@ Flotr.Graph = Class.create({
 					if(!tick.label || tick.label.length == 0 || 
 					    (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
 					    (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top - options.grid.labelMargin - axis.maxLabel.height) + 'px;left:' + (this.plotOffset.left + axis.d2p(tick.v) - xBoxWidth/2) + 'px;width:' + xBoxWidth + 'px;text-align:center;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
+					
+					html.push(
+					  '<div style="position:absolute;top:', 
+					  (this.plotOffset.top - options.grid.labelMargin - axis.maxLabel.height), 'px;left:', 
+					  (this.plotOffset.left + axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
+					  xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
+					  '" class="flotr-grid-label">', tick.label, '</div>'
+					);
 				}
 			}
 			
@@ -1350,7 +1377,14 @@ Flotr.Graph = Class.create({
 					if (!tick.label || tick.label.length == 0 ||
 							 (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
 							 (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2) + 'px;left:0;width:' + (this.plotOffset.left - options.grid.labelMargin) + 'px;text-align:right;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
+					
+					html.push(
+					  '<div style="position:absolute;top:', 
+					  (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;left:0;width:', 
+					  (this.plotOffset.left - options.grid.labelMargin), 'px;text-align:right;', 
+					  (axis.options.color?('color:'+axis.options.color+';'):''), 
+					  '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
+					);
 				}
 			}
 			
@@ -1366,7 +1400,14 @@ Flotr.Graph = Class.create({
 					if (!tick.label || tick.label.length == 0 ||
 							 (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
 							 (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-					html.push('<div style="position:absolute;top:' + (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2) + 'px;right:0;width:' + (this.plotOffset.right - options.grid.labelMargin) + 'px;text-align:left;'+(axis.options.color?('color:'+axis.options.color+';'):'')+'" class="flotr-grid-label">' + tick.label + '</div>');
+					
+					html.push(
+					  '<div style="position:absolute;top:', 
+					  (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;right:0;width:', 
+					  (this.plotOffset.right - options.grid.labelMargin), 'px;text-align:left;', 
+					  (axis.options.color?('color:'+axis.options.color+';'):''), 
+					  '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
+					);
 
 					ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
 					ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
@@ -1483,11 +1524,19 @@ Flotr.Graph = Class.create({
 			
 			// Add title
 			if (options.title)
-				html.push('<div style="position:absolute;top:0;left:'+this.plotOffset.left+'px;font-size:1em;font-weight:bold;text-align:center;width:'+this.plotWidth+'px;" class="flotr-title">'+options.title+'</div>');
+				html.push(
+				  '<div style="position:absolute;top:0;left:', 
+				  this.plotOffset.left, 'px;font-size:1em;font-weight:bold;text-align:center;width:',
+				  this.plotWidth,'px;" class="flotr-title">', options.title, '</div>'
+				);
 			
 			// Add subtitle
 			if (options.subtitle)
-				html.push('<div style="position:absolute;top:'+this.titleHeight+'px;left:'+this.plotOffset.left+'px;font-size:smaller;text-align:center;width:'+this.plotWidth+'px;" class="flotr-subtitle">'+options.subtitle+'</div>');
+				html.push(
+				  '<div style="position:absolute;top:', this.titleHeight, 'px;left:', 
+				  this.plotOffset.left, 'px;font-size:smaller;text-align:center;width:',
+				  this.plotWidth, 'px;" class="flotr-subtitle">', options.subtitle, '</div>'
+				);
 
 			html.push('</div>');
 			
@@ -1495,19 +1544,35 @@ Flotr.Graph = Class.create({
 			
 			// Add x axis title
 			if (a.x.options.title && a.x.used)
-				html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height) + 'px;left:' + this.plotOffset.left + 'px;width:' + this.plotWidth + 'px;text-align:center;" class="flotr-axis-title">' + a.x.options.title + '</div>');
+				html.push(
+				  '<div style="position:absolute;top:', 
+				  (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height), 
+				  'px;left:', this.plotOffset.left, 'px;width:', this.plotWidth, 
+				  'px;text-align:center;" class="flotr-axis-title">', a.x.options.title, '</div>'
+				);
 			
 			// Add x2 axis title
 			if (a.x2.options.title && a.x2.used)
-				html.push('<div style="position:absolute;top:0;left:' + this.plotOffset.left + 'px;width:' + this.plotWidth + 'px;text-align:center;" class="flotr-axis-title">' + a.x2.options.title + '</div>');
+				html.push(
+				  '<div style="position:absolute;top:0;left:', this.plotOffset.left, 'px;width:', 
+				  this.plotWidth, 'px;text-align:center;" class="flotr-axis-title">', a.x2.options.title, '</div>'
+				);
 			
 			// Add y axis title
 			if (a.y.options.title && a.y.used)
-				html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2) + 'px;left:0;text-align:right;" class="flotr-axis-title">' + a.y.options.title + '</div>');
+				html.push(
+				  '<div style="position:absolute;top:', 
+				  (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
+				  'px;left:0;text-align:right;" class="flotr-axis-title">', a.y.options.title, '</div>'
+				);
 			
 			// Add y2 axis title
 			if (a.y2.options.title && a.y2.used)
-				html.push('<div style="position:absolute;top:' + (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2) + 'px;right:0;text-align:right;" class="flotr-axis-title">' + a.y2.options.title + '</div>');
+				html.push(
+				  '<div style="position:absolute;top:', 
+				  (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
+				  'px;right:0;text-align:right;" class="flotr-axis-title">', a.y2.options.title, '</div>'
+				);
 			
 			html.push('</div>');
 			
@@ -1662,8 +1727,11 @@ Flotr.Graph = Class.create({
 		  						var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.Color.extract(div);
 		  						c = this.processColor(tmp, null, {opacity: 1});
 		  					}
-		  					this.el.insert('<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>')
-		  					    .select('div.flotr-legend-bg').first().setOpacity(options.legend.backgroundOpacity);
+		  					this.el.insert(
+		  					  '<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 
+		  					  'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>'
+		  					)
+		  					.select('div.flotr-legend-bg')[0].setOpacity(options.legend.backgroundOpacity);
 		  				}
 		  			}
 		  		}
@@ -2191,7 +2259,7 @@ Flotr.Graph = Class.create({
 				     
 			if(!mt){
 				this.el.insert('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
-				mt = this.mouseTrack = this.el.select('.flotr-mouse-value').first();
+				mt = this.mouseTrack = this.el.select('.flotr-mouse-value')[0];
 			}
 			else {
 				mt.style.cssText = elStyle;
@@ -3883,10 +3951,24 @@ Flotr.addPlugin('spreadsheet', {
 		}
 		
 		var toolbar = new Element('div').addClassName('flotr-datagrid-toolbar').
-			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarDownload).observe('click', this.spreadsheet.downloadCSV.bindAsEventListener(this))).
-			insert(new Element('button', {type:'button'}).addClassName('flotr-datagrid-toolbar-button').update(this.options.spreadsheet.toolbarSelectAll).observe('click', this.spreadsheet.selectAllData.bindAsEventListener(this)));
+			insert(
+			  new Element('button', {type:'button'})
+			      .addClassName('flotr-datagrid-toolbar-button')
+			      .update(this.options.spreadsheet.toolbarDownload)
+			      .observe('click', this.spreadsheet.downloadCSV.bindAsEventListener(this))
+			).
+			insert(
+			  new Element('button', {type:'button'})
+			      .addClassName('flotr-datagrid-toolbar-button')
+			      .update(this.options.spreadsheet.toolbarSelectAll)
+			      .observe('click', this.spreadsheet.selectAllData.bindAsEventListener(this))
+			);
 		
-		var container = new Element('div', {style:'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+(this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2)+'px;overflow:auto;'}).addClassName('flotr-datagrid-container');
+		var container = new Element('div', {
+		  style: 'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+
+		         (this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2)+'px;overflow:auto;'
+		}).addClassName('flotr-datagrid-container');
+		
 		container.insert(toolbar);
 		t.wrap(container.hide());
 		
