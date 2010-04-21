@@ -341,6 +341,7 @@ Flotr.defaultOptions = {
 	},
 	mouse: {
 		track: false,          // => true to track the mouse, no tracking otherwise
+		trackAll: false,
 		position: 'se',        // => position of the value box (default south-east)
 		relative: false,       // => next to the mouse cursor
 		trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
@@ -2095,30 +2096,35 @@ Flotr.Graph = Class.create({
 			if(!s.bars.show){
 				octx.translate(this.plotOffset.left, this.plotOffset.top);
 				octx.beginPath();
-				octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
-				octx.fill();
-				octx.stroke();
+  				octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
+  				octx.fill();
+  				octx.stroke();
 				octx.closePath();
 			}
 
 			else {
-				var bw = s.bars.barWidth;
-				
-				octx.save();
-				octx.translate(this.plotOffset.left, this.plotOffset.top);
-				octx.beginPath();
-				octx.moveTo(xa.d2p(n.x-(bw/2)), ya.d2p(0));
-				octx.lineTo(xa.d2p(n.x-(bw/2)), ya.d2p(n.y));
-				octx.lineTo(xa.d2p(n.x+(bw/2)), ya.d2p(n.y));
-				octx.lineTo(xa.d2p(n.x+(bw/2)), ya.d2p(0));
-
-				if(s.mouse.fillColor){ 
-					octx.fill();
-				}
-				octx.stroke();
-				octx.closePath();
+  				octx.save();
+  				octx.translate(this.plotOffset.left, this.plotOffset.top);
+  				octx.beginPath();
         
-				octx.restore();
+  				if (s.mouse.trackAll) {
+  					octx.moveTo(xa.d2p(n.x), ya.d2p(0));
+  					octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
+				}
+				else {
+  					var bw = s.bars.barWidth;
+  					
+  					octx.moveTo(xa.d2p(n.x-(bw/2)), ya.d2p(0));
+					octx.lineTo(xa.d2p(n.x-(bw/2)), ya.d2p(n.y));
+  					octx.lineTo(xa.d2p(n.x+(bw/2)), ya.d2p(n.y));
+  					octx.lineTo(xa.d2p(n.x+(bw/2)), ya.d2p(0));
+  
+  					if(s.mouse.fillColor) octx.fill();
+				}
+
+  				octx.stroke();
+  				octx.closePath();
+  				octx.restore();
 			}
 			octx.restore();
 		}
@@ -2179,53 +2185,101 @@ Flotr.Graph = Class.create({
 				index:null,
 				seriesIndex:null
 			};
+
+		if (options.mouse.trackAll) {
+			for(i = 0; i < series.length; i++){
+				s = series[0];
+				data = s.data;
+				xa = s.xaxis;
+				ya = s.yaxis;
+				xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
+				mx = xa.p2d(mouse.relX);
+				my = ya.p2d(mouse.relY);
 		
-		for(i = 0; i < series.length; i++){
-			s = series[i];
-			if(!s.mouse.track) continue;
-			data = s.data;
-			xa = s.xaxis;
-			ya = s.yaxis;
-			sens = 2 * options.points.lineWidth * s.mouse.sensibility;
-			xsens = sens/xa.scale;
-			ysens = sens/ya.scale;
-			mx = xa.p2d(mouse.relX);
-			my = ya.p2d(mouse.relY);
-      
-			//if (s.points) {
-			//	var h = this.points.getHit(s, mouse);
-			//	if (h.index !== undefined) console.log(h);
-			//}
-			
-			for(var j = 0, xpow, ypow; j < data.length; j++){
-				x = data[j][0];
-				y = data[j][1];
-				
-				if (y === null || 
-				    xa.min > x || xa.max < x || 
-				    ya.min > y || ya.max < y) continue;
-				
-				var xdiff = Math.abs(x - mx),
-				    ydiff = Math.abs(y - my);
-				
-				// we use a different set of criteria to determin if there has been a hit
-				// depending on what type of graph we have
-				if(((!s.bars.show) && xdiff < xsens && ydiff < ysens) || 
-				    (s.bars.show && xdiff < s.bars.barWidth/2 && ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y)))){
-					var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-					if(distance < n.dist){
-						n.dist = distance;
-						n.x = x;
-						n.y = y;
-						n.xaxis = xa;
-						n.yaxis = ya;
-						n.mouse = s.mouse;
-						n.series = s;
-						n.index = j;
-						n.seriesIndex = i;
+				for(var j = 0; j < data.length; j++){
+					x = data[j][0];
+					y = data[j][1];
+		
+					if (y === null ||
+							xa.min > x || xa.max < x ||
+							ya.min > y || ya.max < y ||
+							mx < xa.min || mx > xa.max ||
+							my < ya.min || my > ya.max) continue;
+		
+					var xdiff = Math.abs(x - mx);
+		
+					// Bars are not supported yet. Not sure how it should look with bars
+					if((!s.bars.show && xdiff < xsens) 
+							|| (s.bars.show && xdiff < s.bars.barWidth/2) 
+							|| (y < 0 && my < 0 && my > y)) {
+						
+						var distance = xdiff;
+						
+						if (distance < n.dist) {
+							n.dist = distance;
+							n.x = x;
+							n.y = y;
+							n.xaxis = xa;
+							n.yaxis = ya;
+							n.mouse = s.mouse;
+							n.series = s; 
+							n.allSeries = series; // include all series
+							n.index = j;
+						}
 					}
 				}
 			}
+		}
+	  else {
+	    for(i = 0; i < series.length; i++){
+  			s = series[i];
+  			if(!s.mouse.track) continue;
+  			
+  			data = s.data;
+  			xa = s.xaxis;
+  			ya = s.yaxis;
+  			sens = 2 * options.points.lineWidth * s.mouse.sensibility;
+  			xsens = sens/xa.scale;
+  			ysens = sens/ya.scale;
+  			mx = xa.p2d(mouse.relX);
+  			my = ya.p2d(mouse.relY);
+        
+  			//if (s.points) {
+  			//	var h = this.points.getHit(s, mouse);
+  			//	if (h.index !== undefined) console.log(h);
+  			//}
+  			
+  			for(var j = 0, xpow, ypow; j < data.length; j++){
+  				x = data[j][0];
+  				y = data[j][1];
+  				
+  				if (y === null || 
+  				    xa.min > x || xa.max < x || 
+  				    ya.min > y || ya.max < y) continue;
+  				
+  				var xdiff = Math.abs(x - mx),
+  				    ydiff = Math.abs(y - my);
+  				
+  				// we use a different set of criteria to determin if there has been a hit
+  				// depending on what type of graph we have
+  				if(((!s.bars.show) && xdiff < xsens && ydiff < ysens) || 
+  				    (s.bars.show && xdiff < s.bars.barWidth/2 && ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y)))){
+  					var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+  					if(distance < n.dist){
+  						n.dist = distance;
+  						n.x = x;
+  						n.y = y;
+  						n.xaxis = xa;
+  						n.yaxis = ya;
+  						n.mouse = s.mouse;
+  						n.series = s;
+  						n.allSeries = series;
+  						n.index = j;
+  						n.seriesIndex = i;
+  					}
+  				}
+  			}
+  		}
 		}
 		
 		if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
