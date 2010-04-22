@@ -10,6 +10,7 @@ var Flotr = {
 	version: '%version%',
 	author: 'Bas Wenneker',
 	website: 'http://www.solutoire.com',
+	isIphone: /iphone/i.test(navigator.userAgent),
 	
 	/**
 	 * An object of the registered graph types. Use Flotr.addType(type, object)
@@ -188,7 +189,7 @@ var Flotr = {
 		return base * Math.floor(n / base);
 	},
 	drawText: function(ctx, text, x, y, style) {
-		if (!ctx.fillText) {
+		if (!ctx.fillText || Flotr.isIphone) {
 			ctx.drawText(text, x, y, style);
 			return;
 		}
@@ -213,7 +214,7 @@ var Flotr = {
 		ctx.restore();
 	},
 	measureText: function(ctx, text, style) {
-		if (!ctx.fillText) {
+		if (!ctx.fillText || Flotr.isIphone) {
 			return {width: ctx.measure(text, style)};
 		}
 		
