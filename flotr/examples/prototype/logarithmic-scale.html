@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>Flotr: Basic Axis Example</title>
+		<title>Flotr: Logarithmic Scale Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
 
 		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
@@ -24,8 +24,7 @@
 			<h1></h1>
 			<div id="container" style="width:600px;height:600px;"></div>
 			<h2>Example</h2>
-			<p>This graph show a 5 series. The axis are configured and the vertical grid lines are not rendered. <br />
-			There are null values on the sinus series.</p>
+			<p>This graph shows how logarithmic scale is handled</p>
 			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
 			<h2>The Code</h2>
 			<pre id="code-view"><code class="javascript"></code></pre>
@@ -35,26 +34,12 @@
 		<!-- ad -->
 		
 		<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading. This graph show a 5 series. The axis are configured.
-			 */
 			window.onload= function(){
-				/**
-				 * Fill series d1 and d2.
-				 */
 				var d1 = [];
-				var d2 = [];
-				var d3 = [];
 				
         var i;
 				for(i = -10; i <= 10; i += 0.1){
 					d1.push([i, Math.exp(i)]);
-					d2.push([i, i]);
-				}
-        
-        d3.push([Number.MIN_VALUE, Math.log(Number.MIN_VALUE)]);
-        for(i = 0.1; i <= 10; i += 0.1){
-					d3.push([i, Math.log(i)]);
 				}
         
 				/**
@@ -62,16 +47,14 @@
 				 */
 				var f = Flotr.draw(
 					$('container'),[ 
-						{data:d1, label:'exp(x)'}, 
-						{data:d2, label:'x'}, 
-						{data:d3, label:'log(x)'}
+						{data:d1, label:'exp(x)'}
 					],{
 						yaxis:{
-              //ticks: [10e-3, 10e-2, 10e-1, 10e0, 10e1],
-              //scaling:'logarithmic',
+              ticks: [10e-5, 10e-4, 10e-3, 10e-2, 10e-1, 10e0, 10e1, 10e2, 10e3, 10e4, 10e5],
+              scaling:'logarithmic',
               //base: 0.5,
-              min: -10,
-              max: 10
+              min: 10e-6,
+              max: 10e6
 						},
             spreadsheet:{
               show: true

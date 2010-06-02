@@ -7,7 +7,8 @@
  * @version 0.2.0
  */
 var Flotr = {
-	version: '%version%',
+	version: "0.2.0-alpha",
+  revision: parseInt('$Rev: 157$'.match(/(\d+)/)[1], 10),
 	author: 'Bas Wenneker',
 	website: 'http://www.solutoire.com',
 	isIphone: /iphone/i.test(navigator.userAgent),
@@ -543,21 +544,38 @@ Flotr.Graph = Class.create({
 			return v;
 		}
 
-		this.axes.x.d2p = this.axes.x2.d2p = function(x){
-			return (d2p(x, this.options) - this.min) * this.scale;
+
+		var x = this.axes.x, 
+		    x2 = this.axes.x2, 
+		    y = this.axes.y, 
+		    y2 = this.axes.y2;
+
+		var pw = this.plotWidth, 
+		    ph = this.plotHeight;
+
+		x.scale  = pw / (d2p(x.max, x.options) - d2p(x.min, x.options));
+		x2.scale = pw / (d2p(x2.max, x2.options) - d2p(x2.min, x2.options));
+		y.scale  = ph / (d2p(y.max, y.options) - d2p(y.min, y.options));
+		y2.scale = ph / (d2p(y2.max, y2.options) - d2p(y2.min, y2.options));
+
+		x.d2p = x2.d2p = function(xval){
+		  var o = this.options;
+			return (d2p(xval, o) - d2p(this.min, o)) * this.scale;
 		};
 
-		this.axes.x.p2d = this.axes.x2.p2d = function(x){
-			return (p2d(x, this.options) / this.scale + this.min);
+		x.p2d = this.axes.x2.p2d = function(xval){
+		  var o = this.options;
+			return p2d(xval / this.scale + d2p(this.min, o), o);
 		};
 
-		var ph = this.plotHeight;
-		this.axes.y.d2p = this.axes.y2.d2p = function(y){
-			return ph - (d2p(y, this.options) - this.min) * this.scale;
+		y.d2p = y2.d2p = function(yval){
+		  var o = this.options;
+			return ph - (d2p(yval, o) - d2p(this.min, o)) * this.scale;
 		};
 
-		this.axes.y.p2d = this.axes.y2.p2d = function(y){
-			return p2d(this.max -y / this.scale, this.options);
+		y.p2d = y2.p2d = function(yval){
+		  var o = this.options;
+			return p2d((ph - yval) / this.scale + d2p(this.min, o), o);
 		};
 	},
 	/**
@@ -768,20 +786,37 @@ Flotr.Graph = Class.create({
 				yaxis = s[i].yaxis;
 				
 				if (data.length > 0 && !s[i].hide) {
-					if (!xaxis.used) xaxis.datamin = xaxis.datamax = data[0][0];
-					if (!yaxis.used) yaxis.datamin = yaxis.datamax = data[0][1];
-					xaxis.used = true;
-					yaxis.used = true;
-
 					for(h = data.length - 1; h > -1; --h){
 						x = data[h][0];
-						     if(x < xaxis.datamin) xaxis.datamin = x;
-						else if(x > xaxis.datamax) xaxis.datamax = x;
+						
+						// Logarithm is only defined for values > 0
+						if ((x <= 0) && (xaxis.options.scaling === 'logarithmic')) continue;
 
+						if(x < xaxis.datamin) {
+							xaxis.datamin = x;
+							xaxis.used = true;
+						}
+						
+						if(x > xaxis.datamax) {
+							xaxis.datamax = x;
+							xaxis.used = true;
+						}
+                                          
 						for(j = 1; j < data[h].length; j++){
 							y = data[h][j];
-							     if(y < yaxis.datamin) yaxis.datamin = y;
-							else if(y > yaxis.datamax) yaxis.datamax = y;
+							
+							// Logarithm is only defined for values > 0
+							if ((y <= 0) && (yaxis.options.scaling === 'logarithmic')) continue;
+
+							if(y < yaxis.datamin) {
+								yaxis.datamin = y;
+								yaxis.used = true;
+							}
+							
+							if(y > yaxis.datamax) {
+								yaxis.datamax = y;
+								yaxis.used = true;
+							}
 						}
 					}
 				}
@@ -817,15 +852,23 @@ Flotr.Graph = Class.create({
 		    min = o.min != null ? o.min : axis.datamin,
 		    max = o.max != null ? o.max : axis.datamax,
 		    margin = o.autoscaleMargin;
+		    
+		if (o.scaling == 'logarithmic') {
+			if (min <= 0) min = axis.datamin;
+
+			// Let it widen later on
+			if (max <= 0) max = min;
+		}
 
 		if(max - min == 0.0){
 			var widen = (max == 0.0) ? 1.0 : 0.01;
 			min -= widen;
 			max += widen;
 		}
+
 		axis.tickSize = Flotr.getTickSize(o.noTicks, min, max, o.tickDecimals);
 
-		// Autoscaling.
+		// Autoscaling. @todo This probably fails with log scale. Find a testcase and fix it
 		if(o.min == null && margin != 0){
 			min -= axis.tickSize * margin;
 			// Make sure we don't go below zero if all values are positive.
@@ -910,6 +953,28 @@ Flotr.Graph = Class.create({
 				axis.tickSize = size;
 				axis.tickUnit = unit;
 				axis.ticks = Flotr.Date.generator(axis);
+			}
+			else if (o.scaling === 'logarithmic') {
+				var max = Math.log(axis.max);
+				if (o.base != Math.E) max /= Math.log(o.base);
+				max = Math.ceil(max);
+
+				var min = Math.log(axis.min);
+				if (o.base != Math.E) min /= Math.log(o.base);
+				min = Math.ceil(min);
+				
+				for (i = min; i < max; ++i) {
+					var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+					var decadeEnd = decadeStart * o.base; // Next decade begins here
+					var stepSize = (decadeEnd - decadeStart) / o.noTicks;
+					
+					for (v = decadeStart; v < decadeEnd; v += stepSize)
+						axis.ticks.push({v: v, label: v != decadeStart ? "" : o.tickFormatter(v)});
+				}
+				
+				// Always show the value at the would-be start of next decade (end of this decade)
+				var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+				axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
 			}
 			else {
 				// Round to nearest multiple of tick size.
@@ -997,11 +1062,6 @@ Flotr.Graph = Class.create({
     
 		this.plotWidth  = this.canvasWidth - p.left - p.right;
 		this.plotHeight = this.canvasHeight - p.bottom - p.top;
-		
-		x.scale  = this.plotWidth / (x.max - x.min);
-		x2.scale = this.plotWidth / (x2.max - x2.min);
-		y.scale  = this.plotHeight / (y.max - y.min);
-		y2.scale = this.plotHeight / (y2.max - y2.min);
 	},
 	/**
 	 * Draws grid, labels, series and outline.
@@ -2738,87 +2798,91 @@ Flotr.addType('lines', {
 			
 		if(data.length < 2) return;
 
-		var prevx = xa.d2p(data[0][0]),
-		    prevy = ya.d2p(data[0][1]) + offset;
+		var plotWidth = this.plotWidth, 
+		    plotHeight = this.plotHeight,
+		    prevx = null,
+		    prevy = null;
 
 		ctx.beginPath();
-		ctx.moveTo(prevx, prevy);
-
 		for(i = 0; i < length; ++i){
-			var x1 = data[i][0],   y1 = data[i][1],
-			    x2 = data[i+1][0], y2 = data[i+1][1];
-
 			// To allow empty values
-			if (y1 === null || y2 === null) continue;
+			if (data[i][1] === null || data[i+1][1] === null) continue;
+            
+            // Zero is infinity for log scales
+            if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
+            if (ya.options.scaling == 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
       
+			var x1 = xa.d2p(data[i][0]),   y1 = ya.d2p(data[i][1]),
+			    x2 = xa.d2p(data[i+1][0]), y2 = ya.d2p(data[i+1][1]);
+
 			/**
-			 * Clip with ymin.
+			 * Clip against graph bottom edge.
 			 */
-			if(y1 <= y2 && y1 < ya.min){
+			if(y1 >= y2 && y1 >= plotHeight){
 				/**
 				 * Line segment is outside the drawing area.
 				 */
-				if(y2 < ya.min) continue;
+				if(y2 >= plotHeight) continue;
 				
 				/**
 				 * Compute new intersection point.
 				 */
-				x1 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-				y1 = ya.min;
+				x1 = x1 - (y1 - plotHeight - 1) / (y2 - y1) * (x2 - x1);
+				y1 = plotHeight - 1;
 			}
-			else if(y2 <= y1 && y2 < ya.min){
-				if(y1 < ya.min) continue;
-				x2 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-				y2 = ya.min;
+			else if(y2 >= y1 && y2 >= plotHeight){
+				if(y1 >= plotHeight) continue;
+				x2 = x1 - (y1 - plotHeight - 1) / (y2 - y1) * (x2 - x1);
+				y2 = plotHeight - 1;
 			}
 
 			/**
-			 * Clip with ymax.
+			 * Clip against graph top edge.
 			 */ 
-			if(y1 >= y2 && y1 > ya.max) {
-				if(y2 > ya.max) continue;
-				x1 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-				y1 = ya.max;
+			if(y1 <= y2 && y1 < 0) {
+				if(y2 < 0) continue;
+				x1 = x1 - y1 / (y2 - y1) * (x2 - x1);
+				y1 = 0;
 			}
-			else if(y2 >= y1 && y2 > ya.max){
-				if(y1 > ya.max) continue;
-				x2 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-				y2 = ya.max;
-			}
-
-			/**
-			 * Clip with xmin.
-			 */
-			if(x1 <= x2 && x1 < xa.min){
-				if(x2 < xa.min) continue;
-				y1 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
-				x1 = xa.min;
-			}
-			else if(x2 <= x1 && x2 < xa.min){
-				if(x1 < xa.min) continue;
-				y2 = (xa.min - x1) / (x2 - x1) * (y2 - y1) + y1;
-				x2 = xa.min;
+			else if(y2 <= y1 && y2 < 0){
+				if(y1 < 0) continue;
+				x2 = x1 - y1 / (y2 - y1) * (x2 - x1);
+				y2 = 0;
 			}
 
 			/**
-			 * Clip with xmax.
+			 * Clip against graph left edge.
 			 */
-			if(x1 >= x2 && x1 > xa.max){
-				if (x2 > xa.max) continue;
-				y1 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
-				x1 = xa.max;
+			if(x1 <= x2 && x1 < 0){
+				if(x2 < 0) continue;
+				y1 = y1 - x1 / (x2 - x1) * (y2 - y1);
+				x1 = 0;
 			}
-			else if(x2 >= x1 && x2 > xa.max){
-				if(x1 > xa.max) continue;
-				y2 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
-				x2 = xa.max;
+			else if(x2 <= x1 && x2 < 0){
+				if(x1 < 0) continue;
+				y2 = y1 - x1 / (x2 - x1) * (y2 - y1);
+				x2 = 0;
 			}
 
-			if(prevx != xa.d2p(x1) || prevy != ya.d2p(y1) + offset)
-				ctx.moveTo(xa.d2p(x1), ya.d2p(y1) + offset);
+			/**
+			 * Clip against graph right edge.
+			 */
+			if(x1 >= x2 && x1 >= plotWidth){
+				if (x2 >= plotWidth) continue;
+				y1 = y1 + (plotWidth - x1) / (x2 - x1) * (y2 - y1);
+				x1 = plotWidth - 1;
+			}
+			else if(x2 >= x1 && x2 >= plotWidth){
+				if(x1 >= plotWidth) continue;
+				y2 = y1 + (plotWidth - x1) / (x2 - x1) * (y2 - y1);
+				x2 = plotWidth - 1;
+			}
+
+			if((prevx != x1) || (prevy != y1 + offset))
+				ctx.moveTo(x1, y1 + offset);
 			
-			prevx = xa.d2p(x2);
-			prevy = ya.d2p(y2) + offset;
+			prevx = x2;
+			prevy = y2 + offset;
 			ctx.lineTo(prevx, prevy);
 		}
     
