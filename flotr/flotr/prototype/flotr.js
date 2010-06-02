@@ -8,7 +8,7 @@
  */
 var Flotr = {
 	version: "0.2.0-alpha",
-  revision: parseInt('$Rev: 157$'.match(/(\d+)/)[1], 10),
+  revision: parseInt('$Revision: 157$'.match(/(\d+)/)[1], 10),
 	author: 'Bas Wenneker',
 	website: 'http://www.solutoire.com',
 	isIphone: /iphone/i.test(navigator.userAgent),
