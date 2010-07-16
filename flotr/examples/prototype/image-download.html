@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<title>Flotr: Download Image Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
 
@@ -105,7 +106,7 @@
 						}
 				});
 				
-				if (Prototype.Browser.IE) {
+				if (Prototype.Browser.IE && (!document.documentMode || document.documentMode < 9)) {
 					var form = $(document.forms['image-download']);
 					form.disable().insert({top: "Your browser doesn't allow you to get a bitmap image from the plot, "+
 					"you can only get a VML image that you can use in Microsoft Office.<br />"});

@@ -9,10 +9,11 @@
 
 var Flotr = {
   version: "0.2.0-alpha",
-  revision: parseInt('$Revision$'.match(/(\d+)/)[1], 10),
+  revision: ('$Revision$'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],
   website: 'http://www.solutoire.com',
   isIphone: /iphone/i.test(navigator.userAgent),
+  isIE9: document.documentMode == 9,
   
   /**
    * An object of the registered graph types. Use Flotr.addType(type, object)
@@ -637,14 +638,14 @@ Flotr.Graph = Class.create({
     oc.context_ = null; // Reset the ExCanvas context
     el.insert(oc);
     
-    if(Prototype.Browser.IE){
+    if(window.G_vmlCanvasManager){
       window.G_vmlCanvasManager.initElement(c);
       window.G_vmlCanvasManager.initElement(oc);
     }
     this.ctx = c.getContext('2d');
     this.octx = oc.getContext('2d');
     
-    if(!Prototype.Browser.IE){
+    if(!window.G_vmlCanvasManager){
       this.ctx.scale(o.resolution, o.resolution);
       this.octx.scale(o.resolution, o.resolution);
     }
@@ -2471,7 +2472,7 @@ Flotr.Graph = Class.create({
   },
   saveImage: function (type, width, height, replaceCanvas) {
     var image = null;
-    if (Prototype.Browser.IE) {
+    if (Prototype.Browser.IE && !Flotr.isIE9) {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
     }
@@ -4082,7 +4083,7 @@ Flotr.addPlugin('spreadsheet', {
     colgroup.push('</colgroup>');
     t.update(colgroup.join('')+html.join(''));
     
-    if (!Prototype.Browser.IE) {
+    if (!Prototype.Browser.IE || Flotr.isIE9) {
       t.select('td').each(function(td) {
         td.observe('mouseover', function(e){
           td = e.element();
@@ -4216,7 +4217,7 @@ Flotr.addPlugin('spreadsheet', {
       }
       csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
     }
-    if (Prototype.Browser.IE) {
+    if (Prototype.Browser.IE && !Flotr.isIE9) {
       csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');
       window.open().document.write(csv);
     }
