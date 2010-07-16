@@ -50,8 +50,8 @@
 				 */
 			  var f = Flotr.draw($('container'), [ s1, s2 ], {
 					radar: {show: true}, 
-					grid: {circular: true}, 
-					yaxis: {min: 0, max: 10}, 
+					grid: {circular: true, minorHorizontalLines: true}, 
+					yaxis: {min: 0, max: 10, minorTickFreq: 2}, 
 					xaxis: {ticks: [[0, "Statutory"], [1,"External"], [2, "Videos"], [3, "Yippy"], [4, "Management"], [5, "oops"]]}
 				});
 			});			

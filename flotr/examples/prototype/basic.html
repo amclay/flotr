@@ -52,7 +52,14 @@
 				/**
 				 * Draw the graph.
 				 */
-			    var f = Flotr.draw($('container'), [ d1, d2 ]);
+			    var f = Flotr.draw($('container'), [ d1, d2 ], {
+			      xaxis: {
+			        minorTickFreq: 4
+			      }, 
+			      grid: {
+			        minorVerticalLines: true
+			      }
+			    });
 			});			
 		</script>
 		
