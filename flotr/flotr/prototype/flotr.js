@@ -710,7 +710,10 @@ Flotr.Graph = Class.create({
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        this.el.observe(c, plugin.callbacks[c].bindAsEventListener(this));
+        // Ensure no old handlers are still observing this element (prevent memory leaks)
+        this.el.
+          stopObserving(c).
+          observe(c, plugin.callbacks[c].bindAsEventListener(this));
       }
       this[name] = Object.clone(plugin);
       for (p in this[name]) {
