@@ -698,6 +698,11 @@ if (!document.createElement('canvas').getContext) {
       xStart += 0.125; // Offset xStart by 1/80 of a pixel. Use something
                        // that can be represented in binary
     }
+    // IE won't render arches drawn clockwise if yStart is very close to yEnd.
+    if ((abs(yStart - yEnd) < 10e-8) && aClockwise) {
+      yStart -= 0.125; // Offset yStart by 1/80 of a pixel. Use something
+                       // that can be represented in binary
+    }
 
     var p = getCoords(this, aX, aY);
     var pStart = getCoords(this, xStart, yStart);
