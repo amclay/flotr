@@ -333,6 +333,7 @@ Flotr.defaultOptions = {
     color: '#545454',      // => primary color used for outline and labels
     backgroundColor: null, // => null for transparent, else color
     backgroundImage: null, // => background image. String or object with src, left and top
+    watermarkAlpha: 0.4,   // => 
     tickColor: '#DDDDDD',  // => color used for the ticks
     labelMargin: 3,        // => margin in pixels
     verticalLines: true,   // => whether to show gridlines in vertical direction
@@ -1170,15 +1171,32 @@ Flotr.Graph = Class.create({
     var g = this.options.grid;
     
     if (g && g.backgroundImage) {
-      if (Object.isString(g.backgroundImage))
+      if (Object.isString(g.backgroundImage)){
         g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
+      }else{
+      	g.backgroundImage = Object.extend({left: 0, top: 0}, g.backgroundImage);
+      }
       
       var img = new Image();
       img.onload = function() {
-        var left = this.plotOffset.left + (g.backgroundImage.left || 0);
-        var top = this.plotOffset.top + (g.backgroundImage.top || 0);
+        var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
+        var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
+        
+        // Store the global alpha to restore it later on.
+        var globalAlpha = this.ctx.globalAlpha;
+        
+        // When the watermarkAlpha is < 1 then the watermark is transparent. 
+        this.ctx.globalAlpha = (g.backgroundImage.alpha||globalAlpha);
+        
+        // Draw the watermark.
         this.ctx.drawImage(img, left, top);
+        
+        // Set the globalAlpha back to the alpha value before changing it to
+        // the grid.watermarkAlpha, otherwise the graph will be transparent also.
+        this.ctx.globalAlpha = globalAlpha;
+        
         afterImageLoad();
+        
       }.bind(this);
       
       img.onabort = img.onerror = afterImageLoad;
