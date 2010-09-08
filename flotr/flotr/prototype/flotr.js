@@ -198,7 +198,7 @@ var Flotr = {
     }
     
     style = Object.extend({
-      size: '10px',
+      size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
       textBaseline: 'bottom',
@@ -222,7 +222,7 @@ var Flotr = {
     }
     
     style = Object.extend({
-      size: '10px',
+      size: Flotr.defaultOptions.fontSize,
       weight: 1,
       angle: 0
     }, style);
@@ -1174,7 +1174,7 @@ Flotr.Graph = Class.create({
       if (Object.isString(g.backgroundImage)){
         g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
       }else{
-      	g.backgroundImage = Object.extend({left: 0, top: 0}, g.backgroundImage);
+        g.backgroundImage = Object.extend({left: 0, top: 0}, g.backgroundImage);
       }
       
       var img = new Image();
@@ -2307,10 +2307,11 @@ Flotr.Graph = Class.create({
         plotOffset = this.plotOffset,
         s = prevHit.series,
         lw = s.bars.lineWidth,
+        lwPie = s.pie.lineWidth,
         xa = prevHit.xaxis,
         ya = prevHit.yaxis;
         
-    if(!s.bars.show){
+    if(!s.bars.show && !s.pie.show){
       var offset = s.mouse.radius + lw;
       this.octx.clearRect(
         plotOffset.left + xa.d2p(prevHit.x) - offset,
@@ -2320,13 +2321,28 @@ Flotr.Graph = Class.create({
       );
     }
 
-    else {
+    else if (s.bars.show){
       var bw = s.bars.barWidth;
       this.octx.clearRect(
         xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
         ya.d2p(prevHit.y >= 0 ? prevHit.y : 0) + plotOffset.top - lw, 
         xa.d2p(bw + xa.min) + lw * 2, 
         ya.d2p(prevHit.y < 0 ? prevHit.y : 0) + lw * 2
+      );
+    }
+    else {
+      var center = {
+        x: plotOffset.left + (this.plotWidth)/2,
+        y: plotOffset.top + (this.plotHeight)/2
+      },
+      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+      margin = (prevHit.series.pie.explode + lwPie) * 4
+      
+      this.octx.clearRect(
+        center.x - radius - margin, 
+        center.y - radius - margin, 
+        2*(radius + margin), 
+        2*(radius + margin)
       );
     }
   },
@@ -2345,7 +2361,7 @@ Flotr.Graph = Class.create({
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
       
-      if(!s.bars.show){
+      if(!s.bars.show && !s.pie.show){
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
@@ -2353,8 +2369,7 @@ Flotr.Graph = Class.create({
           octx.stroke();
         octx.closePath();
       }
-
-      else {
+      else if (s.bars.show){
           octx.save();
           octx.translate(this.plotOffset.left, this.plotOffset.top);
           octx.beginPath();
@@ -2377,6 +2392,37 @@ Flotr.Graph = Class.create({
           octx.stroke();
           octx.closePath();
           octx.restore();
+      }
+      else {
+        octx.save();
+        octx.translate(this.plotOffset.left, this.plotOffset.top);
+        octx.beginPath();
+      
+        if (s.mouse.trackAll) {
+          octx.moveTo(xa.d2p(n.x), ya.d2p(0));
+          octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
+        }
+        else {
+          var center = {
+            x: (this.plotWidth)/2,
+            y: (this.plotHeight)/2
+          },
+          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2;
+
+          var bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
+              xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
+              yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
+          
+          octx.beginPath();
+          octx.moveTo(xOffset, yOffset);
+          octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
+          octx.lineTo(xOffset, yOffset);
+          octx.closePath();
+        }
+
+        octx.stroke();
+        octx.closePath();
+        octx.restore();
       }
       octx.restore();
     }
@@ -2430,6 +2476,9 @@ Flotr.Graph = Class.create({
         relY:mouse.relY,
         absX:mouse.absX,
         absY:mouse.absY,
+        sAngle:null,
+        eAngle:null,
+        fraction: null,
         mouse:null,
         xaxis:null,
         yaxis:null,
@@ -2460,7 +2509,7 @@ Flotr.Graph = Class.create({
     
           var xdiff = Math.abs(x - mx);
     
-          // Bars are not supported yet. Not sure how it should look with bars
+          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
           if((!s.bars.show && xdiff < xsens) 
               || (s.bars.show && xdiff < s.bars.barWidth/2) 
               || (y < 0 && my < 0 && my > y)) {
@@ -2483,52 +2532,136 @@ Flotr.Graph = Class.create({
       }
     }
     else {
-      for(i = 0; i < series.length; i++){
-        s = series[i];
-        if(!s.mouse.track) continue;
-        
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        sens = 2 * options.points.lineWidth * s.mouse.sensibility;
-        xsens = sens/xa.scale;
-        ysens = sens/ya.scale;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-        
-        //if (s.points) {
-        //  var h = this.points.getHit(s, mouse);
-        //  if (h.index !== undefined) console.log(h);
-        //}
-        
-        for(var j = 0, xpow, ypow; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
+      if (!options.pie.show){
+        for(i = 0; i < series.length; i++){
+          s = series[i];
+          if(!s.mouse.track) continue;
           
-          if (y === null || 
-              xa.min > x || xa.max < x || 
-              ya.min > y || ya.max < y) continue;
+          data = s.data;
+          xa = s.xaxis;
+          ya = s.yaxis;
+          sens = 2 * options.points.lineWidth * s.mouse.sensibility;
+          xsens = sens/xa.scale;
+          ysens = sens/ya.scale;
+          mx = xa.p2d(mouse.relX);
+          my = ya.p2d(mouse.relY);
           
-          var xdiff = Math.abs(x - mx),
-              ydiff = Math.abs(y - my);
-          
-          // we use a different set of criteria to determin if there has been a hit
-          // depending on what type of graph we have
-          if(((!s.bars.show) && xdiff < xsens && ydiff < ysens) || 
-              (s.bars.show && xdiff < s.bars.barWidth/2 && ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y)))){
-            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-            if(distance < n.dist){
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s;
-              n.allSeries = series;
-              n.index = j;
-              n.seriesIndex = i;
+          //if (s.points) {
+          //  var h = this.points.getHit(s, mouse);
+          //  if (h.index !== undefined) console.log(h);
+          //}
+                  
+          for(var j = 0, xpow, ypow; j < data.length; j++){
+            x = data[j][0];
+            y = data[j][1];
+            
+            if (y === null || 
+                xa.min > x || xa.max < x || 
+                ya.min > y || ya.max < y) continue;
+            
+            var xdiff = Math.abs(x - mx),
+                ydiff = Math.abs(y - my);
+            
+            // we use a different set of criteria to determin if there has been a hit
+            // depending on what type of graph we have
+            if(((!s.bars.show) && xdiff < xsens && ydiff < ysens) || 
+                (s.bars.show && xdiff < s.bars.barWidth/2 && ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y)))){
+              var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+              if(distance < n.dist){
+                n.dist = distance;
+                n.x = x;
+                n.y = y;
+                n.xaxis = xa;
+                n.yaxis = ya;
+                n.mouse = s.mouse;
+                n.series = s;
+                n.allSeries = series;
+                n.index = j;
+                n.seriesIndex = i;
+              }
             }
+          }
+        }       
+      }
+      else
+      {
+        var radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
+        vScale = 1,//Math.cos(series.pie.viewAngle),
+          center = {
+            x: (this.plotWidth)/2,
+            y: (this.plotHeight)/2
+          },
+          
+          // Pie portions
+          portions = this.series.collect(function(hash, index){
+            if (hash.pie.show && hash.data[0][1] !== null)
+              return {
+                name: (hash.label || hash.data[0][1]),
+                value: [index, hash.data[0][1]],
+                options: hash.pie,
+                series: hash
+              };
+          }),
+          
+          // Sum of the portions' angles
+          sum = portions.pluck('value').pluck(1).inject(0, function(acc, n) { return acc + n; }),
+          fraction = 0.0,
+          angle = options.pie.startAngle,
+          value = 0.0;
+          
+          var slices = portions.collect(function(slice){
+            angle += fraction;
+            value = parseFloat(slice.value[1]); // @warning : won't support null values !!
+            fraction = value/sum;
+            return {
+              name:     slice.name,
+              fraction: fraction,
+              x:        slice.value[0],
+              y:        value,
+              value:    value,
+              options:  slice.options,
+              series:   slice.series,
+              startAngle: 2 * angle * Math.PI,
+              endAngle:   2 * (angle + fraction) * Math.PI
+            };
+          });
+          
+          for(i = 0; i < series.length; i++){
+            s = series[i];
+          
+          x = s.data[0][0];
+          y = s.data[0][1];
+
+          if (y === null) continue;
+          
+          var a = (mouse.relX-center.x),
+              b = (mouse.relY-center.y),
+              c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
+              sAngle = (slices[i].startAngle)%(2 * Math.PI),
+              eAngle = (slices[i].endAngle)%(2 * Math.PI),
+              sAngle = (sAngle> 0 )? sAngle : sAngle + (2 * Math.PI),
+              eAngle = (eAngle> 0 )? eAngle : eAngle + (2 * Math.PI),
+              xSin = b/c,
+              kat = Math.asin(xSin)%(2 * Math.PI),
+              kat = (kat>0) ? kat : kat + (2 * Math.PI),
+              kat2 = Math.asin(-xSin)+(Math.PI);
+          
+          //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
+          //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
+          //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
+          
+          if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
+              ( sAngle>eAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
+            { 
+            n.x = x;
+            n.y = y;
+            n.sAngle = sAngle;
+            n.eAngle = eAngle,
+            n.mouse = s.mouse;
+            n.series = s;
+            n.allSeries = series;
+            n.seriesIndex = i;
+            n.fraction = slices[i].fraction;
           }
         }
       }
@@ -2549,16 +2682,27 @@ Flotr.Graph = Class.create({
         else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
       }
       else { // relative to the mouse or in the case of bar like graphs to the bar
-        if(!s.bars.show){
+        if(!s.bars.show && !s.pie.show){
                if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
           else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
                if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
           else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
         }
 
-        else {
+        else if (s.bars.show) {
           pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
           pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
+        }
+        else {
+          var center = {
+            x: (this.plotWidth)/2,
+            y: (this.plotHeight)/2
+          },
+          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+          bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
+          
+          pos += 'bottom:' + (m - plotOffset.top - center.y - Math.sin(bisection) * radius/2 +  + this.canvasHeight) + 'px;top:auto;';
+          pos += 'left:' + (m + plotOffset.left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
         }
       }
       elStyle += pos;
@@ -2586,7 +2730,8 @@ Flotr.Graph = Class.create({
           y: n.y.toFixed(decimals), 
           series: n.series, 
           index: n.index,
-          nearest: n
+          nearest: n,
+          fraction: n.fraction
         });
         mt.fire('flotr:hit', [n, this]);
       }
@@ -3943,7 +4088,8 @@ Flotr.addType('markers', {
     fillOpacity: 0.4,      // => fill opacity
     stroke: false,         // => draw the rectangle around the markers
     position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
-    labelFormatter: Flotr.defaultMarkerFormatter
+    labelFormatter: Flotr.defaultMarkerFormatter,
+    fontSize: Flotr.defaultOptions.fontSize
   },
   /**
    * Draws lines series in the canvas element.
@@ -3999,7 +4145,7 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left'});
+    Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize});
   }
 });
 
