@@ -89,9 +89,14 @@ var specs = {
       collapsed: true
     },
     ticks: null,
+    minorTicks: null,
     showLabels: {
       type: Boolean,
       def: true
+    },
+    showMinorLabels: {
+      type: Boolean,
+      def: false
     },
     labelsAngle: {
       type: Number,
@@ -109,6 +114,7 @@ var specs = {
       type: Number,
       def: 5
     },
+    minorTickFreq: null,
     tickFormatter: {
       type: Function,
       def: Flotr.defaultTickFormatter
@@ -150,9 +156,14 @@ var specs = {
       collapsed: true
     },
     ticks: null,
+    minorTicks: null,
     showLabels: {
       type: Boolean,
       def: true
+    },
+    showMinorLabels: {
+      type: Boolean,
+      def: false
     },
     labelsAngle: {
       type: Number,
@@ -170,6 +181,7 @@ var specs = {
       type: Number,
       def: 5
     },
+    minorTickFreq: null,
     tickFormatter: {
       type: Function,
       def: Flotr.defaultTickFormatter
@@ -211,9 +223,14 @@ var specs = {
       collapsed: true
     },
     ticks: null,
+    minorTicks: null,
     showLabels: {
       type: Boolean,
       def: true
+    },
+    showMinorLabels: {
+      type: Boolean,
+      def: false
     },
     labelsAngle: {
       type: Number,
@@ -231,6 +248,7 @@ var specs = {
       type: Number,
       def: 5
     },
+    minorTickFreq: null,
     tickFormatter: {
       type: Function,
       def: Flotr.defaultTickFormatter
@@ -262,9 +280,14 @@ var specs = {
       collapsed: true
     },
     ticks: null,
+    minorTicks: null,
     showLabels: {
       type: Boolean,
       def: true
+    },
+    showMinorLabels: {
+      type: Boolean,
+      def: false
     },
     labelsAngle: {
       type: Number,
@@ -282,6 +305,7 @@ var specs = {
       type: Number,
       def: 5
     },
+    minorTickFreq: null,
     tickFormatter: {
       type: Function,
       def: Flotr.defaultTickFormatter
@@ -615,6 +639,10 @@ var specs = {
       type: Color,
       def: null
     },
+    backgroundImage: {
+      type: String,
+      def: null
+    },
     tickColor: {
       type: Color,
       def: '#DDDDDD'
@@ -627,9 +655,17 @@ var specs = {
       type: Boolean,
       def: true
     },
+    minorVerticalLines: {
+      type: Boolean,
+      def: null
+    },
     horizontalLines: {
       type: Boolean,
       def: true
+    },
+    minorHorizontalLines: {
+      type: Boolean,
+      def: null
     },
     outlineWidth: {
       type: Number,
@@ -685,6 +721,10 @@ var specs = {
       inherited: true
     },
     track: {
+      type: Boolean,
+      def: false
+    },
+    trackAll: {
       type: Boolean,
       def: false
     },
