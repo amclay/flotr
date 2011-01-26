@@ -367,6 +367,7 @@ Flotr.defaultOptions = {
     lineColor: '#FF3F19',  // => line color of points that are drawn when mouse comes near a value of a series
     trackDecimals: 1,      // => decimals for the track values
     sensibility: 2,        // => the lower this number, the more precise you have to aim to show a value
+    trackY: true,          // => whether or not to track the mouse in the y axis
     radius: 3,             // => radius of the track point
     fillColor: null,       // => color to fill our select bar with only applies to bar and similar graphs (only bars for now)
     fillOpacity: 0.4       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill 
@@ -2598,7 +2599,7 @@ Flotr.Graph = Class.create({
             
             // we use a different set of criteria to determin if there has been a hit
             // depending on what type of graph we have
-            if(((!s.bars.show) && xdiff < xsens && ydiff < ysens) || 
+            if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
                 (s.bars.show && xdiff < s.bars.barWidth/2 && ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y)))){
               var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
               if(distance < n.dist){
