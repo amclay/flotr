@@ -305,7 +305,8 @@ Flotr.defaultOptions = {
     timeFormat: null,
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
-    titleAlign: 'center'
+    titleAlign: 'center',
+    margin: true           // => Turn off margins with false
   },
   x2axis: {},
   yaxis: {
@@ -326,7 +327,8 @@ Flotr.defaultOptions = {
     color: null,           // => The color of the ticks
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
-    titleAlign: 'center'
+    titleAlign: 'center',
+    margin: true           // => Turn off margins with false
   },
   y2axis: {
     titleAngle: 270
@@ -1150,17 +1152,27 @@ Flotr.Graph = Class.create({
     }
     
     var p = this.plotOffset;
-    p.bottom += (options.grid.circular ? 0 : (x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
-                (x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
+    if (x.options.margin === false) {
+      p.bottom = 0;
+      p.top    = 0;
+    } else {
+      p.bottom += (options.grid.circular ? 0 : (x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
+                  (x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
     
-    p.top    += (options.grid.circular ? 0 : (x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
-                (x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+      p.top    += (options.grid.circular ? 0 : (x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
+                  (x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+    }
     
-    p.left   += (options.grid.circular ? 0 : (y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
-                (y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
+    if (y.options.margin === false) {
+      p.left  = 0;
+      p.right = 0;
+    } else {
+      p.left   += (options.grid.circular ? 0 : (y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
+                  (y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
     
-    p.right  += (options.grid.circular ? 0 : (y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
-                (y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
+      p.right  += (options.grid.circular ? 0 : (y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
+                  (y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
+    }
     
     p.top = Math.floor(p.top); // In order the outline not to be blured
     
