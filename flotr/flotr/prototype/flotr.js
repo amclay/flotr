@@ -2450,7 +2450,10 @@ Flotr.Graph = Class.create({
           
           octx.beginPath();
           octx.moveTo(xOffset, yOffset);
-          octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
+          if (n.fraction != 1)
+            octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
+          else
+            octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
           octx.lineTo(xOffset, yOffset);
           octx.closePath();
         }
@@ -2686,7 +2689,7 @@ Flotr.Graph = Class.create({
           //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
           
           if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
-              ( sAngle>eAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
+              ( (sAngle>eAngle || slices[i].fraction==1) && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
             { 
             n.x = x;
             n.y = y;
