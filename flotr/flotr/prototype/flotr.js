@@ -2603,7 +2603,9 @@ Flotr.Graph = Class.create({
             // we use a different set of criteria to determin if there has been a hit
             // depending on what type of graph we have
             if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
-                (s.bars.show && xdiff < s.bars.barWidth/2 && (!s.mouse.trackY || ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))))){
+                // Bars check
+                (s.bars.show && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
+                    && (!s.mouse.trackY || ((y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))))){
 
               var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
               if(distance < n.dist){
