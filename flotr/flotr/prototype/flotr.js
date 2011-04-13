@@ -2365,7 +2365,7 @@ Flotr.Graph = Class.create({
         xa = prevHit.xaxis,
         ya = prevHit.yaxis;
         
-    if(!s.bars.show && !s.pie.show){
+    if(!s.bars.show && !s.pie.show && !s.bubbles.show){
       var offset = s.mouse.radius + lw;
       this.octx.clearRect(
         plotOffset.left + xa.d2p(prevHit.x) - offset,
@@ -2384,6 +2384,11 @@ Flotr.Graph = Class.create({
         ya.d2p(prevHit.y < 0 ? prevHit.y : 0) + lw * 2
       );
     }
+
+    else if (s.bubbles.show){
+      this.bubbles.clearHit();
+    }
+
     else {
       var center = {
         x: plotOffset.left + (this.plotWidth)/2,
@@ -2415,7 +2420,7 @@ Flotr.Graph = Class.create({
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
       
-      if(!s.bars.show && !s.pie.show){
+      if(!s.bars.show && !s.pie.show && !s.bubbles.show){
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
@@ -2446,6 +2451,9 @@ Flotr.Graph = Class.create({
           octx.stroke();
           octx.closePath();
           octx.restore();
+      }
+      else if (s.bubbles.show){
+        this.bubbles.drawHit(n);
       }
       else {
         octx.save();
@@ -4533,7 +4541,49 @@ Flotr.addType('bubbles', {
       if (series.bubbles.fill) ctx.fill();
       ctx.closePath();
     }
-  }/*,
+  },
+  drawHit: function(n){
+
+    var octx = this.octx,
+        s = n.series,
+        xa = n.xaxis,
+        ya = n.yaxis,
+        z = s.data[0][2],
+        r = this.options.bubbles.baseRadius;
+
+    octx.save();
+    octx.lineWidth = s.points.lineWidth;
+    octx.strokeStyle = s.mouse.lineColor;
+    octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+
+    octx.translate(this.plotOffset.left, this.plotOffset.top);
+    octx.beginPath();
+      octx.arc(xa.d2p(n.x), ya.d2p(n.y), z*r, 0, 2 * Math.PI, true);
+      octx.fill();
+      octx.stroke();
+    octx.closePath();
+    octx.restore();
+  },
+  clearHit: function(){
+    var prevHit = this.prevHit,
+        plotOffset = this.plotOffset,
+        s = prevHit.series,
+        lw = s.bars.lineWidth,
+        xa = prevHit.xaxis,
+        ya = prevHit.yaxis,
+        z = s.data[0][2],
+        r = this.options.bubbles.baseRadius,
+        offset = z*r+lw;
+
+    this.octx.clearRect(
+      plotOffset.left + xa.d2p(prevHit.x) - offset,
+      plotOffset.top  + ya.d2p(prevHit.y) - offset,
+      offset*2,
+      offset*2
+    );
+  }
+
+/*,
   extendXRange: function(axis){
     if(axis.options.max == null){
       var newmin = axis.min,
