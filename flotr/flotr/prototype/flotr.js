@@ -3228,15 +3228,9 @@ Flotr.addType('lines', {
         y2 = ya.d2p(data[i+1][1] + stack2);
         
         if(incStack){
-          if(xa.values[data[i][0]].stack)
-            xa.values[data[i][0]].stack += data[i][1]+stack1;
-          else
             xa.values[data[i][0]].stack = data[i][1]+stack1;
             
           if(i == length-1){
-            if(xa.values[data[i+1][0]].stack)
-              xa.values[data[i+1][0]].stack += data[i+1][1]+stack2;
-            else
               xa.values[data[i+1][0]].stack = data[i+1][1]+stack2;
           }
         }
@@ -3525,14 +3519,12 @@ Flotr.addType('lines', {
           // For stacked lines
           if(l.stacked){
             for (j = 0; j < s.data.length; j++) {
-              if (s.lines.show && s.lines.stacked) {
-                x = s.data[j][0]+'';
-                if(s.data[j][1]>0)
-                  stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
-                else
-                  stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
-                lastSerie = s;
-              }
+              x = s.data[j][0]+'';
+              if(s.data[j][1]>0)
+                stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
+              else
+                stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
+              lastSerie = s;
             }
             
             for (j in stackedSumsPos) {
