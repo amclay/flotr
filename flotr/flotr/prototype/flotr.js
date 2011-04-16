@@ -2388,21 +2388,8 @@ Flotr.Graph = Class.create({
     else if (s.bubbles.show){
       this.bubbles.clearHit();
     }
-
-    else {
-      var center = {
-        x: plotOffset.left + (this.plotWidth)/2,
-        y: plotOffset.top + (this.plotHeight)/2
-      },
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-      margin = (prevHit.series.pie.explode + lwPie) * 4
-      
-      this.octx.clearRect(
-        center.x - radius - margin, 
-        center.y - radius - margin, 
-        2*(radius + margin), 
-        2*(radius + margin)
-      );
+    else if (s.pie.show){
+    	this.pie.clearHit();
     }
   },
   /**
@@ -2455,39 +2442,8 @@ Flotr.Graph = Class.create({
       else if (s.bubbles.show){
         this.bubbles.drawHit(n);
       }
-      else {
-        octx.save();
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
-        octx.beginPath();
-      
-        if (s.mouse.trackAll) {
-          octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-          octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-        }
-        else {
-          var center = {
-            x: (this.plotWidth)/2,
-            y: (this.plotHeight)/2
-          },
-          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2;
-
-          var bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
-              xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
-              yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
-          
-          octx.beginPath();
-          octx.moveTo(xOffset, yOffset);
-          if (n.fraction != 1)
-            octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
-          else
-            octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
-          octx.lineTo(xOffset, yOffset);
-          octx.closePath();
-        }
-
-        octx.stroke();
-        octx.closePath();
-        octx.restore();
+      else if (s.pie.show){
+      	this.pie.drawHit(n);
       }
       octx.restore();
     }
@@ -4184,6 +4140,61 @@ Flotr.addType('pie', {
     ctx.arc   (x, y, radius, startAngle, endAngle, fill);
     ctx.lineTo(x, y);
     ctx.closePath();
+  },
+  drawHit: function(n){
+  	octx = this.octx,
+  	s = n.series,
+  	xa = n.xaxis,
+    ya = n.yaxis;
+  	
+    octx.save();
+    octx.translate(this.plotOffset.left, this.plotOffset.top);
+    octx.beginPath();
+  
+    if (s.mouse.trackAll) {
+      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
+      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
+    }
+    else {
+    	center = {
+        x: (this.plotWidth)/2,
+        y: (this.plotHeight)/2
+      },
+      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+
+      bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
+      xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
+      yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
+      
+      octx.beginPath();
+      octx.moveTo(xOffset, yOffset);
+      if (n.fraction != 1)
+        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
+      else
+        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
+      octx.lineTo(xOffset, yOffset);
+      octx.closePath();
+    }
+
+    octx.stroke();
+    octx.closePath();
+    octx.restore();
+  },
+  clearHit: function(){
+  	center = {
+  		x: this.plotOffset.left + (this.plotWidth)/2,
+  		y: this.plotOffset.top + (this.plotHeight)/2
+    },
+    pie = this.prevHit.series.pie,
+    radius = (Math.min(this.canvasWidth, this.canvasHeight) * pie.sizeRatio) / 2,
+    margin = (pie.explode + pie.lineWidth) * 4;
+      
+    this.octx.clearRect(
+      center.x - radius - margin, 
+      center.y - radius - margin, 
+      2*(radius + margin), 
+      2*(radius + margin)
+    );
   }
 });
 
