@@ -889,7 +889,18 @@ Flotr.Graph = Class.create({
     for (var t in Flotr.graphTypes) {
       if(this.options[t] && this.options[t].show){
         if (this[t][f])  this[t][f](axis);
-      }
+      } else {
+		extend = false;
+		for (i =0 ; i<this.series.length; i++){
+		  var serie = this.series[i];
+		  if(serie[t] && serie[t].show){
+			extend = true;
+			break;
+		  }
+		}
+		if(extend)
+		  if (this[t][f])  this[t][f](axis);
+	  }
     }
   },
   /**
@@ -3597,7 +3608,7 @@ Flotr.addType('bars', {
         else
           var right = stackOffsetNeg, left = x + stackOffsetNeg;
           
-        var bottom = y, top = y + barWidth;
+        var bottom = y - (series.bars.centered ? barWidth/2 : 0), top = y + barWidth - (series.bars.centered ? barWidth/2 : 0);
       }
       else {
         if (y > 0)
@@ -3719,7 +3730,7 @@ Flotr.addType('bars', {
         else
           var right = stackOffsetNeg, left = x + stackOffsetNeg;
           
-        var bottom = y, top = y + barWidth;
+        var bottom = y- (series.bars.centered ? barWidth/2 : 0), top = y + barWidth - (series.bars.centered ? barWidth/2 : 0);
       }
       else {
         if (y > 0)
