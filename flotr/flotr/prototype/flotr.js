@@ -299,6 +299,7 @@ Flotr.defaultOptions = {
     tickDecimals: null,    // => no. of decimals, null means auto
     min: null,             // => min. value to show, null means set automatically
     max: null,             // => max. value to show, null means set automatically
+    autoscale: false,      // => Turns autoscaling on with true
     autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
     color: null,           // => color of the ticks
     mode: 'normal',        // => can be 'time' or 'normal'
@@ -323,6 +324,7 @@ Flotr.defaultOptions = {
     tickDecimals: null,    // => no. of decimals, null means auto
     min: null,             // => min. value to show, null means set automatically
     max: null,             // => max. value to show, null means set automatically
+    autoscale: false,      // => Turns autoscaling on with true
     autoscaleMargin: 0,    // => margin in % to add if auto-setting min/max
     color: null,           // => The color of the ticks
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
@@ -952,26 +954,26 @@ Flotr.Graph = Class.create({
       axis.tickSize = Flotr.getTickSize(o.noTicks, min, max, o.tickDecimals);
     }
 
-    // Autoscaling. @todo This probably fails with log scale. Find a testcase and fix it
-    if(o.min == null && margin != 0){
-      min -= axis.tickSize * margin;
-      // Make sure we don't go below zero if all values are positive.
-      if(min < 0 && axis.datamin >= 0) min = 0;
-      min = axis.tickSize * Math.floor(min / axis.tickSize);
-    }
-    
-    if(o.max == null && margin != 0){
-      max += axis.tickSize * margin;
-      if(max > 0 && axis.datamax <= 0 && axis.datamax != axis.datamin) max = 0;        
-      max = axis.tickSize * Math.ceil(max / axis.tickSize);
-    }
-
-    if (min == max) max = min + 1;
-
     axis.min = min;
-    axis.max = max;
+    axis.max = max; //extendRange may use axis.min or axis.max, so it should be set before it is caled
     
-    this.extendRange(axis, type);
+    this.extendRange(axis, type);//extendRange probably changed axis.min and axis.max
+    
+    // Autoscaling. @todo This probably fails with log scale. Find a testcase and fix it
+    if(o.min == null && o.autoscale){
+      axis.min -= axis.tickSize * margin;
+      // Make sure we don't go below zero if all values are positive.
+      if(axis.min < 0 && axis.datamin >= 0) axis.min = 0;
+      axis.min = axis.tickSize * Math.floor(axis.min / axis.tickSize);
+    }
+    
+    if(o.max == null && o.autoscale){
+      axis.max += axis.tickSize * margin;
+      if(axis.max > 0 && axis.datamax <= 0 && axis.datamax != axis.datamin) axis.max = 0;        
+      axis.max = axis.tickSize * Math.ceil(axis.max / axis.tickSize);
+    }
+
+    if (axis.min == axis.max) axis.max = axis.min + 1;
   },
   /** 
    * Find every values of the x axes or when horizontal stacked bar chart is used also y axes
@@ -2453,8 +2455,8 @@ Flotr.Graph = Class.create({
           octx.stroke();
         octx.closePath();
       }
-      else if (s.bars.show){
-				octx.save();
+      else if (s.bars.show){ 
+        octx.save();
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
         
