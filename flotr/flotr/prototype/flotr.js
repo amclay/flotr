@@ -3768,32 +3768,25 @@ Flotr.addType('bars', {
       var stackOffsetPos = 0;
       var stackOffsetNeg = 0;
       
+      // TODO reconcile this with the same logic in Plot, maybe precalc
       if(series.bars.stacked) {
         if(series.bars.horizontal) {
-          $H(ya.values).each(function(pair) {
-            if (pair.key == y) {
-              stackOffsetPos = pair.value.stackShadowPos || 0;
-              stackOffsetNeg = pair.value.stackShadowNeg || 0;
-              
-              if(x>0)
-                pair.value.stackShadowPos = stackOffsetPos + x;
-              else
-                pair.value.stackShadowNeg = stackOffsetNeg + x;
-            }
-          });
+          stackOffsetPos = ya.values[y].stackShadowPos || 0;
+          stackOffsetNeg = ya.values[y].stackShadowNeg || 0;
+          if(x > 0) {
+            ya.values[y].stackShadowPos = stackOffsetPos + x;
+          } else {
+            ya.values[y].stackShadowNeg = stackOffsetNeg + x;
+          }
         }
         else {
-          $H(xa.values).each(function(pair) {
-            if (pair.key == x) {
-              stackOffsetPos = pair.value.stackShadowPos || 0;
-              stackOffsetNeg = pair.value.stackShadowNeg || 0;
-              
-              if(y > 0)
-                pair.value.stackShadowPos = stackOffsetPos + y;
-              else
-                pair.value.stackShadowNeg = stackOffsetNeg + y;
-            }
-          });
+          stackOffsetPos = xa.values[x].stackShadowPos || 0;
+          stackOffsetNeg = xa.values[x].stackShadowNeg || 0;
+          if(y > 0) {
+            xa.values[x].stackShadowPos = stackOffsetPos + y;
+          } else {
+            xa.values[x].stackShadowNeg = stackOffsetNeg + y;
+          }
         }
       }
       
