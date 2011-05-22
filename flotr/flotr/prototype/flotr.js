@@ -3653,28 +3653,22 @@ Flotr.addType('bars', {
       
       if(series.bars.stacked) {
         if(series.bars.horizontal) {
-          $H(ya.values).each(function(pair) {
-            if (pair.key == y) {
-              stackOffsetPos = pair.value.stackPos || 0;
-              stackOffsetNeg = pair.value.stackNeg || 0;
-              if(x > 0)
-                pair.value.stackPos = stackOffsetPos + x;
-              else
-                pair.value.stackNeg = stackOffsetNeg + x;
-            }
-          });
+          stackOffsetPos = ya.values[y].stackPos || 0;
+          stackOffsetNeg = ya.values[y].stackNeg || 0;
+          if(x > 0) {
+            ya.values[y].stackPos = stackOffsetPos + x;
+          } else {
+            ya.values[y].stackNeg = stackOffsetNeg + x;
+          }
         } 
         else {
-          $H(xa.values).each(function(pair) {
-            if (pair.key == x) {
-              stackOffsetPos = pair.value.stackPos || 0;
-              stackOffsetNeg = pair.value.stackNeg || 0;
-              if(y > 0)
-                pair.value.stackPos = stackOffsetPos + y;
-              else
-                pair.value.stackNeg = stackOffsetNeg + y;
-            }  
-          });
+          stackOffsetPos = xa.values[x].stackPos || 0;
+          stackOffsetNeg = xa.values[x].stackNeg || 0;
+          if(y > 0) {
+            xa.values[x].stackPos = stackOffsetPos + y;
+          } else {
+            xa.values[x].stackNeg = stackOffsetNeg + y;
+          }
         }
       }
       
