@@ -10,7 +10,7 @@
 var Flotr = {
   version: "0.2.0-alpha",
   revision: ('$Revision$'.match(/(\d+)/) || [null,null])[1],
-  author: ['Bas Wenneker', 'Fabien Ménager'],
+  author: ['Bas Wenneker', 'Fabien MÃ©nager'],
   website: 'http://www.solutoire.com',
   isIphone: /iphone/i.test(navigator.userAgent),
   isIE9: document.documentMode == 9,
@@ -154,7 +154,7 @@ var Flotr = {
    */
   engineeringNotation: function(value, precision, base){
     var sizes =         ['Y','Z','E','P','T','G','M','k',''],
-        fractionSizes = ['y','z','a','f','p','n','µ','m',''],
+        fractionSizes = ['y','z','a','f','p','n','Âµ','m',''],
         total = sizes.length;
 
     base = base || 1000;
@@ -2657,17 +2657,21 @@ Flotr.Graph = Class.create({
                 xa.min > x || xa.max < x || 
                 ya.min > y || ya.max < y) continue;
             
-            if(s.bars.show && s.bars.centered){
-              var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y - my);
-            } else {
-              if (s.bars.horizontal){
-                var xdiff = Math.abs(x - mx),
-                  ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-              } else {
-                var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                  ydiff = Math.abs(y - my);
+            var xdiff, ydiff;
+            
+            if (s.bars.show && !s.bars.centered) {
+              if (s.bars.horizontal) {
+                xdiff = Math.abs(x - mx);
+                ydiff = Math.abs(y + s.bars.barWidth / 2 - my);
               }
+              else {
+                xdiff = Math.abs(x + s.bars.barWidth / 2 - mx);
+                ydiff = Math.abs(y - my);
+              }
+            }
+            else {
+              xdiff = Math.abs(x - mx);
+              ydiff = Math.abs(y - my);
             }
             
             // we use a different set of criteria to determin if there has been a hit
