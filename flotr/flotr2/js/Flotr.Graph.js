@@ -5,7 +5,6 @@
 
   var D = Flotr.DOM;
 
-  // TODO Find a home for this.
   function eventPointer(e) {
     if (Flotr.isIE && Flotr.isIE < 9) {
       return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
@@ -21,36 +20,59 @@
  * @param {Object} options - an object containing options
  */
 Flotr.Graph = function(el, data, options){
-
   try {
-    this._setEl(el);
-
-    this._initPlugins();
-
-    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
-
-    this._initMembers();
-    this.data = data;
-    this.series = Flotr.getSeries(data);
-    this._initOptions(options);
-    this._initGraphTypes();
-    this._initCanvas();
-    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
-    this._initEvents();
+  this.el = el;
   
-    this.findDataRanges();
-    this.calculateTicks(this.axes.x);
-    this.calculateTicks(this.axes.x2);
-    this.calculateTicks(this.axes.y);
-    this.calculateTicks(this.axes.y2);
+  if (!this.el) throw 'The target container doesn\'t exist';
+  if (!this.el.clientWidth) throw 'The target container must be visible';
 
-    this.calculateSpacing();
-    this.setupAxes();
-
-    this.draw(_.bind(function() {
-      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
-    }, this));
-
+  this.registerPlugins();
+  
+  Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
+  
+  // Initialize some variables
+  this.el.graph = this;
+  this.data = data;
+  this.lastMousePos = { pageX: null, pageY: null };
+  this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
+  this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
+  this.prevSelection = null;
+  this.selectionInterval = null;
+  this.ignoreClick = false;   
+  this.prevHit = null;
+  this.series = Flotr.getSeries(data);
+  this.setOptions(options);
+  
+  // Init graph types
+  var type, p;
+  for (type in Flotr.graphTypes) {
+    this[type] = _.clone(Flotr.graphTypes[type]);
+    for (p in this[type]) {
+      if (_.isFunction(this[type][p]))
+        this[type][p] = _.bind(this[type][p], this);
+    }
+  }
+  
+  // Create and prepare canvas.
+  this.constructCanvas();
+  
+  Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
+  
+  // Add event handlers for mouse tracking, clicking and selection
+  this.initEvents();
+  
+  this.findDataRanges();
+  this.calculateTicks(this.axes.x);
+  this.calculateTicks(this.axes.x2);
+  this.calculateTicks(this.axes.y);
+  this.calculateTicks(this.axes.y2);
+  
+  this.calculateSpacing();
+  this.setupAxes();
+  
+  this.draw(_.bind(function() {
+    Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
+  }, this));
   } catch (e) {
     try {
       console.error(e);
@@ -63,7 +85,7 @@ Flotr.Graph.prototype = {
    * Sets options and initializes some variables and color specific values, used by the constructor. 
    * @param {Object} opts - options object
    */
-  _initOptions: function(opts){
+  setOptions: function(opts){
     var options = Flotr.clone(Flotr.defaultOptions);
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
@@ -277,7 +299,7 @@ Flotr.Graph.prototype = {
    * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
    * are created, the elements are inserted into the container element.
    */
-  _initCanvas: function(){
+  constructCanvas: function(){
     var el = this.el,
       o = this.options,
       size, style;
@@ -330,18 +352,15 @@ Flotr.Graph.prototype = {
     _.extend(o, options);
     return Flotr.Color.processColor(color, o);
   },
-  _initPlugins: function(){
-    // TODO Should be moved to Flotr and mixed in.
+  registerPlugins: function(){
     var name, plugin, c;
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        Flotr.EventAdapter.observe(this.el, c, _.bind(plugin.callbacks[c], this));
-        // TODO
         // Ensure no old handlers are still observing this element (prevent memory leaks)
-        // Make sure multiple plugins can listen to the same event.
-          //stopObserving(this.el, c).
-          
+        Flotr.EventAdapter.
+          stopObserving(this.el, c).
+          observe(this.el, c, _.bind(plugin.callbacks[c], this));
       }
       this[name] = _.clone(plugin);
       for (p in this[name]) {
@@ -378,12 +397,13 @@ Flotr.Graph.prototype = {
   /**
    * Initializes event some handlers.
    */
-  _initEvents: function () {
+  initEvents: function () {
     //@TODO: maybe stopObserving with only flotr functions
     Flotr.EventAdapter.
       stopObserving(this.overlay).
       observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
       observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      observe(this.overlay, 'mouseout', _.bind(this.clearHit, this)).
       observe(this.overlay, 'click', _.bind(this.clickHandler, this));
   },
   /**
@@ -790,6 +810,7 @@ Flotr.Graph.prototype = {
     var afterImageLoad = _.bind(function() {
       this.drawGrid();
       this.drawLabels();
+      this.drawTitles();
 
       if(this.series.length){
         Flotr.EventAdapter.fire(this.el, 'flotr:beforedraw', [this.series, this]);
@@ -1319,6 +1340,171 @@ Flotr.Graph.prototype = {
     }
   },
   /**
+   * Draws the title and the subtitle
+   */
+  drawTitles: function(){
+    var html,
+        options = this.options,
+        margin = options.grid.labelMargin,
+        ctx = this.ctx,
+        a = this.axes;
+    
+    if (!options.HtmlText && this.textEnabled) {
+      var style = {
+        size: options.fontSize,
+        color: options.grid.color,
+        textAlign: 'center'
+      };
+      
+      // Add subtitle
+      if (options.subtitle){
+        Flotr.drawText(
+          ctx, options.subtitle,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.titleHeight + this.subtitleHeight - 2,
+          style
+        );
+      }
+      
+      style.weight = 1.5;
+      style.size *= 1.5;
+      
+      // Add title
+      if (options.title){
+        Flotr.drawText(
+          ctx, options.title,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.titleHeight - 2,
+          style
+        );
+      }
+      
+      style.weight = 1.8;
+      style.size *= 0.8;
+      
+      // Add x axis title
+      if (a.x.options.title && a.x.used){
+        style.textAlign = a.x.options.titleAlign || 'center';
+        style.textBaseline = 'top';
+        style.angle = Flotr.toRad(a.x.options.titleAngle);
+        style = Flotr.getBestTextAlign(style.angle, style);
+        Flotr.drawText(
+          ctx, a.x.options.title,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.plotOffset.top + a.x.maxLabel.height + this.plotHeight + 2 * margin,
+          style
+        );
+      }
+      
+      // Add x2 axis title
+      if (a.x2.options.title && a.x2.used){
+        style.textAlign = a.x2.options.titleAlign || 'center';
+        style.textBaseline = 'bottom';
+        style.angle = Flotr.toRad(a.x2.options.titleAngle);
+        style = Flotr.getBestTextAlign(style.angle, style);
+        Flotr.drawText(
+          ctx, a.x2.options.title,
+          this.plotOffset.left + this.plotWidth/2, 
+          this.plotOffset.top - a.x2.maxLabel.height - 2 * margin,
+          style
+        );
+      }
+      
+      // Add y axis title
+      if (a.y.options.title && a.y.used){
+        style.textAlign = a.y.options.titleAlign || 'right';
+        style.textBaseline = 'middle';
+        style.angle = Flotr.toRad(a.y.options.titleAngle);
+        style = Flotr.getBestTextAlign(style.angle, style);
+        Flotr.drawText(
+          ctx, a.y.options.title,
+          this.plotOffset.left - a.y.maxLabel.width - 2 * margin, 
+          this.plotOffset.top + this.plotHeight / 2,
+          style
+        );
+      }
+      
+      // Add y2 axis title
+      if (a.y2.options.title && a.y2.used){
+        style.textAlign = a.y2.options.titleAlign || 'left';
+        style.textBaseline = 'middle';
+        style.angle = Flotr.toRad(a.y2.options.titleAngle);
+        style = Flotr.getBestTextAlign(style.angle, style);
+        Flotr.drawText(
+          ctx, a.y2.options.title,
+          this.plotOffset.left + this.plotWidth + a.y2.maxLabel.width + 2 * margin, 
+          this.plotOffset.top + this.plotHeight / 2,
+          style
+        );
+      }
+    } 
+    else {
+      html = [];
+      
+      // Add title
+      if (options.title)
+        html.push(
+          '<div style="position:absolute;top:0;left:', 
+          this.plotOffset.left, 'px;font-size:1em;font-weight:bold;text-align:center;width:',
+          this.plotWidth,'px;" class="flotr-title">', options.title, '</div>'
+        );
+      
+      // Add subtitle
+      if (options.subtitle)
+        html.push(
+          '<div style="position:absolute;top:', this.titleHeight, 'px;left:', 
+          this.plotOffset.left, 'px;font-size:smaller;text-align:center;width:',
+          this.plotWidth, 'px;" class="flotr-subtitle">', options.subtitle, '</div>'
+        );
+
+      html.push('</div>');
+      
+      html.push('<div class="flotr-axis-title" style="font-weight:bold;">');
+      
+      // Add x axis title
+      if (a.x.options.title && a.x.used)
+        html.push(
+          '<div style="position:absolute;top:', 
+          (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height), 
+          'px;left:', this.plotOffset.left, 'px;width:', this.plotWidth, 
+          'px;text-align:center;" class="flotr-axis-title">', a.x.options.title, '</div>'
+        );
+      
+      // Add x2 axis title
+      if (a.x2.options.title && a.x2.used)
+        html.push(
+          '<div style="position:absolute;top:0;left:', this.plotOffset.left, 'px;width:', 
+          this.plotWidth, 'px;text-align:center;" class="flotr-axis-title">', a.x2.options.title, '</div>'
+        );
+      
+      // Add y axis title
+      if (a.y.options.title && a.y.used)
+        html.push(
+          '<div style="position:absolute;top:', 
+          (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
+          'px;left:0;text-align:right;" class="flotr-axis-title">', a.y.options.title, '</div>'
+        );
+      
+      // Add y2 axis title
+      if (a.y2.options.title && a.y2.used)
+        html.push(
+          '<div style="position:absolute;top:', 
+          (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
+          'px;right:0;text-align:right;" class="flotr-axis-title">', a.y2.options.title, '</div>'
+        );
+      
+      html = html.join('');
+
+      var div = D.create('div');
+      D.setStyles({
+        color: options.grid.color 
+      });
+      div.className = 'flotr-titles';
+      D.insert(this.el, div);
+      D.insert(div, html);
+    }
+  },
+  /**
    * Actually draws the graph.
    * @param {Object} series - series to draw
    */
@@ -1377,8 +1563,20 @@ Flotr.Graph.prototype = {
    */
   mouseMoveHandler: function(event){
     var pos = this.getEventPosition(event);
+
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
+      
+      //@todo Add another overlay for the crosshair
+    if (this.options.crosshair.mode)
+      this.clearCrosshair();
+      
+    if(this.selectionInterval == null && (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})))
+      this.hit(pos);
+    
+    if (this.options.crosshair.mode)
+      this.drawCrosshair(pos);
+    
     Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -1582,6 +1780,60 @@ Flotr.Graph.prototype = {
     octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.restore();
   },
+  /**   
+   * Draws the selection box.
+   */
+  drawCrosshair: function(pos) {
+    var octx = this.octx,
+      options = this.options,
+      plotOffset = this.plotOffset,
+      x = plotOffset.left+pos.relX+0.5,
+      y = plotOffset.top+pos.relY+0.5;
+    
+    if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
+      this.el.style.cursor = null;
+      D.removeClass(this.el, 'flotr-crosshair');
+      return; 
+    }
+    
+    this.lastMousePos.relX = null;
+    this.lastMousePos.relY = null;
+    
+    if (options.crosshair.hideCursor) {
+      this.el.style.cursor = 'none';
+      D.addClass(this.el, 'flotr-crosshair');
+    }
+    
+    octx.save();
+    octx.strokeStyle = options.crosshair.color;
+    octx.lineWidth = 1;
+    octx.beginPath();
+    
+    if (options.crosshair.mode.indexOf('x') != -1) {
+      octx.moveTo(x, plotOffset.top);
+      octx.lineTo(x, plotOffset.top + this.plotHeight);
+      this.lastMousePos.relX = x;
+    }
+    
+    if (options.crosshair.mode.indexOf('y') != -1) {
+      octx.moveTo(plotOffset.left, y);
+      octx.lineTo(plotOffset.left + this.plotWidth, y);
+      this.lastMousePos.relY = y;
+    }
+    
+    octx.stroke();
+    octx.restore();
+  },
+  /**
+   * Removes the selection box from the overlay canvas.
+   */
+  clearCrosshair: function() {
+    if (this.lastMousePos.relX != null)
+      this.octx.clearRect(this.lastMousePos.relX-0.5, this.plotOffset.top, 1,this.plotHeight+1);
+    
+    if (this.lastMousePos.relY != null)
+      this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
+  },
   /**
    * Determines whether or not the selection is sane and should be drawn.
    * @return {Boolean} - True when sane, false otherwise.
@@ -1589,6 +1841,269 @@ Flotr.Graph.prototype = {
   selectionIsSane: function(){
     return Math.abs(this.selection.second.x - this.selection.first.x) >= 5 &&
            Math.abs(this.selection.second.y - this.selection.first.y) >= 5;
+  },
+  /**
+   * Removes the mouse tracking point from the overlay.
+   */
+  clearHit: function(){
+    var prev = this.prevHit;
+    if(prev && !this.executeOnType(prev.series, 'clearHit')){
+      var plotOffset = this.plotOffset,
+        s = prev.series,
+        lw = (s.bars ? s.bars.lineWidth : 1),
+        offset = s.mouse.radius + lw;
+      this.octx.clearRect(
+        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
+        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
+        offset*2,
+        offset*2
+      );
+    }
+  },
+  /**
+   * Updates the mouse tracking point on the overlay.
+   */
+  drawHit: function(n){
+    var octx = this.octx,
+      s = n.series;
+
+    if(s.mouse.lineColor != null){
+      octx.save();
+      octx.lineWidth = (s.points ? s.points.lineWidth : 1);
+      octx.strokeStyle = s.mouse.lineColor;
+      octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+
+      if (!this.executeOnType(s, 'drawHit', [n])) {
+        var xa = n.xaxis,
+          ya = n.yaxis;
+
+        octx.translate(this.plotOffset.left, this.plotOffset.top);
+        octx.beginPath();
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
+          octx.fill();
+          octx.stroke();
+        octx.closePath();
+      }
+      octx.restore();
+    }
+    this.prevHit = n;
+  },
+  /**
+   * Retrieves the nearest data point from the mouse cursor. If it's within
+   * a certain range, draw a point on the overlay canvas and display the x and y
+   * value of the data.
+   * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
+   */
+  hit: function(mouse){
+    var series = this.series,
+      options = this.options,
+      prevHit = this.prevHit,
+      plotOffset = this.plotOffset,
+      octx = this.octx, 
+      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i,
+      /**
+       * Nearest data element.
+       */
+      n = {
+        dist:Number.MAX_VALUE,
+        x:null,
+        y:null,
+        relX:mouse.relX,
+        relY:mouse.relY,
+        absX:mouse.absX,
+        absY:mouse.absY,
+        sAngle:null,
+        eAngle:null,
+        fraction: null,
+        mouse:null,
+        xaxis:null,
+        yaxis:null,
+        series:null,
+        index:null,
+        seriesIndex:null
+      };
+
+    if (options.mouse.trackAll) {
+      for(i = 0; i < series.length; i++){
+        s = series[0];
+        data = s.data;
+        xa = s.xaxis;
+        ya = s.yaxis;
+        xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
+        mx = xa.p2d(mouse.relX);
+        my = ya.p2d(mouse.relY);
+    
+        for(var j = 0; j < data.length; j++){
+          x = data[j][0];
+          y = data[j][1];
+    
+          if (y === null ||
+              xa.min > x || xa.max < x ||
+              ya.min > y || ya.max < y ||
+              mx < xa.min || mx > xa.max ||
+              my < ya.min || my > ya.max) continue;
+    
+          var xdiff = Math.abs(x - mx);
+    
+          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
+          if((!s.bars.show && xdiff < xsens) 
+              || (s.bars.show && xdiff < s.bars.barWidth/2) 
+              || (y < 0 && my < 0 && my > y)) {
+            
+            var distance = xdiff;
+            
+            if (distance < n.dist) {
+              n.dist = distance;
+              n.x = x;
+              n.y = y;
+              n.xaxis = xa;
+              n.yaxis = ya;
+              n.mouse = s.mouse;
+              n.series = s; 
+              n.allSeries = series; // include all series
+              n.index = j;
+            }
+          }
+        }
+      }
+    }
+    else if(!this.executeOnType(series, 'hit', [mouse, n])) {
+      for(i = 0; i < series.length; i++){
+        s = series[i];
+        if(!s.mouse.track) continue;
+        
+        data = s.data;
+        xa = s.xaxis;
+        ya = s.yaxis;
+        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
+        xsens = sens/xa.scale;
+        ysens = sens/ya.scale;
+        mx = xa.p2d(mouse.relX);
+        my = ya.p2d(mouse.relY);
+        
+        //if (s.points) {
+        //  var h = this.points.getHit(s, mouse);
+        //  if (h.index !== undefined) console.log(h);
+        //}
+                
+        for(var j = 0, xpow, ypow; j < data.length; j++){
+          x = data[j][0];
+          y = data[j][1];
+          
+          if (y === null || 
+              xa.min > x || xa.max < x || 
+              ya.min > y || ya.max < y) continue;
+          
+          if(s.bars.show && s.bars.centered){
+            var xdiff = Math.abs(x - mx),
+              ydiff = Math.abs(y - my);
+          } else {
+            if (s.bars.horizontal){
+              var xdiff = Math.abs(x - mx),
+                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
+            } else {
+              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
+                ydiff = Math.abs(y - my);
+            }
+          }
+          
+          // we use a different set of criteria to determin if there has been a hit
+          // depending on what type of graph we have
+          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
+              // Bars check
+              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
+              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
+              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
+              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
+            
+            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+            if(distance < n.dist){
+              n.dist = distance;
+              n.x = x;
+              n.y = y;
+              n.xaxis = xa;
+              n.yaxis = ya;
+              n.mouse = s.mouse;
+              n.series = s;
+              n.allSeries = series;
+              n.index = j;
+              n.seriesIndex = i;
+            }
+          }
+        }
+      }
+    }
+    
+    if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
+      var mt = this.getMouseTrack(),
+          pos = '', 
+          s = n.series,
+          p = n.mouse.position, 
+          m = n.mouse.margin,
+          elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
+      
+      if (!n.mouse.relative) { // absolute to the canvas
+             if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
+        else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';
+             if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
+        else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
+      }
+      else { // relative to the mouse or in the case of bar like graphs to the bar
+        if(!s.bars.show && !s.pie.show){
+               if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+          else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+               if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+          else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+        }
+
+        else if (s.bars.show) {
+          pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
+          pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
+        }
+        else {
+          var center = {
+            x: (this.plotWidth)/2,
+            y: (this.plotHeight)/2
+          },
+          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+          bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
+          
+          pos += 'bottom:' + (m - plotOffset.top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
+          pos += 'left:' + (m + plotOffset.left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
+        }
+      }
+      elStyle += pos;
+
+      mt.style.cssText = elStyle;
+
+      if(n.x !== null && n.y !== null){
+        D.show(mt);
+        
+        this.clearHit();
+        this.drawHit(n);
+        
+        var decimals = n.mouse.trackDecimals;
+        if(decimals == null || decimals < 0) decimals = 0;
+        
+        mt.innerHTML = n.mouse.trackFormatter({
+          x: n.x.toFixed(decimals), 
+          y: n.y.toFixed(decimals), 
+          series: n.series, 
+          index: n.index,
+          nearest: n,
+          fraction: n.fraction
+        });
+        Flotr.EventAdapter.fire(mt, 'flotr:hit', [n, this]);
+      }
+      else if(prevHit){
+        D.hide(mt);
+        this.clearHit();
+      }
+    }
+    else if(this.prevHit) {
+      D.hide(this.mouseTrack);
+      this.clearHit();
+    }
   },
   getMouseTrack: function() {
     if (!this.mouseTrack) {
@@ -1657,32 +2172,6 @@ Flotr.Graph.prototype = {
     this.overlay.show();
     if (this.saveImageElement) this.el.removeChild(this.saveImageElement);
     this.saveImageElement = null;
-  },
-
-  _initMembers: function() {
-    this.selection = {first: {x: -1, y: -1}, second: {x: -1, y: -1}};
-    this.prevSelection = null;
-    this.selectionInterval = null;
-    this.lastMousePos = {pageX: null, pageY: null };
-    this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-    this.ignoreClick = false;
-    this.prevHit = null;
-  },
-  _initGraphTypes: function() {
-    var type, p;
-    for (type in Flotr.graphTypes) {
-      this[type] = _.clone(Flotr.graphTypes[type]);
-      for (p in this[type]) {
-        if (_.isFunction(this[type][p]))
-          this[type][p] = _.bind(this[type][p], this);
-      }
-    }
-  },
-  _setEl: function(el) {
-    if (!el) throw 'The target container doesn\'t exist';
-    if (!el.clientWidth) throw 'The target container must be visible';
-    this.el = el;
-    this.el.graph = this;
   }
 }
 })();
