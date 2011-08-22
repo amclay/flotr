@@ -3,8 +3,16 @@
  */
 (function () {
 
-  var D = Flotr.DOM,
-    E = Flotr.EventAdapter;
+  var D = Flotr.DOM;
+
+  // TODO Find a home for this.
+  function eventPointer(e) {
+    if (Flotr.isIE && Flotr.isIE < 9) {
+      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
+    } else {
+      return {x: e.pageX, y: e.pageY};
+    }
+  }
 
 /**
  * Flotr Graph constructor.
@@ -19,7 +27,7 @@ Flotr.Graph = function(el, data, options){
 
     this._initPlugins();
 
-    E.fire(this.el, 'flotr:beforeinit', [this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
 
     this._initMembers();
     this.data = data;
@@ -27,7 +35,7 @@ Flotr.Graph = function(el, data, options){
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    E.fire(this.el, 'flotr:afterconstruct', [this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
   
     this.findDataRanges();
@@ -40,7 +48,7 @@ Flotr.Graph = function(el, data, options){
     this.setupAxes();
 
     this.draw(_.bind(function() {
-      E.fire(this.el, 'flotr:afterinit', [this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
 
   } catch (e) {
@@ -328,7 +336,7 @@ Flotr.Graph.prototype = {
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        E.observe(this.el, c, _.bind(plugin.callbacks[c], this));
+        Flotr.EventAdapter.observe(this.el, c, _.bind(plugin.callbacks[c], this));
         // TODO
         // Ensure no old handlers are still observing this element (prevent memory leaks)
         // Make sure multiple plugins can listen to the same event.
@@ -372,7 +380,7 @@ Flotr.Graph.prototype = {
    */
   _initEvents: function () {
     //@TODO: maybe stopObserving with only flotr functions
-    E.
+    Flotr.EventAdapter.
       stopObserving(this.overlay).
       observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
       observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
@@ -383,70 +391,55 @@ Flotr.Graph.prototype = {
    */
   findDataRanges: function(){
     var s = this.series, 
-        a = this.axes,
-        yLogarithmic, yLogarithmic,
-        i, j, h, x, y, data, xaxis, yaxis, length, xmax, xmin, ymax, ymin, xused, yused;
+        a = this.axes;
     
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
-
+    
     if(s.length > 0){
-
+      var i, j, h, x, y, data, xaxis, yaxis;
+    
       // Get datamin, datamax start values 
       for(i = 0; i < s.length; ++i) {
         data = s[i].data;
         xaxis = s[i].xaxis;
         yaxis = s[i].yaxis;
-        xmin = xaxis.datamin;
-        xmax = xaxis.datamax;
-        ymin = yaxis.datamin;
-        ymax = yaxis.datamax;
-        xused = xaxis.used;
-        yused = yaxis.used;
-
-        xLogarithmic = (xaxis.options.scaling === 'logarithmic');
-        yLogarithmic = (yaxis.options.scaling === 'logarithmic');
-
+        
         if (data.length > 0 && !s[i].hide) {
-          length = data.length;
-          for(h = 0; h < length; h++){
+          for(h = data.length - 1; h > -1; --h){
             x = data[h][0];
-            y = data[h][1];
             
             // Logarithm is only defined for values > 0
-            if (xLogarithmic && (x <= 0)) continue;
+            if ((x <= 0) && (xaxis.options.scaling === 'logarithmic')) continue;
 
-            if(x < xmin) {
-              xmin = x;
-              xused = true;
+            if(x < xaxis.datamin) {
+              xaxis.datamin = x;
+              xaxis.used = true;
             }
-
-            if(x > xmax) {
-              xmax = x;
-              xused = true;
+            
+            if(x > xaxis.datamax) {
+              xaxis.datamax = x;
+              xaxis.used = true;
             }
+                                          
+            for(j = 1; j < data[h].length; j++){
+              y = data[h][j];
+              
+              // Logarithm is only defined for values > 0
+              if ((y <= 0) && (yaxis.options.scaling === 'logarithmic')) continue;
 
-            // Logarithm is only defined for values > 0
-            if (yLogarithmic && (y <= 0)) continue;
-
-            if(y < ymin) {
-              ymin = y;
-              yused = true;
-            }
-
-            if(y > ymax) {
-              ymax = y;
-              yused = true;
+              if(y < yaxis.datamin) {
+                yaxis.datamin = y;
+                yaxis.used = true;
+              }
+              
+              if(y > yaxis.datamax) {
+                yaxis.datamax = y;
+                yaxis.used = true;
+              }
             }
           }
         }
-
-        xaxis.datamin = xmin;
-        xaxis.datamax = xmax;
-        yaxis.datamin = ymin;
-        yaxis.datamax = ymax;
-        xaxis.used = xused;
-        yaxis.used = yused;
       }
     }
     
@@ -799,7 +792,7 @@ Flotr.Graph.prototype = {
       this.drawLabels();
 
       if(this.series.length){
-        E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
+        Flotr.EventAdapter.fire(this.el, 'flotr:beforedraw', [this.series, this]);
         
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
@@ -808,7 +801,7 @@ Flotr.Graph.prototype = {
       }
     
       this.drawOutline();
-      E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
     
@@ -858,7 +851,7 @@ Flotr.Graph.prototype = {
         
     if(o.grid.verticalLines || o.grid.minorVerticalLines || 
            o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      E.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
     }
     ctx.save();
     ctx.lineWidth = 1;
@@ -981,7 +974,7 @@ Flotr.Graph.prototype = {
     ctx.restore();
     if(o.grid.verticalLines || o.grid.minorVerticalLines ||
        o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      E.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
     }
   }, 
   /**
@@ -1352,11 +1345,9 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var offset = D.position(this.overlay),
-        pointer = E.eventPointer(e),
+        pointer = eventPointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
-        ry = (pointer.y - offset.top - this.plotOffset.top),
-        dx = pointer.x - this.lastMousePos.pageX,
-        dy = pointer.y - this.lastMousePos.pageY;
+        ry = (pointer.y - offset.top - this.plotOffset.top);
 
     return {
       x:  this.axes.x.p2d(rx),
@@ -1365,8 +1356,6 @@ Flotr.Graph.prototype = {
       y2: this.axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
-      dX: dx,
-      dY: dy,
       absX: pointer.x,
       absY: pointer.y
     };
@@ -1380,7 +1369,7 @@ Flotr.Graph.prototype = {
       this.ignoreClick = false;
       return this.ignoreClick;
     }
-    E.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
   },
   /**
    * Observes mouse movement over the graph area. Fires the 'flotr:mousemove' event.
@@ -1390,7 +1379,7 @@ Flotr.Graph.prototype = {
     var pos = this.getEventPosition(event);
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
-    E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
    * Observes the 'mousedown' event.
@@ -1408,31 +1397,199 @@ Flotr.Graph.prototype = {
       
       function cancelContextMenu () {
         overlay.show();
-        E.stopObserving(document, 'mousemove', cancelContextMenu);
+        Flotr.EventAdapter.stopObserving(document, 'mousemove', cancelContextMenu);
       }
-      E.observe(document, 'mousemove', cancelContextMenu);
+      Flotr.EventAdapter.observe(document, 'mousemove', cancelContextMenu);
       return;
     }
     */
 
-    // @TODO why?
+    function isLeftClick (e, type) {
+      return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
+    }
+
+    if(!this.options.selection.mode || !isLeftClick(event)) return;
+
+    var pointer = eventPointer(event);
+    this.setSelectionPos(this.selection.first, {pageX:pointer.x, pageY:pointer.y});
+    if(this.selectionInterval != null){
+      clearInterval(this.selectionInterval);
+    }
+    this.lastMousePos.pageX = null;
+    this.selectionInterval = 
+      setInterval(_.bind(this.updateSelection, this), 1000/this.options.selection.fps);
+    
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
-    E.observe(document, 'mouseup', this.mouseUpHandler);
-    E.fire(this.el, 'flotr:mousedown', [event, this]);
+    Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
+  },
+  /**
+   * Fires the 'flotr:select' event when the user made a selection.
+   */
+  fireSelectEvent: function(){
+    var a = this.axes, s = this.selection,
+        x1, x2, y1, y2;
+    
+    x1 = a.x.p2d(s.first.x);
+    x2 = a.x.p2d(s.second.x);
+    y1 = a.y.p2d(s.first.y);
+    y2 = a.y.p2d(s.second.y);
+
+    Flotr.EventAdapter.fire(this.el, 'flotr:select', [{
+      x1:Math.min(x1, x2), 
+      y1:Math.min(y1, y2), 
+      x2:Math.max(x1, x2), 
+      y2:Math.max(y1, y2),
+      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2
+    }, this]);
   },
   /**
    * Observes the mouseup event for the document. 
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
-    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+    Flotr.EventAdapter.stopObserving(document, 'mouseup', this.mouseUpHandler);
     // @TODO why?
     //event.stop();
-    E.fire(this.el, 'flotr:mouseup', [event, this]);
-  },
     
-    
+    if(this.selectionInterval != null){
+      clearInterval(this.selectionInterval);
+      this.selectionInterval = null;
+    }
 
+    var pointer = eventPointer(event);
+    this.setSelectionPos(this.selection.second, {pageX:pointer.x, pageY:pointer.y});
+    this.clearSelection();
+    
+    if(this.selectionIsSane()){
+      this.drawSelection();
+      this.fireSelectEvent();
+      this.ignoreClick = true;
+    }
+  },
+  /**
+   * Calculates the position of the selection.
+   * @param {Object} pos - Position object.
+   * @param {Event} event - Event object.
+   */
+  setSelectionPos: function(pos, pointer) {
+    var options = this.options,
+        offset = D.position(this.overlay);
+
+    if(options.selection.mode.indexOf('x') == -1){
+      pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;         
+    }else{
+      pos.x = pointer.pageX - offset.left - this.plotOffset.left;
+      pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
+    }
+
+    if (options.selection.mode.indexOf('y') == -1){
+      pos.y = (pos == this.selection.first) ? 0 : this.plotHeight;
+    }else{
+      pos.y = pointer.pageY - offset.top - this.plotOffset.top;
+      pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
+    }
+  },
+  /**
+   * Updates (draws) the selection box.
+   */
+  updateSelection: function(){
+    if(this.lastMousePos.pageX == null) return;
+    
+    this.setSelectionPos(this.selection.second, this.lastMousePos);
+    this.clearSelection();
+    
+    if(this.selectionIsSane()) this.drawSelection();
+  },
+  /**
+   * Removes the selection box from the overlay canvas.
+   */
+  clearSelection: function() {
+    if(this.prevSelection == null) return;
+      
+    var prevSelection = this.prevSelection,
+      lw = this.octx.lineWidth,
+      plotOffset = this.plotOffset,
+      x = Math.min(prevSelection.first.x, prevSelection.second.x),
+      y = Math.min(prevSelection.first.y, prevSelection.second.y),
+      w = Math.abs(prevSelection.second.x - prevSelection.first.x),
+      h = Math.abs(prevSelection.second.y - prevSelection.first.y);
+    
+    this.octx.clearRect(x + plotOffset.left - lw/2+0.5,
+                        y + plotOffset.top - lw/2+0.5,
+                        w + lw,
+                        h + lw);
+    
+    this.prevSelection = null;
+  },
+  /**
+   * Allows the user the manually select an area.
+   * @param {Object} area - Object with coordinates to select.
+   */
+  setSelection: function(area, preventEvent){
+    var options = this.options,
+      xa = this.axes.x,
+      ya = this.axes.y,
+      vertScale = ya.scale,
+      hozScale = xa.scale,
+      selX = options.selection.mode.indexOf('x') != -1,
+      selY = options.selection.mode.indexOf('y') != -1;
+    
+    this.clearSelection();
+
+    this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
+    this.selection.second.y = (selX && !selY) ? this.plotHeight : (ya.max - area.y2) * vertScale;      
+    this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
+    this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
+    
+    this.drawSelection();
+    if (!preventEvent)
+      this.fireSelectEvent();
+  },
+  /**
+   * Draws the selection box.
+   */
+  drawSelection: function() {
+    var prevSelection = this.prevSelection,
+      s = this.selection,
+      octx = this.octx,
+      options = this.options,
+      plotOffset = this.plotOffset;
+    
+    if(prevSelection != null &&
+      s.first.x == prevSelection.first.x &&
+      s.first.y == prevSelection.first.y && 
+      s.second.x == prevSelection.second.x &&
+      s.second.y == prevSelection.second.y)
+      return;
+
+    octx.save();
+    octx.strokeStyle = this.processColor(options.selection.color, {opacity: 0.8});
+    octx.lineWidth = 1;
+    octx.lineJoin = 'miter';
+    octx.fillStyle = this.processColor(options.selection.color, {opacity: 0.4});
+
+    this.prevSelection = {
+      first: { x: s.first.x, y: s.first.y },
+      second: { x: s.second.x, y: s.second.y }
+    };
+
+    var x = Math.min(s.first.x, s.second.x),
+        y = Math.min(s.first.y, s.second.y),
+        w = Math.abs(s.second.x - s.first.x),
+        h = Math.abs(s.second.y - s.first.y);
+    
+    octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
+    octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
+    octx.restore();
+  },
+  /**
+   * Determines whether or not the selection is sane and should be drawn.
+   * @return {Boolean} - True when sane, false otherwise.
+   */
+  selectionIsSane: function(){
+    return Math.abs(this.selection.second.x - this.selection.first.x) >= 5 &&
+           Math.abs(this.selection.second.y - this.selection.first.y) >= 5;
+  },
   getMouseTrack: function() {
     if (!this.mouseTrack) {
       this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
@@ -1503,6 +1660,9 @@ Flotr.Graph.prototype = {
   },
 
   _initMembers: function() {
+    this.selection = {first: {x: -1, y: -1}, second: {x: -1, y: -1}};
+    this.prevSelection = null;
+    this.selectionInterval = null;
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
     this.ignoreClick = false;
