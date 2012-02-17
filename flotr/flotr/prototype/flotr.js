@@ -2065,10 +2065,17 @@ Flotr.Graph = Class.create({
    */
   getEventPosition: function (event){
     var offset = this.overlay.cumulativeOffset(),
+        scroll = this.overlay.cumulativeScrollOffset(),
         pointer = Event.pointer(event),
-        rx = (pointer.x - offset.left - this.plotOffset.left),
+        docElement = document.documentElement,
+        body = document.body;
+        
+    offset.top  -= scroll.top  - (docElement.scrollTop  || body.scrollTop  || 0);
+    offset.left -= scroll.left - (docElement.scrollLeft || body.scrollLeft || 0);
+        
+    var rx = (pointer.x - offset.left - this.plotOffset.left),
         ry = (pointer.y - offset.top - this.plotOffset.top);
-    
+        
     return {
       x:  this.axes.x.p2d(rx),
       x2: this.axes.x2.p2d(rx),
@@ -2379,7 +2386,7 @@ Flotr.Graph = Class.create({
         ya = prevHit.yaxis;
         
     if(!s.bars.show && !s.pie.show && !s.bubbles.show){
-      var offset = s.mouse.radius + lw;
+      var offset = s.mouse.radius + lw * 4;
       this.octx.clearRect(
         plotOffset.left + xa.d2p(prevHit.x) - offset,
         plotOffset.top  + ya.d2p(prevHit.y) - offset,
@@ -2391,45 +2398,47 @@ Flotr.Graph = Class.create({
       var bw = s.bars.barWidth;
       if(!s.bars.horizontal){ // vertical bars (default)
         var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
-	      if(s.bars.centered) {
-	        this.octx.clearRect(
-	            xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
-	            lastY + plotOffset.top - lw, 
-	            xa.d2p(bw + xa.min) + lw * 2, 
-	            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-	        );
-	      } else {
-	        this.octx.clearRect(
-	            xa.d2p(prevHit.x) + plotOffset.left - lw, 
-	            lastY + plotOffset.top - lw, 
-	            xa.d2p(bw + xa.min) + lw * 2, 
-	            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-	        ); 
-	      }
+        var offset = lw * 4;
+        
+        if(s.bars.centered) {
+          this.octx.clearRect(
+              plotOffset.left + xa.d2p(prevHit.x - bw/2) - offset, 
+              plotOffset.top  + lastY - offset, 
+              xa.d2p(bw + xa.min) + offset * 2, 
+              ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + offset * 2
+          );
+        } else {
+          this.octx.clearRect(
+              plotOffset.left + xa.d2p(prevHit.x) - offset, 
+              plotOffset.top  + lastY  - offset, 
+              xa.d2p(bw + xa.min) + offset * 2, 
+              ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + offset * 2
+          ); 
+        }
       } else { // horizontal bars
         var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
-    	  if(s.bars.centered) {
-    	    this.octx.clearRect(
-    	        lastX + plotOffset.left + lw, 
-    	        ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
-    	        xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-    	        ya.d2p(bw + ya.min) + lw * 2
-    	    );
-  	    } else {
-  	      this.octx.clearRect(
-  	          lastX + plotOffset.left + lw, 
-  	          ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
-  	          xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-  	          ya.d2p(bw + ya.min) + lw * 2
-  	      );
-  	    }
+        if(s.bars.centered) {
+          this.octx.clearRect(
+              lastX + plotOffset.left + offset, 
+              ya.d2p(prevHit.y + bw/2) + plotOffset.top - offset, 
+              xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - offset * 2,
+              ya.d2p(bw + ya.min) + offset * 2
+          );
+        } else {
+          this.octx.clearRect(
+              lastX + plotOffset.left + offset, 
+              ya.d2p(prevHit.y + bw) + plotOffset.top - offset, 
+              xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - offset * 2,
+              ya.d2p(bw + ya.min) + offset * 2
+          );
+        }
       }
     }
     else if (s.bubbles.show){
       this.bubbles.clearHit();
     }
     else if (s.pie.show){
-    	this.pie.clearHit();
+      this.pie.clearHit();
     }
   },
   /**
@@ -2477,9 +2486,9 @@ Flotr.Graph = Class.create({
                 rx = xa.d2p(n.x+(bw/2));
             
               octx.moveTo(lx, ly);
-            	octx.lineTo(lx, y);
-            	octx.lineTo(rx, y);
-            	octx.lineTo(rx, ly);
+              octx.lineTo(lx, y);
+              octx.lineTo(rx, y);
+              octx.lineTo(rx, ly);
             } else {
               var rx = xa.d2p(n.x+bw); //right vertex x value (in points)
               
@@ -2520,7 +2529,7 @@ Flotr.Graph = Class.create({
         this.bubbles.drawHit(n);
       }
       else if (s.pie.show){
-      	this.pie.drawHit(n);
+        this.pie.drawHit(n);
       }
       octx.restore();
     }
@@ -4230,7 +4239,7 @@ Flotr.addType('pie', {
       s = n.series,
       xa = n.xaxis,
       ya = n.yaxis;
-  	
+    
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
     octx.beginPath();
